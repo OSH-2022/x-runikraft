@@ -1,6 +1,6 @@
 # x-runikraft
 
-USTC 011705 (OSH) Course Project of LJW's Group
+USTC 011705 (OSH) Course Project of Runikraft Group
 
 ## Group Members
 
