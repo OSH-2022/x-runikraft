@@ -70,7 +70,7 @@ Rumprun 可用于将几乎任何与 POSIX 兼容的程序转换为一个可工�
 
 下面是 Rumprun 的**架构图**：
 
-![rumprun-2](./pictures/rumprun-2.bmp)
+![rumprun-2](./pictures/rumprun-2.png)
 
 Rumprun 也有一些**限制**：
 
