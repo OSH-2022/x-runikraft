@@ -927,8 +927,18 @@ ASLR、W\^{}X政策、保护页、stack canary四项安全技术。
 \item 移植更多库。
 \end{enumerate}
 
-\section{前瞻性/重要性分析}
+在系统架构方面，我们将主要参考Unikraft，并少量参考MirageOS和RustyHermit；
+在技术方面，我们将参考Chen and Wu的\textit{rCore Tutorial Book}\cite{bib:rcore-os}。
 
+\section{前瞻性/重要性分析}\sectionauthor{张子辰}
+Rust和RISC-V都是新兴事物，并且它们都是在吸取旧事物的教训的基础上诞生的，
+而且，实践表明，两者都正在经历蓬勃的发展，并正在分别逐步取代旧事物。
+而unikernel本身也是比较新颖的操作系统结构，它在云计算领域正在逐步取代
+传统的容器，并且有在嵌入式领域取代传统的嵌入式实时系统的潜能。
+因此，用Rust在RISC-V上开发unikernel顺应了历史的趋势。
+
+此外，我们在开发的Runikraft将努力避免现有的unikernels的缺点，集中现有的unikernels
+的优点，所以，Runikraft在unikernel领域内部也属于新事物，它将能促进unikernel的发展。
 \section{相关工作}
 \subsection{往年项目}\sectionauthor{吴骏东}
 \vspace*{-3ex}
@@ -1311,6 +1321,7 @@ for A-profile architecture}[S/OL]. Version 21.0, Arm Limited, 2022[2022-03-27]. 
 \bibitem{bib:24-rumrun} [The Rumprun Unikernel]\url{../../references/The Rumprun Unikernel.pdf}
 \bibitem{bib:canary} \url{https://en.wikipedia.org/wiki/Animal_sentinel#Historical_examples}
 \bibitem{bib:unikraft-secuirty} \url{https://unikraft.org/docs/features/security/}
-
+\bibitem{bib:rcore-os} Yu Chen and Yifan Wu. \textit{rCore Tutorial Book}[M/OL]. Version 3,
+2022(20220102) [2022-03-27]. \url{https://rcore-os.github.io/rCore-Tutorial-Book-v3/chapter0/0intro.html}
 \end{thebibliography}
 \end{document}
