@@ -1,12 +1,20 @@
+***本文件仅供参考，最终报告是`research-report.tex`***
+
 # Runikraft 调研报告
+
+本调研报告分为4个主要部分：Rust语言的优越性（郭耸霄调研）、当前时代的unikernel项目整理（陈建绿、蓝俊玮调研）、往年OSH-20xx课程小组的unikernel项目整理（吴骏东调研），以及unikernel的安全性问题（张子辰调研）。
 
 [TOC]
 
 ## 项目简介
 
-本项目参考 Unikraft 的设计，用 Rust 语言实现模块化的 unikernel，在保持 Unikraft 的 POSIX 兼容性、可定制性的基础上，用 Rust 语言增强内核的安全性。参考项目：[unikraft](https://github.com/unikraft/unikraft)
+**本项目参考 Unikraft 的设计，用 Rust 语言实现模块化的 unikernel，在保持 Unikraft 的 POSIX 兼容性、可定制性的基础上，用 Rust 语言增强内核的安全性。**
 
-本调研报告分为4个主要部分：Rust语言的优越性（郭耸霄调研）、当前时代的unikernel项目整理（陈建绿、蓝俊玮调研）、往年OSH-20xx课程小组的unikernel项目整理（吴骏东调研），以及unikernel的安全性问题（张子辰调研）。
+Unikernel是专一用途的、单地址空间的轻量操作系统。Unikernels在虚拟机上运行时，能够提供比传统的容器更短的启动时间、更高的运行效率和更强的隔离性，因此unikernels通常被用在云计算领域。然而，为了追求轻量性，unikernels裁剪了传统的操作系统的众多组件，因此unikernels无法提供许多常用的库的应用程序接口，所以为了将现有的程序移植到某个unikernel平台，开发者不得不根据该unikernel的API重构程序。此外，为了轻量、快速，unikernels删去的许多基本的并且不会影响性能的安全措施，这导致unikernels相比容器更容易受到用户程序的安全漏洞的影响。
+
+Unikraft是一个充分考虑了兼容性和安全性的unikernel，它将系统分割成若干相对独立的模块，各个模块可以独立安装和更新，就像传统操作系统上的动态库。在创建系统镜像时，Unikraft提供的编译系统能够编译用户需要使用的模块，并将它们与用户代码一起连接成可引导镜像。
+
+我们小组计划仿照Unikraft的架构，用Rust语言编写能在RISC-V架构+ KVM平台上运行的unikernel——Runikraft。Runikraft的核心代码使用Rust编写，但允许用户代码使用任何语言编写——只要它能够被编译成入口为`main`的目标代码。Runikraft强调构建系统镜像的简洁，用户只需要修改现有的项目的编译参数就可以构建基于Runikraft的系统镜像，而不必使用专用的工具链，更不需要重构代码。Runikraft是POSIX兼容的，所以它将支持内存管理、进程调度，甚至磁盘管理和进程通信。不过，这些功能都是可选的且可拓展的，如果用户不需要某项功能，他可以不将相关模块打包进系统镜像中，如果用户能够提供某些功能的更好实现，他可以用自己的实现替换原有的模块，甚至POSIX兼容层本身也是可选的，如果用户愿意为了效率重构代码，他也可以直接用Runikraft的专用API。Runikraft可以支持多进程，因为我们认为，将若干密切管理的程序打包到一个镜像会提高效率。
 
 ## Rust语言的优越性
 
