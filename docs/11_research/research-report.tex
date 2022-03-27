@@ -235,7 +235,174 @@ Rust的严格要求会让第三方库的质量明显高很多。语言本身的�
 因为python和rust的彼此适用面其实不太冲突。\cite{bib:5-why-rust2}
 \end{itemize}
 
-\subsection{RISC-V指令集架构}%TODO
+\subsection{RISC-V指令集架构}\sectionauthor{张子辰}
+这一部分解释我们为什么要选择RISC-V架构，并且说明RISC-V相比所谓的“成熟”“生态好”
+的ARMv8没有任何劣势。
+
+\subsubsection{RISC-V的特点}
+RISC-V(“RISC five”)的目标是成为一个通用的指令集架构(ISA):\cite{bib:risc-v-manual}
+\begin{itemize}
+\item 它要能适应包括从最袖珍的嵌入式控制器，到最快的高性能计算机等各种规模的
+处理器。
+\item 它应该能兼容各种流行的软件栈和编程语言。
+\item 它应该适应所有实现技术，包括现场可编程门阵列(FPGA)
+ 、专用集成电路(ASIC) 、全定制芯片，甚至未来的设备技术。
+\item 它应该对所有微体系结构样式都有效:例如微编码或硬连线控制;顺序或乱序执行
+流水线; 单发射或超标量等等。
+\item 它应该支持广泛的专业化，成为定制加速器的基础，因为随着摩尔定律的消退，
+加速器的重要性日益提高。
+\item 它应该是稳定的，基础的指令集架构不应该改变。更重要的是，它不能像以前的
+专有指令集架构一样被弃用，例如AMD Am29000、Digital Alpha、Digital VAX、
+Hewlett Packard PA-RISC、Intel i860、Intel i960、Motorola 88000、以及Zilog
+Z8000。
+\end{itemize}
+
+RISC-V的不同寻常不仅在于它是一个最近诞生的指令集架构(它诞生于最近十
+年，而大多数其他指令集都诞生于20世纪70到80年代)，而且在于它是一个开源的指
+令集架构。与几乎所有的旧架构不同，它的未来不受任何单一公司的浮沉或一时兴起
+的决定的影响(这一点让许多过去的指令集架构都遭了殃)。它属于一个开放的，非
+营利性质的基金会。RISC-V基金会的目标是保持RISC-V的稳定性，仅仅出于技术原
+因缓慢而谨慎地发展它，并力图让它之于硬件如同Linux之于操作系统一样受欢迎。
+
+RISC-V的另一个不同寻常之处在于和几乎所
+有以往的ISA不同，它是\textit{模块化}的。它的核心是一个名为RV32I的基础ISA，
+运行一个完整的软件栈。RV32I是固定的，永远不会改变。这为编译器编写者，操作系统开发人员和汇
+编语言程序员提供了稳定的目标。模块化来源于可选的标准扩展，根据应用程序的需要，
+硬件可以包含或不包含这些扩展。这种模块化特性使得RISC-V具有了袖珍化、低能耗的特
+点，而这对于嵌入式应用可能至关重要。RISC-V编译器得知当前硬件包含哪些扩展后，便
+可以生成当前硬件条件下的最佳代码。惯例是把代表扩展的字母附加到指令集名称之后作
+为指示。例如，RV32IMFD将乘法(RV32M)，单精度浮点(RV32F)和双精度浮点
+(RV32D)的扩展添加到了基础指令集(RV32I)中。
+
+\subsubsection{RISC-V的优势}
+RISC-V在设计时考虑了成本、简洁性、性能、架构和具体实现的分离、提升空间、
+程序大小和易于编程/编译/链接七个因素，并且充分从过去的错误
+中吸取了教训：\cite{bib:risc-v-manual}
+\begin{longtable}{|p{0.08\linewidth}|*{4}{p{0.19\linewidth}|}}
+\hline
+&ARM-32 (1986)&MIPS-32 (1986)&x86-32 (1978)&RV32I (2011)\\\hline
+\endhead
+成本&必须支持整数乘除法&
+必须支持整数乘除法&
+8 位以及 16 位操作、必须支持整数乘除法&
+无 8 位、16 位操作、可选的整数乘 除 法 支 持(RV32M)\\\hline
+简洁性&
+无零寄存器、条件指令执行、复杂的寻址模式、栈操作指令(push/pop)、算术/逻辑指令中存在移位&
+立即数支持零扩展及符号扩展、一些算术指令会造成溢出异常&
+无零寄存器、复杂的过程调用指令(enter/leave)、栈指令(push/pop) 、复杂寻址模式、
+循环指令&
+  寄存器 x0 专门
+  用于存放常数 0、
+  立即数只进行符
+  号扩展 、一种数
+  据寻址模式、没
+  有条件执行、没
+  有复杂的函数调
+  用指令以及栈指
+ 令、算术指令不
+ 抛异常、使用单
+ 独的移位指令来
+ 处理移位操作\\\hline
+性能&
+分支指令使用条
+ 件码、在不同格
+ 式的指令中，源
+ 和目的寄存器的
+ 位置不同、加载
+ 多个计算得到的
+ 立即数、 PC 是一
+ 个通用寄存器&
+在不同格式的指
+ 令中，源和目的寄
+ 存器的位置不同&
+ 分支指令使用
+  条件码、每个指
+  令中最多只能
+  使用两个寄存
+  器&
+使用同一条指令
+实现比较及跳转
+(不使用条件
+码)、每条指令三
+个寄存器 、不能
+一次 load 多个数
+据、不同指令格
+式中，源及目的
+寄存器字段位置
+固定、立即数是
+常数(不是由计
+算得出的)、PC
+不是通用寄存器\\\hline
+架构和具体实现的分离&
+将 PC 像 普 通 寄
+ 存器一样读写，
+ 这样暴露了流水
+ 线长度&
+ 分支指令延迟槽、
+  Load 指令延迟槽、
+ 乘除法使用单独
+  的 HI，LO 寄存器&
+ 寄存器不是通
+  用
+ 的
+  (AX，CX，DX，
+  DI，SI 有 特 殊 用
+ 途)&
+不是通用寄存器
+ 分支指令没有延
+ 迟槽、Load 指令
+ 无延迟槽、通用
+ 寄存器\\\hline
+提升空间&
+有限的指令码空间&
+有限的指令码空间&
+&
+大量可用的指令
+码空间位指令位\\\hline
+程序大小&
+仅 有 32bit 指 令
+ (Thumb-2 是 作
+ 为一个独立的
+ ISA)
+ 仅  个寄存器&
+ 仅 32bit 指 令
+  (microMIPS 是 作
+  为一个独立的ISA)&
+ 指令长度可用
+  是不同字节，但
+  这是一个很不
+ 好的选择
+ 仅  个寄存器&
+ 32 位 指 令 +16 位
+ RV32C 扩展\\\hline
+易于编程/编译/链接&
+仅 15 个寄存器、
+ 内存数据必须对
+ 齐、不规则的数
+ 据寻址模式、不
+ 一致的性能计数
+ 器&
+ 内存数据必须对
+  齐、不规则的数据
+  寻址模式、不一致
+  的性能计数器&
+  仅 8 个通用寄存器、
+  内存数据必须
+  对齐、不规则的
+  数据寻址模式、
+  不一致的性能
+  计数器&
+ 31 个寄存器、数
+ 据可用不对齐、
+ PC 相对的数据
+ 寻址模式 、对称
+ 的数据寻址模
+ 式、定义在架构
+中的性能计数器\\\hline
+\end{longtable}
+
+\subsubsection{RISC-V的生态}
+
 
 \subsection{Unikernel}
 Unikernel是专一用途的、单地址空间的轻量操作系统。Unikernels在虚拟机
@@ -430,7 +597,7 @@ RustyHermit 也是一个用来评估操作系统新的设计的研究项目。
 Unikernel。这篇论文的摘要如下（中英文对照）：\cite{bib:19-mpk}
 
 \begin{quote}
-Unikernels are minimal, single-purpose virtual machines. This new operating system model promises numerous benefits within many application domains in terms of lightweightness, performance, and security. Although the isolation between unikernels is generally recognized as strong, there is no isolation within a unikernel itself. This is due to the use of a single, unprotected address space, a basic principle of unikernels that provide their lightweightness and performance benefits. In this paper, we propose a new design that brings memory isolation inside a unikernel instance while keeping a single address space. We leverage Intel’s Memory Protection Key to do so without impacting the lightweightness and performance benefits of unikernels. We implement our isolation scheme within an existing unikernel written in Rust and use it to provide isolation between trusted and untrusted components: we isolate (1) safe kernel code from unsafe kernel code and (2) kernel code from user code. Evaluation shows that our system provides such isolation with very low performance overhead. Notably, the unikernel with our isolation exhibits only 0.6\% slowdown on a set of macrobenchmarks.
+Unikernels are minimal, single-purpose virtual machines. This new operating system model promises numerous benefits within many application domains in terms of lightweightness, performance, and security. Although the isolation between unikernels is generally recognized as strong, there is no isolation within a unikernel itself. This is due to the use of a single, unprotected address space, a basic principle of unikernels that provide their lightweightness and performance benefits. In this paper, we propose a new design that brings memory isolation inside a unikernel instance while keeping a single address space. We leverage Intel's Memory Protection Key to do so without impacting the lightweightness and performance benefits of unikernels. We implement our isolation scheme within an existing unikernel written in Rust and use it to provide isolation between trusted and untrusted components: we isolate (1) safe kernel code from unsafe kernel code and (2) kernel code from user code. Evaluation shows that our system provides such isolation with very low performance overhead. Notably, the unikernel with our isolation exhibits only 0.6\% slowdown on a set of macrobenchmarks.
 \end{quote}
 
 译：
@@ -1098,5 +1265,6 @@ Cristian Banu, Laurent Mathy, Răzvan Deaconescu, Costin Raiciu and Felipe Huici
 \bibitem{bib:24-rumrun} [The Rumprun Unikernel]\url{../../references/The Rumprun Unikernel.pdf}
 \bibitem{bib:canary} \url{https://en.wikipedia.org/wiki/Animal_sentinel#Historical_examples}
 \bibitem{bib:unikraft-secuirty} \url{https://unikraft.org/docs/features/security/}
+\bibitem{bib:risc-v-manual} David Patterson and Andrew Waterman. \textit{RISC-V 手册: 一本开源指令集的指南}[S]. 勾凌睿, 黄成, 刘志刚译. 2018: 13-21
 \end{thebibliography}
 \end{document}
