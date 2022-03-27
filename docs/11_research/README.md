@@ -489,13 +489,13 @@ NCC Group只测试了 rumprun 和 includeOS 两个 unikernels，并发现它们�
 [^15]: [Rust Runtime 与 ABI——知乎专栏](https://zhuanlan.zhihu.com/p/370897059)
 [^16]:[Rust 运行时 - Rust 参考 (rust-lang.org)](https://doc.rust-lang.org/reference/runtime.html)
 [^17]:[The `RustyHermit` Unikernel——Rust OSDev](https://rust-osdev.com/showcase/rusty-hermit/)
-[^18]:[Intra-Unikernel Isolation with Intel Memory Protection Keys.pdf](../../references/Intra-Unikernel Isolation with Intel Memory Protection Keys.pdf)
+[^18]:[Intra-Unikernel Isolation with Intel Memory Protection Keys.pdf](.../references/Intra-Unikernel Isolation with Intel Memory Protection Keys.pdf)
 [^19]: [MPK——Core API Doc](https://www.kernel.org/doc/html/latest/core-api/protection-keys.html#:~:text=Memory%20Protection%20Keys%20provides%20a%20mechanism%20for%20enforcing,to%20a%20%E2%80%9Cprotection%20key%E2%80%9D%2C%20giving%2016%20possible%20keys.)
 [^20]: [linux内核那些事之Memory protection keys(硬件原理)——CSDN博客](https://blog.csdn.net/weixin_42730667/article/details/121386896)
 [^21]: [Rump kernel——Wikipedia (其中有介绍 Anykernel)](https://en.wikipedia.org/wiki/Rump_kernel)
 [^22]: [Xen on Rump Kernels and the Rumprun Unikernel——XenProject](https://xenproject.org/2015/08/06/on-rump-kernels-and-the-rumprun-unikernel/)
 [^23]: [All About Unikernels: Part 2, Two Different Approaches, MirageOS and Rumprun——Container Solutions blog](https://blog.container-solutions.com/all-about-unikernels-part-2-mirageos-and-rumprun)
-[^24]: [The Rumprun Unikernel](../../references/The Rumprun Unikernel.pdf)
+[^24]: [The Rumprun Unikernel](.../references/The Rumprun Unikernel.pdf)
 
 
 
