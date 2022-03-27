@@ -98,40 +98,10 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 
 \tableofcontents
 
-\section{项目简介}\sectionauthor{张子辰}
-\textbf{本项目参考 Unikraft 的设计，用 Rust 语言实现模块化的 unikernel
+\section{项目简介}
+本项目参考 Unikraft 的设计，用 Rust 语言实现模块化的 unikernel
 在保持 Unikraft 的 POSIX 兼容性、可定制性的基础上，用 Rust 语言增强
-内核的安全性。}
-
-Unikernel是专一用途的、单地址空间的轻量操作系统。Unikernels在虚拟机
-上运行时，能够提供比传统的容器更短的启动时间、更高的运行效率和更强的
-隔离性，因此unikernels通常被用在云计算领域。\cite{bib:unikernel}
-然而，为了追求轻量性，
-unikernels裁剪了传统的操作系统的众多组件，因此unikernels无法提供许多
-常用的库的应用程序接口，所以为了将现有的程序移植到某个unikernel平台，开发者
-不得不根据该unikernel的API重构程序。\cite{bib:unikraft}
-此外，为了轻量、快速，unikernels
-删去的许多基本的并且不会影响性能的安全措施，这导致unikernels相比容器
-更容易受到用户程序的安全漏洞的影响。\cite{bib:unikernel-secuirty}
-
-Unikraft是一个充分考虑了兼容性和安全性的unikernel，它将系统分割成
-若干相对独立的模块，各个模块可以独立安装和更新，就像传统操作系统上的动态库。
-在创建系统镜像时，Unikraft提供的编译系统能够编译用户需要使用的模块，并将
-它们与用户代码一起连接成可引导镜像。
-
-我们小组计划仿照Unikraft的架构，用Rust语言编写能在RISC-V架构+ KVM平台上
-运行的unikernel——Runikraft。Runikraft的核心代码使用Rust编写，但
-允许用户代码使用任何语言编写——只要它能够被编译成入口为\texttt{main}的
-目标代码。Runikraft强调构建系统镜像的简洁，用户只需要
-修改现有的项目的编译参数就可以构建基于Runikraft的系统镜像，而不必使用
-专用的工具链，更不需要重构代码。Runikraft是POSIX兼容的，所以它将支持
-内存管理、进程调度，甚至磁盘管理和进程通信。不过，这些功能都是可选的且可
-拓展的，如果用户不需要某项功能，他可以不将相关模块打包进系统镜像中，
-如果用户能够提供某些功能的更好实现，他可以用自己的实现替换原有的模块，
-甚至POSIX兼容层本身也是可选的，如果用户愿意为了效率重构代码，他也可以
-直接用Runikraft的专用API。
-Runikraft可以支持多进程，因为我们认为，将若干密切管理的程序打包到一个
-镜像会提高效率。
+内核的安全性。
 \section{项目背景}
 \subsection{Rust语言}\sectionauthor{郭耸霄}
 
@@ -266,7 +236,21 @@ Rust的严格要求会让第三方库的质量明显高很多。语言本身的�
 
 \subsection{RISC-V指令集架构}%TODO
 
-\subsection{目前的Unikernel}
+\subsection{Unikernel}
+Unikernel是专一用途的、单地址空间的轻量操作系统。Unikernels在虚拟机
+上运行时，能够提供比传统的容器更短的启动时间、更高的运行效率和更强的
+隔离性，因此unikernels通常被用在云计算领域。\cite{bib:unikernel}
+然而，为了追求轻量性，
+unikernels裁剪了传统的操作系统的众多组件，因此unikernels无法提供许多
+常用的库的应用程序接口，所以为了将现有的程序移植到某个unikernel平台，开发者
+不得不根据该unikernel的API重构程序。\cite{bib:unikraft}
+此外，为了轻量、快速，unikernels
+删去的许多基本的并且不会影响性能的安全措施，这导致unikernels相比容器
+更容易受到用户程序的安全漏洞的影响。\cite{bib:unikernel-secuirty}
+
+我们小组详细调研了ClickOS、MirageOS、IncludeOS、Rusty-Hermit、Rumprun
+和Unikraft六个目前的unikernel项目。
+
 \subsubsection[ClickOS]{ClickOS\cite{bib:12-clickos}\cite{bib:13-clickos2}}\sectionauthor{蓝俊玮}
 
 ClickOS 是一个基于 Xen 的高性能地虚拟化软件中间盒平台。为了达到高性能，
@@ -716,7 +700,42 @@ ARM Speculation Barrier (SB)  & Planned   & \texttt{ARCH\_ARM\_64}\\\hline
 总的来说，Unikraft是我们发现的最好的unikernel项目，所以我们的项目将
 主要参考它。
 
-\section{立项依据}
+\section{立项依据}\sectionauthor{张子辰}
+我们小组计划仿照Unikraft的架构，用Rust语言编写能在RISC-V架构+ KVM平台上
+运行的unikernel——Runikraft。Runikraft的核心代码使用Rust编写，但
+允许用户代码使用任何语言编写——只要它能够被编译成入口为\texttt{main}的
+目标代码。Runikraft强调构建系统镜像的简洁，用户只需要
+修改现有的项目的编译参数就可以构建基于Runikraft的系统镜像，而不必使用
+专用的工具链，更不需要重构代码。Runikraft是POSIX兼容的，所以它将支持
+内存管理、进程调度，甚至磁盘管理和进程通信。不过，这些功能都是可选的且可
+拓展的，如果用户不需要某项功能，他可以不将相关模块打包进系统镜像中，
+如果用户能够提供某些功能的更好实现，他可以用自己的实现替换原有的模块，
+甚至POSIX兼容层本身也是可选的，如果用户愿意为了效率重构代码，他也可以
+直接用Runikraft的专用API。
+Runikraft可以支持多进程，因为我们认为，将若干密切管理的程序打包到一个
+镜像会提高效率。
+与Unikraft一样，Runikraft在注重效率的同时兼顾安全性。我们计划实现
+ASLR、W\^{}X政策、保护页、stack canary四项安全技术。
+
+以往的unikernel项目的不足之处可以概况为（并不每个unikernel都有所有缺点）：
+\begin{itemize}
+\item 无法兼顾效率和兼容性；
+\item 系统内的组件耦合度过高，系统不易裁剪或拓展；
+\item 需要使用专用的工具构建系统镜像；
+\item 将安全性与隔离性等同，忽视了单个unikernel虚拟机的安全；
+\item 不支持RISC-V架构；
+\item 核心代码使用不安全的程序设计语言编写。
+\end{itemize}
+而我们的项目将不具有以上缺点。
+
+如果时间允许，我们还会尝试：
+\begin{enumerate}
+\item 支持更多架构，比如目前流行的AMD64和ARMv8；
+\item 支持在裸机上运行，虽然unikernel为云计算诞生，但这并不代表它只适合
+    云计算领域，事实上，任何专一用途的设备上的系统都可以是unikernel，
+    而且unikernels理论上可以具有比现有的实时系统更高效率；
+\item 移植更多库。
+\end{enumerate}
 
 \section{前瞻性/重要性分析}
 
