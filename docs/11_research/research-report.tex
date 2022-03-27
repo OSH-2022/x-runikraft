@@ -91,7 +91,7 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 
 \begin{document}
 \sffamily %为方便屏幕阅读，文档主要使用无衬线字体
-\title{\bfseries x-runikraft小组\quad 调研报告}
+\title{\bfseries Runikraft小组\quad 调研报告}
 \author{吴骏东\and 张子辰\and 蓝俊玮\and 郭耸霄\and 陈建绿}
 \date{\today}
 \maketitle
@@ -157,7 +157,7 @@ Rust 丰富的类型系统和所有权模型保证了内存安全和线程安全
 
 \begin{itemize}
 \item 处理系统级编程\\
-  与其他系统级编程语言（例如C或C ++）相比，Rust可以提供的最大好处是借阅检查器。
+  与其他系统级编程语言（例如C或C++）相比，Rust可以提供的最大好处是借阅检查器。
   这是编译器的一部分，负责确保引用不会超出引用的数据寿命，并有助于消除由于内存不安全而导致的
   所有类型的错误。与许多现有的系统编程语言不同，Rust不需要你将所有时间都花在细节上。Rust力求
   拥有尽可能多的\textit{零成本抽象}，这种抽象与等效的手写代码具有同等的性能。当安全的Rust无法表达某些
@@ -274,6 +274,24 @@ RISC-V的另一个不同寻常之处在于和几乎所
 为指示。例如，RV32IMFD将乘法(RV32M)，单精度浮点(RV32F)和双精度浮点
 (RV32D)的扩展添加到了基础指令集(RV32I)中。
 
+\subsubsection{RISC-V的支持}
+自诞生以来，RISC-V就得到了Google、华为、IBM、Microsoft、삼성等著名企业\cite{bib:risc-v-manual}和
+众多自由软件开发者的支持，所以RISC-V发展迅猛。
+尽管历史不长，RISC-V目前已经得到相当完善的软件和硬件方面的支持。
+在软件方面，GCC\cite{bib:riscv-gcc}和LLVM\cite{bib:riscv-llvm}都
+支持RISC-V架构，这一味着以LLVM为后端的
+rustc也支持RISC-V架构。Linux内核自4.15版开设支持RISC-V架构，
+到2020年底，Linux 5.10已经支持RISC-V架构的UEFI引导。\cite{bib:riscv-linux}
+在Debian发行版中，已经有超过95\%的软件包支持RISC-V架构。\cite{bib:riscv-debian}
+
+在硬件方面，目前已有相当多的RISC-V架构的处理器，比如：\cite{bib:riscv-support}
+\begin{itemize}
+\item The \href{https://beagleboard.org/beaglev}{BeagleV}, a low-cost single board computer than can run Linux
+\item The \href{https://www.sifive.com/boards/hifive1-rev-b}{HiFive1 Rev B} microcontroller
+\item The \href{https://www.seeedstudio.com/Perf-V-Based-on-Xilinx-Artix-7-FPGA-RISC-V-opensource-p-4058.html}{Seeed Studio Perf-V} based on a Xilinx Artix-7 RISC-V FPGA
+\item The \href{https://www.sparkfun.com/products/15594}{SparkFun RED-V RedBoard}, a microcontroller in an Arduino form factor
+\item The \href{https://www.digikey.ca/en/products/detail/groupgets-llc/LOFIVE-R1/10186935}{LoFive} RISC-V SoC evaluation kit
+\end{itemize}
 \subsubsection{RISC-V的优势}
 RISC-V在设计时考虑了成本、简洁性、性能、架构和具体实现的分离、提升空间、
 程序大小和易于编程/编译/链接七个因素，并且充分从过去的错误
@@ -401,8 +419,12 @@ RISC-V在设计时考虑了成本、简洁性、性能、架构和具体实现�
 中的性能计数器\\\hline
 \end{longtable}
 
-\subsubsection{RISC-V的生态}
-
+而且，从学习成本上看，RISC-V相比ARMv8和AMD64也有明显的优势：
+RISC-V的“规范”只有4卷，238\cite{bib:riscv-spec1}+155\cite{bib:riscv-spec2}+141\cite{bib:riscv-spec3}+80\cite{bib:riscv-spec4}=614页,
+AMD64的“程序员手册”有5卷，3273页\cite{bib:amd64-manual}\footnote{这是AMD提供的手册，
+Intel提供的手册更长，有4卷，4830页\cite{bib:amd64-manual-intel}}，ARMv8的“参考手册”更是
+长达11卷，11530页\cite{bib:armv8-reference}。按两分钟读一页，一天工作八小时，一周工作五天计算，
+读完RISC-V的手册需要不到三天，读完AMD64的手册需要将近三周，而读完AMDv8的手册需要两个多月。
 
 \subsection{Unikernel}
 Unikernel是专一用途的、单地址空间的轻量操作系统。Unikernels在虚拟机
@@ -1125,6 +1147,7 @@ Unikernel 开发难度高、分发部署困难、对系统管理人员要求高�
 
 Cunik-engine 架构如下：
 \begin{figure}[H]
+\centering
 \includegraphics[width=0.5\linewidth]{pictures/resp1.png}
 \caption{}
 \end{figure}
@@ -1247,6 +1270,29 @@ Cristian Banu, Laurent Mathy, Răzvan Deaconescu, Costin Raiciu and Felipe Huici
 \bibitem{bib:6-why-rust-pop-2} [Rust programming language - what is rust used for and why is so popular?]\url{https://codilime.com/blog/why-is-rust-programming-language-so-popular/}
 \bibitem{bib:7-rust-by-num} [Rust by the Numbers: The Rust Programming Language in 2021 – The New Stack]\url{https://thenewstack.io/rust-by-the-numbers-the-rust-programming-language-in-2021/}
 \bibitem{bib:8-rust-compatibility} [Compatibility - Rust By Example (rust-lang.org)]\url{https://doc.rust-lang.org/rust-by-example/compatibility.html}
+\bibitem{bib:risc-v-manual} David Patterson and Andrew Waterman. \textit{RISC-V 手册: 一本开源指令集的指南}[S]. 勾凌睿, 黄成, 刘志刚译. 2018: 13-21
+\bibitem{bib:riscv-support} \url{https://www.ics.com/blog/what-risc-v-and-why-it-important}
+\bibitem{bib:riscv-gcc} \url{https://gcc.gnu.org/onlinedocs/gcc-11.2.0/gcc/RISC-V-Options.html#RISC-V-Options}
+\bibitem{bib:riscv-llvm} \url{https://clang.llvm.org/docs/ClangCommandLineReference.html#riscv}
+\bibitem{bib:riscv-linux} \url{https://elinux.org/images/3/3d/Linux_riscv_elce2020.pdf}
+\bibitem{bib:riscv-debian} \url{https://wiki.debian.org/RISC-V}
+
+\bibitem{bib:riscv-spec1} \textit{The RISC-V Instruction Set Manual
+Volume I: Unprivileged ISA}[S/OL]. Editors Andrew Waterman and Krste Asanović. Version 2.1. RISC-V Foundation, 2019(20191213)[2022-03-25]. \url{https://github.com/riscv/riscv-isa-manual/releases/download/Ratified-IMAFDQC/riscv-spec-20191213.pdf}
+\bibitem{bib:riscv-spec2} \textit{The RISC-V Instruction Set Manual
+Volume II: Privileged Architecture}[S/OL]. Editors Andrew Waterman, Krste Asanović and John Hauser.
+Version 1.9.1. RISC-V International, 2021(20211204)[2022-03-27]. \url{https://github.com/riscv/riscv-isa-manual/releases/download/Priv-v1.12/riscv-privileged-20211203.pdf}
+\bibitem{bib:riscv-spec3} \textit{RISC-V Debug Support
+}[S/OL]. Editors Ernie Edgar and Tim Newsome. Version 1.0.0-Stable. SiFive, Inc., 2022(20220209)[2022-03-27]. \url{https://github.com/riscv/riscv-debug-spec/raw/b659d7dc7f578e1a2a76f9e62a5eec0f2d80045c/riscv-debug-stable.pdf}
+\bibitem{bib:riscv-spec4} \textit{RISC-V Processor Trace}[S/OL]. Gajinder Panesar and
+Iain Robertson. Version 1.0. UltraSoC Technologies Ltd., 2020(20200320)[2022-03-27]. \url{https://github.com/riscv/riscv-trace-spec/raw/e372bd36abc1b72ccbff31494a73a862367cbb29/riscv-trace-spec.pdf}
+
+\bibitem{bib:amd64-manual} \textit{AMD64 Architecture Programmer's Manual: Volumes 1-5}[S/OL]. Revision 4.04, Advanced Micro Devices, Inc., 2021(202111)[2022-03-27]. \url{https://www.amd.com/system/files/TechDocs/40332.pdf}
+\bibitem{bib:amd64-manual-intel} \textit{Intel\textsuperscript{®} 64 and IA-32 Architectures Software Developer’s Manual}[S/OL]. Order Number: 325462-076US, Intel Corporation, 2021(202112)[2022-03-27]. \url{https://cdrdv2.intel.com/v1/dl/getContent/671200}
+
+\bibitem{bib:armv8-reference} \texttt{Arm\textsuperscript{®} Architecture Reference Manual
+for A-profile architecture}[S/OL]. Version 21.0, Arm Limited, 2022[2022-03-27]. \url{https://developer.arm.com/documentation/ddi0487/latest}
+
 \bibitem{bib:9-includeos}  [IncludeOS: A minimal, resource efficient unikernel for cloud systems]\url{https://blog.acolyer.org/2016/02/22/includeos}
 \bibitem{bib:10-includeos2} [IncludeOS: a unikernel for C++ applications]\url{https://lwn.net/Articles/728682/}
 \bibitem{bib:11-unikerel2} [Unikernels: Rise of the Virtual Library Operating System]\url{https://queue.acm.org/detail.cfm?id=2566628}
@@ -1265,6 +1311,6 @@ Cristian Banu, Laurent Mathy, Răzvan Deaconescu, Costin Raiciu and Felipe Huici
 \bibitem{bib:24-rumrun} [The Rumprun Unikernel]\url{../../references/The Rumprun Unikernel.pdf}
 \bibitem{bib:canary} \url{https://en.wikipedia.org/wiki/Animal_sentinel#Historical_examples}
 \bibitem{bib:unikraft-secuirty} \url{https://unikraft.org/docs/features/security/}
-\bibitem{bib:risc-v-manual} David Patterson and Andrew Waterman. \textit{RISC-V 手册: 一本开源指令集的指南}[S]. 勾凌睿, 黄成, 刘志刚译. 2018: 13-21
+
 \end{thebibliography}
 \end{document}
