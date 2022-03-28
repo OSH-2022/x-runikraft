@@ -142,13 +142,9 @@ Rust 速度惊人且内存利用率极高。由于没有运行时和垃圾回收
 
 \item 解决垃圾回收问题\\
   Rust可以选择将数据存储在堆栈上还是堆上，并在编译时确定何时不再需要内存并可以对其进行清理。
-  这样可以有效利用内存，并实现更高性能的内存访问。Tilde是Rust在其Skylight产品中的早期生产用户，
-  他发现通过使用Rust重写某些Java HTTP服务，他们能够将内存使用量从5Gb减少到50Mb。无需连续运行
-  垃圾收集器，Rust项目非常适合被其他编程语言通过外部功能接口用作库。这使现有项目可以用快速的Rust
-  代码替换对性能至关重要的代码，而不会产生其他系统编程语言固有的内存安全风险。某些项目甚至已使用
-  这些技术在Rust中进行了增量重写。通过直接访问硬件和内存，Rust是嵌入式和裸机开发的理想语言你您
-  可以编写底层代码，例如操作系统内核或微控制器应用程序。在这些特别具有挑战性的环境中，Rust的核心
-  类型和功能以及可重用的库代码表现将会非常出色。\cite{bib:3-why-rust-pop}
+  这样可以有效利用内存，并实现更高性能的内存访问。Rust项目非常适合被其他编程语言通过外部功能接口用作库。
+  这使现有项目可以用快速的Rust代码替换对性能至关重要的代码，而不会产生其他系统编程语言固有的内存安全风险。
+  \cite{bib:3-why-rust-pop}
 \end{itemize}
 
 \subsubsection{可靠性（Reliability）}
@@ -163,27 +159,12 @@ Rust 丰富的类型系统和所有权模型保证了内存安全和线程安全
   拥有尽可能多的\textit{零成本抽象}，这种抽象与等效的手写代码具有同等的性能。当安全的Rust无法表达某些
   概念时，\url{http://cliffle.com/p/dangerust/}可以使用不安全的 Rust。这样可以释放一些
   额外的功能，但作为交换，程序员现在有责任确保代码真正安全。然后，可以将这种不安全的代码包装在
-  更高级别的抽象中，以确保抽象的所有使用都是安全的。使用不安全的代码应该是一个经过深思熟虑的决定，
-  因为正确使用它需要与负责避免未定义行为的任何其他语言一样多的思考和关心。最小化不安全代码是最小化
-  由于内存不安全而导致段错误和漏洞的可能性的最佳方法。系统性编程语言有一种天生的使命，即它们必须
-  永远有效地存在。尽管某些现代软件并不需要那么长的使用寿命，
-  但许多企业希望其辛苦编写代码库在可预见的将来能够一直使用。\cite{bib:3-why-rust-pop}
+  更高级别的抽象中，以确保抽象的所有使用都是安全的。\cite{bib:3-why-rust-pop}
 
 \item Concurrent programming made easier\\
   Rust makes it easier to write concurrent programs by preventing data races at
-  compile time. A data race occurs when at least two different instructions from
-  different threads are trying to access the same memory location simultaneously,
-  while at least one of them is trying to write something and there is no synchronization
-  that could set any particular order among the various accesses. Access to the memory
-  without synchronization is undefined. In Rust, data races are detected. If a given
-  object access does not support many threads ( i. e. is not marked with an appropriate
-  trait), it needs to be synchronized by a mutex that will lock access to this particular
-  object for other threads. To ensure that operations performed on an object will not
-  break it, only one thread has access to it. From the perspective of other threads,
-  operations on this object are atomic, which means that an observed state of the
-  object is always correct and you cannot observe any intermediate state resulting
-  from an operation performed on this object by another thread. Rust language can
-  check if we are performing any incorrect operations on such objects and inform
+  compile time. Rust language can
+  check if we are performing any incorrect operations and inform
   us at compile time.\cite{bib:6-why-rust-pop-2}
 \end{itemize}
 
@@ -199,11 +180,6 @@ Rust 拥有出色的文档、友好的编译器和清晰的错误提示信息，
   基本上构建后端应用必须的库 Rust 都已经比较齐备。 总体来说，现阶段 Rust 定位的方向
   还是高性能服务器端程序开发，另外类型系统和语法层面上的创新也使得其可以作为开发 DSL
   的利器。\cite{bib:2-why-rust}\\
-  Cargo is recognized as one of the exceptional strengths of the Rust ecosystem.
-  Without Cargo, we would have had to search for libraries, download these
-  libraries from unknown sources from GitHub, build as static library crates,
-  link them against the program. How painful this is all to do. But we have
-  Cargo that does all this for us while working with Rust.\cite{bib:7-rust-by-num}
 \end{itemize}
 \subsubsection{Rust语言的兼容性}
 
@@ -215,11 +191,7 @@ identifiers mean something to the language, and so you cannot use them in places
 like variable names, function names, and other places. Raw identifiers let you use
 keywords where they would not normally be allowed. This is particularly useful
 when Rust introduces new keywords, and a library using an older edition of Rust
-has a variable or function with the same name as a keyword introduced in a newer edition.
-
-For example, consider a crate \texttt{foo} compiled with the 2015 edition of Rust that
-exports a function named \texttt{try}. This keyword is reserved for a new feature in the
- 2018 edition, so without raw identifiers, we would have no way to name the function.\cite{bib:8-rust-compatibility}
+has a variable or function with the same name as a keyword introduced in a newer edition.\cite{bib:8-rust-compatibility}
 
 \subsubsection{相比其他语言Rust的优势}
 
