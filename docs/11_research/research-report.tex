@@ -142,12 +142,10 @@ Rust 速度惊人且内存利用率极高。由于没有运行时和垃圾回收
 
 \item 解决垃圾回收问题\\
   Rust可以选择将数据存储在堆栈上还是堆上，并在编译时确定何时不再需要内存并可以对其进行清理。
-  这样可以有效利用内存，并实现更高性能的内存访问。Tilde是Rust在其Skylight产品中的早期生产用户，
-  他发现通过使用Rust重写某些Java HTTP服务，他们能够将内存使用量从5Gb减少到50Mb。无需连续运行
-  垃圾收集器，Rust项目非常适合被其他编程语言通过外部功能接口用作库。这使现有项目可以用快速的Rust
-  代码替换对性能至关重要的代码，而不会产生其他系统编程语言固有的内存安全风险。某些项目甚至已使用
-  这些技术在Rust中进行了增量重写。通过直接访问硬件和内存，Rust是嵌入式和裸机开发的理想语言你您
-  可以编写底层代码，例如操作系统内核或微控制器应用程序。在这些特别具有挑战性的环境中，Rust的核心
+  这样可以有效利用内存，并实现更高性能的内存访问。Rust项目非常适合被其他编程语言通过外部功能接口用作库。
+  这使现有项目可以用快速的Rust代码替换对性能至关重要的代码，而不会产生其他系统编程语言固有的内存安全风险。
+  某些项目甚至已使用这些技术在Rust中进行了增量重写。通过直接访问硬件和内存，Rust是嵌入式和裸机开发的理想
+  语言。您可以编写底层代码，例如操作系统内核或微控制器应用程序。在这些特别具有挑战性的环境中，Rust的核心
   类型和功能以及可重用的库代码表现将会非常出色。\cite{bib:3-why-rust-pop}
 \end{itemize}
 
@@ -215,11 +213,7 @@ identifiers mean something to the language, and so you cannot use them in places
 like variable names, function names, and other places. Raw identifiers let you use
 keywords where they would not normally be allowed. This is particularly useful
 when Rust introduces new keywords, and a library using an older edition of Rust
-has a variable or function with the same name as a keyword introduced in a newer edition.
-
-For example, consider a crate \texttt{foo} compiled with the 2015 edition of Rust that
-exports a function named \texttt{try}. This keyword is reserved for a new feature in the
- 2018 edition, so without raw identifiers, we would have no way to name the function.\cite{bib:8-rust-compatibility}
+has a variable or function with the same name as a keyword introduced in a newer edition.\cite{bib:8-rust-compatibility}
 
 \subsubsection{相比其他语言Rust的优势}
 
