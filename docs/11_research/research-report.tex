@@ -464,16 +464,16 @@ MirageOS的亮点是输入应用程序的所有源代码依赖项都被显式跟
 垃圾回收器的最小运行时。没有抢占式线程，内核是通过一个 I/O 循环轮询
 Xen 设备的事件驱动的。\cite{bib:11-unikerel2}
 
-\subsubsection[IncludeOS]{IncludeOS\cite{bib:10-includeos2}}\sectionauthor{蓝俊玮}
+\subsubsection{IncludeOS}\sectionauthor{蓝俊玮}
 
 IncludeOS 是一个为开发基于 unikernel 的应用程序而创建 C++ API 的项目。\cite{bib:9-includeos}
 
 当 IncludeOS 映像引导时，它通过设置内存、运行全局构造函数、注册驱动程序和中断处理
 程序来初始化操作系统。IncludeOS 不支持虚拟内存，应用程序和
  unikernel 库使用单个地址空间。因此，没有系统调用或用户空间的概念; 所有操作系统服务
- 都通过对库的简单函数调用来调用，并且都以特权模式运行。
+ 都通过对库的简单函数调用来调用，并且都以特权模式运行。\cite{bib:10-includeos2}
 
-\noindent IncludeOS 有如下优点：
+\noindent IncludeOS 有如下优点：\cite{bib:9-includeos}
 \begin{itemize}
 \item IncludeOS中目前没有进程抢占，所以操作系统的行为非常静态。
 只要机器本身是可预测的，延迟也将是完全可预测的。因此，在裸机硬件上，
@@ -487,7 +487,7 @@ IncludeOS可被视为低延迟，可预测的操作系统。
 通过使所有 I/O 都是异步的，CPU 保持忙碌，这样就不会发生阻塞。
 \end{itemize}
 
-\noindent IncludeOS 有如下缺点：
+\noindent IncludeOS 有如下缺点：\cite{bib:9-includeos}
 \begin{itemize}
 \item IncludeOS 不实现所有 POSIX。开发人员认为，
 只有在需要时才会实现 POSIX 的某些部分。开发人员不太可能将完全遵守 POSIX 作为一个目标。
