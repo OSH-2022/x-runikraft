@@ -37,9 +37,9 @@ Then simply run:
 make
 ```
 
-Building the reports and documentations requires XeLaTeX (recommend TeX Live 2021+) and some CJK fonts:
+Building the reports and documentations requires XeLaTeX (recommend TeX Live 2021+, MikTeX might crash while building) and some CJK fonts:
 
-- Noto Serif CJK SC Regular+Bold, Noto Sans CJK SC DemiLight+Bold: `apt install fonts-noto-cjk fonts-noto-cjk-extra`.
+- Noto Serif CJK SC Regular+Bold, Noto Sans CJK SC DemiLight+Bold: `apt install fonts-noto-cjk fonts-noto-cjk-extra`, or download [here](https://mirrors.ustc.edu.cn/ubuntu/pool/main/f/fonts-noto-cjk/fonts-noto-cjk-extra_20220127%2Brepack1-1_all.deb) and [here](https://mirrors.ustc.edu.cn/ubuntu/pool/main/f/fonts-noto-cjk/fonts-noto-cjk_20220127%2Brepack1-1_all.deb).
 - SimFang, SimKai: they are available in [this repository](https://github.com/Halfish/lstm-ctc-ocr/tree/master/fonts). (sorry for using non-free fonts, for we hasn't found free alternatives yet)
 
 Then run:
