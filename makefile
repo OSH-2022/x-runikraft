@@ -9,15 +9,15 @@
 # 	SimKai, SimFang
 
 export MAKE_ROOT_DIR := $(shell pwd)/build
-export DOCS_ROOT_DIR := $(shell pwd)/docs
+export REPORT_ROOT_DIR := $(shell pwd)/report
 
 #currently nothing for all
 .PHONY: all
 all:
 
-report: $(MAKE_ROOT_DIR)/docs/makefile
-	cd $(MAKE_ROOT_DIR)/docs && $(MAKE)
+report: $(MAKE_ROOT_DIR)/report/makefile
+	cd $(MAKE_ROOT_DIR)/report && $(MAKE)
 
-$(MAKE_ROOT_DIR)/docs/makefile: makefiles/docs.mk
-	-mkdir --parents $(MAKE_ROOT_DIR)/docs
-	cp makefiles/docs.mk $(MAKE_ROOT_DIR)/docs/makefile
+$(MAKE_ROOT_DIR)/report/makefile: makefiles/report.mk
+	-mkdir --parents $(MAKE_ROOT_DIR)/report
+	cp makefiles/report.mk $(MAKE_ROOT_DIR)/report/makefile

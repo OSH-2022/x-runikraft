@@ -17,8 +17,8 @@ USTC 011705 (OSH) Course Project of Runikraft Group
 
 ## Directories Description
 
-- `docs`: project reports for submission purpose (despite its name, it does not contain any documentation)
-- `references`: references and bibliographies
+- `report`: project reports for submission purpose
+- `reference`: references and bibliographies
 
  ## Usage
 
