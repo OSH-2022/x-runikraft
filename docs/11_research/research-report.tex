@@ -264,17 +264,15 @@ rustc也支持RISC-V架构。Linux内核自4.15版开设支持RISC-V架构，
 RISC-V在设计时考虑了成本、简洁性、性能、架构和具体实现的分离、提升空间、
 程序大小和易于编程/编译/链接七个因素，并且充分从过去的错误
 中吸取了教训：\cite{bib:risc-v-manual}
-\begin{longtable}{|p{0.08\linewidth}|*{4}{p{0.19\linewidth}|}}
+\begin{longtable}{|p{0.08\linewidth}|*{3}{p{0.27\linewidth}|}}
 \hline
-&ARM-32 (1986)&MIPS-32 (1986)&x86-32 (1978)&RV32I (2011)\\\hline
+&ARM-32 (1986)&x86-32 (1978)&RV32I (2011)\\\hline
 \endhead
 成本&必须支持整数乘除法&
-必须支持整数乘除法&
 8 位以及 16 位操作、必须支持整数乘除法&
 无 8 位、16 位操作、可选的整数乘 除 法 支 持(RV32M)\\\hline
 简洁性&
 无零寄存器、条件指令执行、复杂的寻址模式、栈操作指令(push/pop)、算术/逻辑指令中存在移位&
-立即数支持零扩展及符号扩展、一些算术指令会造成溢出异常&
 无零寄存器、复杂的过程调用指令(enter/leave)、栈指令(push/pop) 、复杂寻址模式、
 循环指令&
   寄存器 x0 专门
@@ -298,9 +296,6 @@ RISC-V在设计时考虑了成本、简洁性、性能、架构和具体实现�
  多个计算得到的
  立即数、 PC 是一
  个通用寄存器&
-在不同格式的指
- 令中，源和目的寄
- 存器的位置不同&
  分支指令使用
   条件码、每个指
   令中最多只能
@@ -324,10 +319,6 @@ RISC-V在设计时考虑了成本、简洁性、性能、架构和具体实现�
  存器一样读写，
  这样暴露了流水
  线长度&
- 分支指令延迟槽、
-  Load 指令延迟槽、
- 乘除法使用单独
-  的 HI，LO 寄存器&
  寄存器不是通
   用
  的
@@ -341,19 +332,13 @@ RISC-V在设计时考虑了成本、简洁性、性能、架构和具体实现�
  寄存器\\\hline
 提升空间&
 有限的指令码空间&
-有限的指令码空间&
 &
 大量可用的指令
 码空间位指令位\\\hline
 程序大小&
 仅 有 32bit 指 令
  (Thumb-2 是一个独立的ISA)&
- 仅 32bit 指 令
-  (microMIPS 是一个独立的ISA)&
- 指令长度可用
-  是不同字节，但
-  这是一个很不
- 好的选择&
+ 仅 32bit 指 令&
  32 位 指 令 +16 位
  RV32C 扩展\\\hline
 易于编程/编译/链接&
@@ -363,10 +348,6 @@ RISC-V在设计时考虑了成本、简洁性、性能、架构和具体实现�
  据寻址模式、不
  一致的性能计数
  器&
- 内存数据必须对
-  齐、不规则的数据
-  寻址模式、不一致
-  的性能计数器&
   仅 8 个通用寄存器、
   内存数据必须
   对齐、不规则的
@@ -400,6 +381,19 @@ unikernels裁剪了传统的操作系统的众多组件，因此unikernels无法
 此外，为了轻量、快速，unikernels
 删去的许多基本的并且不会影响性能的安全措施，这导致unikernels相比容器
 更容易受到用户程序的安全漏洞的影响。\cite{bib:unikernel-secuirty}
+
+\noindent 目前已经有很多 Unikernel 项目，它们的实现方式大致可以分为两种：
+\begin{itemize}
+\item 全新的方式(Clean-slate)：在构建单一用途的操作系统的假设下，
+自由地使用现代工具来进行构建，比如模块化(modularity)、
+声明性代码(declarative code)、避开样板文件(avoiding boilerplate)等。
+并且从头开始思考操作系统和应用程序层的实现，
+使用高级语言进行系统库的编写，从而使得实现更加可掌控，得到的系统库质量更高。
+用 OCmal 语言编写的 MirageOS 就是使用 Clean-slate 方式实现的。
+\item 传统的方式(Legacy)：在不进行修改或只进行一些小的修改的前提下，
+运行现有的软件。这通常通过将现有的操作系统代码库重构到库操作系统中来实现。
+用 C 语言编写的 Rumprun 是使用 Legacy 方式实现的。
+\end{itemize}
 
 下面简要介绍我们小组详细调研的ClickOS、MirageOS、IncludeOS、Rusty-Hermit、Rumprun
 和Unikraft等六个目前仍然在维护的unikernel项目。我们假定读者对
@@ -491,47 +485,42 @@ IncludeOS可被视为低延迟，可预测的操作系统。
 \item IncludeOS 目前还缺少可写的文件系统。
 \end{itemize}
 
-\subsubsection[RustyHermit]{RustyHermit\cite{bib:14-rusty-hermit}\cite{bib:15-rust-runtime}\cite{bib:16-rust-runtime2}\cite{bib:17-rusty-hermit2}}\sectionauthor{陈建绿}
+\subsubsection{RustyHermit}\sectionauthor{陈建绿}
 
 RustyHermit（\href{https://github.com/hermitcore/rusty-hermit}{Github}） 是
-一个基于 Rust 的、轻量级的 Unikernel。它用 Rust 语言完全改写了 RWTH Aachen University
- 开发的研究项目 \href{http://hermitcore.org/}{HermitCore}。
+一个基于 Rust 的、轻量级的 Unikernel，也是一个用来评估操作系统新的设计的研究项目。
+它用 Rust 语言完全改写了 RWTH Aachen University
+ 开发的研究项目 \href{http://hermitcore.org/}{HermitCore}\footnote{HermitCore 最初是用 C 语言编写的，是一种针对高性能和云计算的可伸缩和可预测的运行时的 Unikernel。}。\cite{bib:14-rusty-hermit}
 
-\begin{quote}
-HermitCore 最初是用 C 语言编写的，是一种针对高性能和云计算的可伸缩和可预测的运行时的 Unikernel。
-\end{quote}
-
-该项目完全使用 Rust 语言开发，\textbf{Rust 的所有权模型保证了它的内存/线程安全}，
+该项目完全使用 Rust 语言开发，Rust 的所有权模型保证了它的内存/线程安全，
 并且让开发者能够在编译时就消除许多种 bug。因此，与通用编程语言相比，使用 Rust
  进行内核开发会留下更少的漏洞，得到更加安全的内核。
 
-开发者\textbf{扩展了 Rust 工具链}以至于 RustyHermit 的 build 过程
+开发者扩展了 Rust 工具链以至于 RustyHermit 的 build 过程
 与 Rust 通常的工作流程相似。使用 Rust runtime 而且不直接使用 OS 服务的
- Rust 应用程序能够直接在 RustyHermit 上运行而不需要修改。因此，\textbf{原则上，
- 每一个现有的 Rust 应用程序都可以建立在 RustyHermit 之上}。
+ Rust 应用程序能够直接在 RustyHermit 上运行而不需要修改。因此，原则上，
+ 每一个现有的 Rust 应用程序都可以建立在 RustyHermit 之上。\cite{bib:17-rusty-hermit2}
 
 
-RustyHermit 中\textbf{优化实现了网络栈}。它使用 \href{https://github.com/smoltcp-rs/smoltcp}{smoltcp} (Rust 语言编写)
+RustyHermit 中优化实现了网络栈。它使用 \href{https://github.com/smoltcp-rs/smoltcp}{smoltcp}
 作为它的网络栈，使用 \href{https://www.linux-kvm.org/page/Virtio}{Virtio}
-(KVM 的准虚拟化驱动程序，广泛应用于虚拟化 Linux 环境中) 作为客户机和主机操作系统之间的接口。
-将RustyHermit 和 Linux 分别作为客户端运行在基于 Linux 的主机系统上的虚拟机中，以信息的比特数作为自变量，吞吐量/Mbps作为因变量，
-进行测试并绘图，结果如下：\cite{bib:20-linux-kernel}
-\begin{figure}[H]
-\includegraphics[width=\linewidth]{pictures/RustyHermit-1.png}
-\caption{}
-\end{figure}
+作为客户机和主机操作系统之间的接口。
+%将RustyHermit 和 Linux 分别作为客户端运行在基于 Linux 的主机系统上的虚拟机中，以信息的比特数作为自变量，吞吐量/Mbps作为因变量，
+%进行测试并绘图，结果如下：\cite{bib:20-linux-kernel}
+%\begin{figure}[H]
+%\includegraphics[width=\linewidth]{pictures/RustyHermit-1.png}
+%\caption{}
+%\end{figure}
+%
+%由结果图可以看出，\textbf{RustyHermit 在信息比特数较小时吞吐量明显比 Linux 更快}。
 
-由结果图可以看出，\textbf{RustyHermit 在信息比特数较小时吞吐量明显比 Linux 更快}。
+Sung, Olivier, Lankes and Ravindran\cite{bib:18-intra-unikernel}
+提出了一个修改版本的 RustyHermit，该版本利用Intel MPK(Memory Protection Keys)\cite{bib:19-mpk}，
+在保持单一地址空间的同时，在 Unikernel 实例中引入内存隔离，
+包括安全内核代码与不安全内核代码之间的隔离、内核代码与用户代码之间的隔离。
+在一组宏基准测试中，带有隔离功能的 unikernel 仅减慢了0.6\%。
 
-RustyHermit 也是一个用来评估操作系统新的设计的研究项目。
-
-
-有Sung, Olivier, Lankes and Ravindran\cite{bib:18-intra-unikernel}
-提出了\textbf{一个修改版本的 RustyHermit}，该版本提供了一
-个\textbf{使用 Intel MPK}(Memory Protection Keys)\textbf{进行内部隔离}的
-Unikernel。这篇论文的摘要翻译如下：
-
-这篇论文中的内容可以作为我们实现 runikraft 的参考。\cite{bib:19-mpk}
+这篇论文中的内容可以作为我们实现 runikraft 的参考。
 
 \subsubsection{Rumprun}\sectionauthor{陈建绿}
 
@@ -551,47 +540,39 @@ Java、 Javascript (node.js)、 Python、 Ruby 和 Rust 等语言编写的应用
 
 \paragraph{1. Rump kernels 的相关介绍}\cite{bib:21-rump-kernel}\cite{bib:22-xen}
 
-
-
 Rump kernels 的组件来自未经修改的 NetBSD，由此开发者提供了一个 POSIX-y API。
 Rump Kernel 项目以一种可用于构建轻量级、特殊用途虚拟机的形式提供了 NetBSD 的
 模块化驱动程序。因为开发者没有做会将错误引入到应用程序运行时(application runtime)、
-libc 或驱动程序中的移植工作，所以程序可以很稳定地工作。下面这张图片阐述了 Anykernel、
-Rump kernel 和 Rumprun Unikernel 的关系：
+libc 或驱动程序中的移植工作，所以程序可以很稳定地工作。
 \begin{figure}[H]
 \includegraphics[width=\linewidth]{pictures/rumprun-1.png}
-\caption{}
+\caption{Anykernel、
+Rump kernel 和 Rumprun Unikernel 的关系}
 \end{figure}
 
 \begin{quote}
 “Anykernel”概念指的是一种与架构无关的驱动程序方法，在这种方法中，驱动程序既可以编译到宏内核中，也可以作为用户空间进程运行，具有微内核风格，并且不需要修改代码。\\
-\hfill——维基百科
+\hspace*{\fill}——维基百科
 \end{quote}
 
 \paragraph{2. Rumprun 的相关介绍}\cite{bib:23-mirageos}\cite{bib:24-rumrun}
 
-目前已经有很多 Unikernel 项目，它们的实现方式大致可以分为两种：
-\begin{itemize}
-\item 全新的方式(Clean-slate)：在构建单一用途的操作系统的假设下，
-自由地使用现代工具来进行构建，比如模块化(modularity)、
-声明性代码(declarative code)、避开样板文件(avoiding boilerplate)等。并且从头开始思考操作系统和应用程序层的实现，
-使用高级语言进行系统库的编写，从而使得实现更加可掌控，得到的系统库质量更高。
-\item 传统的方式(Legacy)：在不进行修改或只进行一些小的修改的前提下，
-运行现有的软件。这通常通过将现有的操作系统代码库重构到库操作系统中来实现。
-\end{itemize}
 
-用 OCmal 语言编写的 MirageOS Unikernel 就是使用 Clean-slate 方式实现的，
-而用 C 语言编写的 Rumprun Unikernel 则是使用 Legacy 方式实现的。
 
 Rumprun 可用于将几乎任何与 POSIX 兼容的程序转换为一个可工作的
 Unikernel。使用 Rumprun，理论上可以将 Linux 或者 类Unix系统上的大部分
 程序编译成 Unikernel。Rumprun 以开发 NetBSD 内核中的驱动程序并在用户空间
 中进行测试的需求为出发点，主要的工作是重构这个代码库，使其看起来像一个库操作系统。
 
-下面是 Rumprun 的架构图：
-\begin{figure}[H]
-\includegraphics[width=\linewidth]{pictures/rumprun-2.png}
-\caption{}
+\begin{figure}[!hbt]
+\begin{minipage}{0.49\linewidth}
+\includegraphics[width=\linewidth]{pictures/rumprun-2-cut.png}
+\caption{Rumprun 的架构}
+\end{minipage}
+\begin{minipage}{0.49\linewidth}
+\includegraphics[width=\linewidth]{pictures/rumprun-3-cut.png}
+\caption{Rumprun 的工作流程示例}
+\end{minipage}
 \end{figure}
 
 Rumprun 也有一些限制：
@@ -617,12 +598,6 @@ Rumprun 也有一些限制：
     \end{itemize}
 \end{itemize}
 
-下图是 Rumprun 的一个工作流程示例图：
-\begin{figure}[H]
-\includegraphics[width=\linewidth]{pictures/rumprun-3.png}
-\caption{}
-\end{figure}
-
 我在调研的过程中发现，rump kernel 的好多官方文档都会重定向到
 \url{https://rumpkernel.org}这个网址，而这个网址目前只有一些 IT News，
 并非和 rump kernel 相关的内容，所以\textit{猜测该项目目前已经无人维护}。
@@ -636,8 +611,8 @@ Rumprun 也有一些限制：
 与 Windows 或 Linux 等通用操作系统相比，它有几个限制——即它是一个单进程系统，
 不支持运行多个程序，也不具备通过 ssh 进行用户或远程管理的概念。
 \item Nanos 的目标是成为一个比 Linux 安全得多的系统。
-它做到这一点的几个依赖：\textbf{没有用户的概念}，\textbf{每个虚拟机只运行一个进程}，\textbf{限制每个虚拟机中包含的代码数量}。
-\item Nanos 并不打算在裸金属上运行，所以开发者努力使\textbf{其内核尽可能简单}。
+它做到这一点的几个依赖：没有用户的概念，每个虚拟机只运行一个进程，限制每个虚拟机中包含的代码数量。
+\item Nanos 并不打算在裸金属上运行，所以开发者努力使其内核\textit{尽可能简单}。
 \end{itemize}
 
 这也许会对我们的项目有所帮助。
@@ -681,7 +656,7 @@ Unikraft的作者有意将它们分割到了不同的库中，并尽可能降低
 实现相同APIs的微型库可以相互替换。比如，Unikraft内核就提供了多种实现
 \texttt{ukalloc}接口的内存分配器。
 \item \textbf{构建系统}：它为用户提供基于Kconfig的配置菜单\footnote{在实验1中，
-我们在定制Linux内核时看到的就是Kconfig菜单。}，
+我们在定制Linux内核时，运行\texttt{make menuconfig}后看到的就是Kconfig菜单。}，
 用户可用它选择要用哪些微型库，要为哪个平台和哪个CPU架构构建。
 \end{itemize}
 \begin{figure}[!hbt]
@@ -701,7 +676,6 @@ Unikraft的作者有意将它们分割到了不同的库中，并尽可能降低
 并为程序本身选用默认分配器）。
 
 关注快速引导的开发者也可以使用自己的遵守\texttt{ukboot} API的引导代码（⑤）。
-
 对于网络密集型程序，开发者可以使用标准的套接字接口（②），或者使用更底层、更高效
 的\texttt{uknetdev} API（⑦）以便大幅提高吞吐量。
 
@@ -733,61 +707,34 @@ Unikraft在提升效率的同时兼顾了安全性。根据NCC Group\cite{bib:un
 虽然 unikernel 相比容器体积更小、隔离性更好，但是由于不存在内核态-用户态隔离，
 且缺乏W\^{}X、stack canary等安全特性，unikernel 其实比传统的容器更不安全。
 也就是说，攻击者可以利用 unikernel 上的程序的漏洞，控制 unikernel 所在的虚拟机，
-进而获取本不应该拥有的权限。以 unikernel 的传统应用领域云计算为例，
-如果某个 unikernel 负责处理用户的敏感数据——它通过网络获取用户的数据，
-然后将计算结果通过网络发回，则它一定拥有读用户数据的权限。那么，
-一旦这个 unikernel 存在安全漏洞，攻击者虽然不能控制 unikernel 所在的宿主机，
-但足够窃取用户的数据。所以，我们不能片面地把安全性与隔离性等同。而且我们不能
-片面地认为使用 Rust 这样的安全的程序设计语言就能保证安全\cite{bib:unikraft-secuirty}，
+进而未经授权访问资源。
+%以 unikernel 的传统应用领域云计算为例，
+%如果某个 unikernel 负责处理用户的敏感数据——它通过网络获取用户的数据，
+%然后将计算结果通过网络发回，则它一定拥有读用户数据的权限。那么，
+%一旦这个 unikernel 存在安全漏洞，攻击者虽然不能控制 unikernel 所在的宿主机，
+%但足够窃取用户的数据。
+所以，我们不能片面地把安全性与隔离性等同。而且我们不能
+片面地认为使用 Rust 这样的安全的程序设计语言就能保证安全，
 因为完整的 unikernel 上不只包含安全的系统代码（或者说库代码），还包含可能不安全的用户代码，
 而后者可以导致整个系统不安全。因此，要实现安全的 unikernel，不能仅仅依靠安全的程序设计语言，
 而需要额外的安全特性。
 
-NCC Group提到的安全特性：
-\begin{itemize}
-\item 地址空间布局随机化 （ASLR）：将数据、函数的位置随机放在内存段中，这样将无法通过跳转到特定地址完成攻击。
-\item 分页保护
-    \begin{itemize}
-    \item W\^{}X政策：一段内存空间不能同时拥有执行权和写入权；
-    \item 内部数据加固：防止程序读取与程序本身无关的数据，比如全局偏移表；
-    \item 保护页：在不同数据段之间（比如.text段与.data）放置不可读写的页面；
-    \item 空页面漏洞：\texttt{malloc}函数可能返回\texttt{nullptr}，而在 unikernel 上，
-    \texttt{0x0}可能是有效地址，访问0不会引发segmentation fault。
-    \end{itemize}
-\item 栈保护标志（stack canary，典故：金丝雀曾经被用来检查煤矿的有毒气体\cite{bib:canary}）：在栈的返回地址后加上一个随机的整型变量（canary），执行\texttt{ret}前检查 canary 是否被修改。
-\item 堆加固：堆的结构通常是双向链表，链表的元数据（如指针）通常与数据块相邻，堆上的溢出可以改变这些数据块，导致内存的分配、释放算法出错，通常的加固方法是为元数据增加校验值。
-\item 熵和随机数生成器：通常的 unikernel 缺乏足够产生密码学安全的伪随机数的硬件熵，这导致 unikernel 上生成的伪随机数的质量差，解决方法有使用 CPU 的专用随机数指令（如 x86 的 \texttt{rdrand}）
-\item 标准库加固
-    \begin{itemize}
-    \item \texttt{printf} 的 \texttt{\%n} 格式符：它将已经输出的字符的数量写入对应的参数指向的地址（没错，它不输出任何内容，而是写入内容），攻击者可以利用自定义的格式串和 \texttt{\%n} 实现攻击，所以不应该支持它；
-    \item 自定义格式符：它可能可以扩大攻击面；
-    \item \texttt{\_FORTIFY\_SOURCE} 宏：定义它会导致一些函数执行轻量级的缓冲区溢出检查。
-    \end{itemize}
-\end{itemize}
-NCC Group只测试了 rumprun 和 includeOS 两个 unikernels，并发现它们几乎没有实现任何安全特性。
+NCC Group提到了ASLR、分页保护（如W\^{}X政策、内部数据加固、保护页、空页面漏洞等）、
+栈保护标志\footnote{它的英文stack canary来自金丝雀曾经被用来检查煤矿的有毒气体的典故\cite{bib:canary}。}、堆加固、标准库加固等安全措施。
+%\begin{itemize}
+%\item 地址空间布局随机化 （ASLR）。
+%\item 分页保护：如W\^{}X政策、内部数据加固、保护页、空页面漏洞。
+%\item 栈保护标志（stack canary，典故：金丝雀曾经被用来检查煤矿的有毒气体\cite{bib:canary}）：在栈的返回地址后加上一个随机的整型变量（canary），执行\texttt{ret}前检查 canary 是否被修改。
+%\item 堆加固：堆的结构通常是双向链表，链表的元数据（如指针）通常与数据块相邻，堆上的溢出可以改变这些数据块，导致内存的分配、释放算法出错，通常的加固方法是为元数据增加校验值。
+%\item 熵和随机数生成器：通常的 unikernel 缺乏足够产生密码学安全的伪随机数的硬件熵，这导致 unikernel 上生成的伪随机数的质量差，解决方法有使用 CPU 的专用随机数指令（如 x86 的 \texttt{rdrand}）
+%\item 标准库加固：如\texttt{printf} 的 \texttt{\%n} 格式符、自定义格式符、\texttt{\_FORTIFY\_SOURCE} 宏。
+%\end{itemize}
+它测试了 rumprun 和 includeOS 两个 unikernels，并发现它们几乎没有实现任何安全特性。
 
-尽管 Unikraft 使用 C 语言实现，但它支持（或计划支持）以下安全特性\cite{bib:unikraft-secuirty}：
-{\small
-\begin{longtable}{|l|l|l|}
-\hline
-\textbf{Security feature}&\textbf{Status}&\textbf{Targets}\\\hline
-\endhead
-
-\href{https://github.com/unikraft/unikraft/tree/staging/lib/uksp}{Stack Smashing Protection (SP)}& Upstream& \texttt{ARCH\_ARM\_64 || ARCH\_X86\_64}\\\hline
-\href{https://github.com/unikraft/unikraft/tree/staging/lib/ubsan}{Undefined Behavior Sanitization (UBSAN)}& Upstream& any\\\hline
-\href{https://github.com/unikraft/unikraft/tree/staging/lib/ukrust}{Rust internal libraries in Unikraft}& Upstream &\texttt{ARCH\_X86\_64}\\\hline
-ARM Pointer authentication (PAuth)& Under review     & \texttt{ARCH\_ARM\_64 || ARCH\_ARM\_32}\\\hline
-\href{https://github.com/unikraft/unikraft/pull/421}{ARM Branch Target Identification (BTI)}& Under review&\texttt{ARCH\_ARM\_64}\\\hline
-\href{https://github.com/unikraft/unikraft/pull/191}{Kernel Address Sanitizer (KASAN)}&Under review&\texttt{PLAT\_KVM \&\& ARCH\_X86\_64}\\\hline
-\href{https://github.com/unikraft/unikraft/pull/239}{Position Independent Executables (PIE)}& Under review &\texttt{PLAT\_KVM \&\& ARCH\_X86\_64}\\\hline
-True Random Number Generator& Under review     & \texttt{ARCH\_X86\_64}\\\hline
-ARM Memory Tagging Extension (MTE)  & Work-in-progress &ARM \\\hline
-Intel Control-flow Enforcement Technology (CET) & Planned  & \texttt{ARCH\_X86\_64}\\\hline
-Shadow stack & Planned          & any\\\hline
-\texttt{FORTIFY\_SOURCE}   & Planned    & any\\\hline
-ARM Speculation Barrier (SB)  & Planned   & \texttt{ARCH\_ARM\_64}\\\hline
-\end{longtable}
-}
+尽管 Unikraft 使用 C 语言实现，但它支持（或计划支持）
+\href{https://github.com/unikraft/unikraft/tree/staging/lib/uksp}{Stack SP}、
+\href{https://github.com/unikraft/unikraft/tree/staging/lib/ubsan}{UBSAN}、ARM PAuth、\href{https://github.com/unikraft/unikraft/pull/421}{ARM BTI}、\href{https://github.com/unikraft/unikraft/pull/191}{KASAN}、\href{https://github.com/unikraft/unikraft/pull/239}{PIE}、True Random Number Generator、ARM MTE、
+Intel CET、\texttt{FORTIFY\_SOURCE}、ARM SB等安全特性。\cite{bib:unikraft-secuirty}
 
 总的来说，Unikraft是我们发现的最好的unikernel项目，所以我们的项目将
 主要参考它。
@@ -1215,7 +1162,7 @@ Iain Robertson. Version 1.0. UltraSoC Technologies Ltd., 2020(20200320)[2022-03-
 \bibitem{bib:amd64-manual} \textit{AMD64 Architecture Programmer's Manual: Volumes 1-5}[S/OL]. Revision 4.04, Advanced Micro Devices, Inc., 2021 (202111) [2022-03-27]. \url{https://www.amd.com/system/files/TechDocs/40332.pdf}
 \bibitem{bib:amd64-manual-intel} \textit{Intel\textsuperscript{®} 64 and IA-32 Architectures Software Developer’s Manual}[S/OL]. Order Number: 325462-076US, Intel Corporation, 2021 (202112) [2022-03-27]. \url{https://cdrdv2.intel.com/v1/dl/getContent/671200}
 
-\bibitem{bib:armv8-reference} \texttt{Arm\textsuperscript{®} Architecture Reference Manual
+\bibitem{bib:armv8-reference} \textit{Arm\textsuperscript{®} Architecture Reference Manual
 for A-profile architecture}[S/OL]. Version 21.0, Arm Limited, 2022 [2022-03-27]. \url{https://developer.arm.com/documentation/ddi0487/latest}
 
 \bibitem{bib:12-clickos} Joao Martins, Mohamed Ahmed, Costin Raiciu, Vladimir Olteanu,
@@ -1230,14 +1177,14 @@ Design and Implementation. Seattle: USENIX Association. 2014: 459-473[2022-03-22
 \bibitem{bib:10-includeos2} Nur Hussein. \textit{IncludeOS: a unikernel for C++ applications}[Z/OL]. 2017 (20170725) [2022-03-22]. \url{https://lwn.net/Articles/728682/}
 
 \bibitem{bib:14-rusty-hermit} \textit{RustyHermit - A Rust-based, lightweight unikernel}[G/OL]. rusty-hermit 0.3.10. [2022-03-25]. \url{https://docs.rs/crate/rusty-hermit/0.3.10}
-\bibitem{bib:15-rust-runtime} Jason 于航. \textit{Rust Runtime 与 ABI}[M/OL]. 知乎专栏, 2021 (20210509) [2022-03-25] \url{https://zhuanlan.zhihu.com/p/370897059}
-\bibitem{bib:16-rust-runtime2} \textit{The Rust runtime}[G/OL]. The Rust Reference. [2022-03-17].
-\url{https://web.archive.org/web/20220317124224/https://doc.rust-lang.org/reference/runtime.html}
+%\bibitem{bib:15-rust-runtime} Jason 于航. \textit{Rust Runtime 与 ABI}[M/OL]. 知乎专栏, 2021 (20210509) [2022-03-25] \url{https://zhuanlan.zhihu.com/p/370897059}
+%\bibitem{bib:16-rust-runtime2} \textit{The Rust runtime}[G/OL]. The Rust Reference. [2022-03-17].
+%\url{https://web.archive.org/web/20220317124224/https://doc.rust-lang.org/reference/runtime.html}
 \bibitem{bib:17-rusty-hermit2} @stlankes. \textit{The \texttt{RustyHermit} Unikernel}[Z/OL]. Rust OSDev. 2021 (20210122) [2022-03-25]. \url{https://rust-osdev.com/showcase/rusty-hermit/}
 
 \bibitem{bib:18-intra-unikernel} Mincheol Sung and Pierre Olivier. \textit{Intra-Unikernel Isolation with Intel Memory Protection Keys}[C/OL]. 16th ACM SIGPLAN/SIGOPS International Conference on Virtual Execution Environments. Lausanne: Association for Computing Machinery, 2022. \texttt{doi:10.1145/3381052.3381326}.
 \bibitem{bib:19-mpk} \textit{Memory Protection Keys}[G/OL]. The Linux Kernel, 5.17.0. [2022-03-18]. \url{https://web.archive.org/web/20220318143208/https://www.kernel.org/doc/html/latest/core-api/protection-keys.html}
-\bibitem{bib:20-linux-kernel} Huo的藏经阁. \textit{linux内核那些事之Memory protection keys(硬件原理)}[Z/OL]. CSDN博客. 2021 (20211119) [2022-03-25]. \url{https://blog.csdn.net/weixin_42730667/article/details/121386896}
+%\bibitem{bib:20-linux-kernel} Huo的藏经阁. \textit{linux内核那些事之Memory protection keys(硬件原理)}[Z/OL]. CSDN博客. 2021 (20211119) [2022-03-25]. \url{https://blog.csdn.net/weixin_42730667/article/details/121386896}
 \bibitem{bib:21-rump-kernel} Wikipedia Contributors. \textit{Rump kernel}[G/OL]. Wikipedia, 2021 (20210903) [2022-03-29]. \url{https://en.wikipedia.org/w/index.php?title=Rump_kernel&oldid=1042218732}
 \bibitem{bib:22-xen} Antti Kantee. \textit{Xen on Rump Kernels and the Rumprun Unikernel}[Z/OL]. XenProject, 2015 (20150806) [2021-08-18].  \url{https://web.archive.org/web/20210818101601/https://xenproject.org/2015/08/06/on-rump-kernels-and-the-rumprun-unikernel/}
 

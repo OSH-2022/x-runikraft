@@ -16,6 +16,6 @@ all: report
 report: research-report.pdf
 
 research-report.pdf: $(DOCS_ROOT_DIR)/11_research/research-report.tex
+	rm research-report.aux research-report.out research-report.toc
 	env TEXINPUTS=$(DOCS_ROOT_DIR)/11_research:$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(DOCS_ROOT_DIR)/11_research/research-report.tex
 	env TEXINPUTS=$(DOCS_ROOT_DIR)/11_research:$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(DOCS_ROOT_DIR)/11_research/research-report.tex
-
