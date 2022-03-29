@@ -10,7 +10,8 @@
 }
 \setCJKmainfont[ItalicFont={KaiTi},BoldItalicFont={KaiTi},
 BoldItalicFeatures={FakeBold=3}]{Noto Serif CJK SC}
-\setCJKsansfont[AutoFakeSlant]{Noto Sans CJK SC DemiLight}
+\setCJKsansfont[BoldFont={Noto Sans CJK SC Bold},
+AutoFakeSlant]{Noto Sans CJK SC DemiLight}
 \setCJKmonofont[AutoFakeBold=3,AutoFakeSlant]{FangSong}
 \setmainfont{cmun}[Extension=.otf,UprightFont=*rm,
 ItalicFont=*ti,BoldFont=*bx,BoldItalicFont=*bi]
@@ -106,15 +107,13 @@ Runikraft 是用Rust语言编写的能在RISC-V + KVM上运行unikernel。
 \section{项目背景}
 \subsection{Rust语言}\sectionauthor{郭耸霄}
 
-这一部分主要阐释我们为什么选择Rust语言作为开发语言。Rust 是由 Mozilla 研究室
+Rust 是由 Mozilla 研究室
 主导开发的一门现代系统编程语言，自 2015 年 5 月发布 1.0 之后，一直以每 6 周
 一个小版本的开发进度稳定向前推进。语言设计上跟 C++ 一样强调零开销抽象和 RAII。
 拥有极小的运行时和高效的 C 绑定，使其运行效率与 C/C++ 一个级别，非常适合对性能
 要求较高的系统编程领域。利用强大的类型系统和独特的生命周期管理实现了编译期内存管理，
 保证内存安全和线程安全的同时使编译后的程序运行速度极快，Rust 还提供函数式编程语言
-的模式匹配和类型推导，让程序写起来更简洁优雅。宏和基于 trait 的泛型机制让 Rust
-的拥有非常强大的抽象能力，在实际工程中尤其是库的编写过程中可以少写很多 boilerplate
-代码。\cite{bib:2-why-rust}
+的模式匹配和类型推导，让程序写起来更简洁优雅。\cite{bib:2-why-rust}
 总地来说，Rust是一门赋予每个人 构建可靠且高效软件能力的语言。\cite{bib:1-rust-lang}
 它具有以下三个方面的优越性。
 
@@ -131,13 +130,11 @@ Rust 速度惊人且内存利用率极高。由于没有运行时和垃圾回收
 
 \item 对动态类型语言与静态类型的平衡\\
   动态类型语言在调试、运行时具有不确定性，而静态类型的语言减少了程序理解的开销和动态
-  运行的不确定性，但并不是所有静态类型系统都是高效的。Rust使用可选类型对这种可能性进行
-  编码，并且编译器要求你处理\texttt{None}这种情况。这样可以防止发生可怕的运行时错误
-  （或等效语言），而可以将其提升为你在用户看到它之前解决的编译时错误。Rust的静态类型尽
+  运行的不确定性，但并不是所有静态类型系统都是高效的。Rust的静态类型尽
   最大努力避免程序员的麻烦，同时鼓励长期的可维护性。一些静态类型的语言给程序员带来了沉重的
   负担，要求他们多次重复变量的类型，这阻碍了可读性和重构。其他静态类型的语言允许在全局进行
   数据类型推断。虽然在最初的开发过程中很方便，但是这会降低编译器在类型不再匹配时提供有用的
-  错误信息的能力。Rust可以从这两种样式中学习，并要求顶层项（如函数参数和常量）具有显式类型，
+  错误信息的能力。Rust可以从这两种样式中学习，并要求顶层项具有显式类型，
   同时允许在函数体内部进行类型推断。\cite{bib:3-why-rust-pop}
 
 \item 解决垃圾回收问题\\
@@ -155,8 +152,7 @@ Rust 丰富的类型系统和所有权模型保证了内存安全和线程安全
 \item 处理系统级编程\\
   与其他系统级编程语言（例如C或C++）相比，Rust可以提供的最大好处是借阅检查器。
   这是编译器的一部分，负责确保引用不会超出引用的数据寿命，并有助于消除由于内存不安全而导致的
-  所有类型的错误。与许多现有的系统编程语言不同，Rust不需要你将所有时间都花在细节上。Rust力求
-  拥有尽可能多的\textit{零成本抽象}，这种抽象与等效的手写代码具有同等的性能。当安全的Rust无法表达某些
+  所有类型的错误。与许多现有的系统编程语言不同，Rust不需要你将所有时间都花在细节上。当安全的Rust无法表达某些
   概念时，\url{http://cliffle.com/p/dangerust/}可以使用不安全的 Rust。这样可以释放一些
   额外的功能，但作为交换，程序员现在有责任确保代码真正安全。然后，可以将这种不安全的代码包装在
   更高级别的抽象中，以确保抽象的所有使用都是安全的。\cite{bib:3-why-rust-pop}
@@ -514,11 +510,6 @@ HermitCore 最初是用 C 语言编写的，是一种针对高性能和云计算
  Rust 应用程序能够直接在 RustyHermit 上运行而不需要修改。因此，\textbf{原则上，
  每一个现有的 Rust 应用程序都可以建立在 RustyHermit 之上}。
 
-Rust runtime，翻译过来称为 Rust 运行时。其中 runtime 这个词在维基百科中的定义如下：
-\begin{quote}
-In computer science, \textbf{runtime}, \textbf{run time}, or \textbf{execution time} is \textit{the final phase of a computer program's life cycle} in which the code is being executed on the computer's central processing unit (CPU) as machine code. In other words, ``runtime" is the running phase of a program.
-\end{quote}
-由此可以将 runtime 简单理解为\textbf{程序代码被 CPU 执行的那段时间}。
 
 RustyHermit 中\textbf{优化实现了网络栈}。它使用 \href{https://github.com/smoltcp-rs/smoltcp}{smoltcp} (Rust 语言编写)
 作为它的网络栈，使用 \href{https://www.linux-kvm.org/page/Virtio}{Virtio}
@@ -533,33 +524,21 @@ RustyHermit 中\textbf{优化实现了网络栈}。它使用 \href{https://githu
 由结果图可以看出，\textbf{RustyHermit 在信息比特数较小时吞吐量明显比 Linux 更快}。
 
 RustyHermit 也是一个用来评估操作系统新的设计的研究项目。
-比如，RustyHermit 提供了一些经典的技术来提升像堆栈保护、应用程序堆栈
-与操作系统库堆栈分离等行为的安全性。但是，库操作系统通常使用一个普通函数
-调用进入内核，传统的通过进入更高的权限级别来将用户空间和内核空间分离的做法是被遗漏了的。
+
 
 有Sung, Olivier, Lankes and Ravindran\cite{bib:18-intra-unikernel}
 提出了\textbf{一个修改版本的 RustyHermit}，该版本提供了一
 个\textbf{使用 Intel MPK}(Memory Protection Keys)\textbf{进行内部隔离}的
-Unikernel。这篇论文的摘要如下（中英文对照）：\cite{bib:19-mpk}
+Unikernel。这篇论文的摘要翻译如下：
 
-\begin{quote}
-Unikernels are minimal, single-purpose virtual machines. This new operating system model promises numerous benefits within many application domains in terms of lightweightness, performance, and security. Although the isolation between unikernels is generally recognized as strong, there is no isolation within a unikernel itself. This is due to the use of a single, unprotected address space, a basic principle of unikernels that provide their lightweightness and performance benefits. In this paper, we propose a new design that brings memory isolation inside a unikernel instance while keeping a single address space. We leverage Intel's Memory Protection Key to do so without impacting the lightweightness and performance benefits of unikernels. We implement our isolation scheme within an existing unikernel written in Rust and use it to provide isolation between trusted and untrusted components: we isolate (1) safe kernel code from unsafe kernel code and (2) kernel code from user code. Evaluation shows that our system provides such isolation with very low performance overhead. Notably, the unikernel with our isolation exhibits only 0.6\% slowdown on a set of macrobenchmarks.
-\end{quote}
-
-译：
-
-\begin{quote}
-Unikernels 是最小的、单一用途的虚拟机。这种新的操作系统模型在许多应用程序领域中承诺了轻量化、性能和安全性方面的许多好处。虽然 Unikernels 之间的隔离通常被认为是很强的，但是在 Unikernels 本身内部并没有隔离。这是因为使用了单一的、不受保护的地址空间，这是提供轻量级和性能优势的 Unikernels 的基本原则。在本文中，我们提出了一种新的设计，即在保持单一地址空间的同时，在 Unikernel 实例中引入内存隔离。我们利用 Intel 的内存保护密钥(MPK)来做到这一点，而不会影响 Unikernels 的轻量化和性能优势。我们在现有的用 Rust 编写的 Unikernel\footnote{“用 Rust 编写的 Unikernel”指 RustyHermit。} 中实现了我们的隔离方案，并使用它来提供可信和不可信组件之间的隔离：(1)安全内核代码与不安全内核代码之间的隔离，(2)内核代码与用户代码之间的隔离。评估表明，我们的系统以非常低的性能开销提供了这种隔离。值得注意的是，在一组宏基准测试中，带有隔离功能的 unikernel 仅减慢了0.6\%。
-\end{quote}
-
-这篇论文中的内容可以作为我们实现 runikraft 的参考。
+这篇论文中的内容可以作为我们实现 runikraft 的参考。\cite{bib:19-mpk}
 
 \subsubsection{Rumprun}\sectionauthor{陈建绿}
 
 Rumprun unikernel 是在 rump kernels 的基础上开发的。
-Rumprun 不仅可以\textbf{在像 KVM 和 Xen 这样的管理程序上工作}，
-还\textbf{可以在裸金属上工作}。\textbf{无论有没有 POSIX-y 接口，Rumprun 都
-可以正常使用}。如果有 POSIX-y 接口，Rumprun 则允许现有的、
+Rumprun 不仅可以在像 KVM 和 Xen 这样的管理程序上工作，
+还可以在裸金属上工作。无论有没有 POSIX-y 接口，Rumprun 都
+可以正常使用。如果有 POSIX-y 接口，Rumprun 则允许现有的、
 未经修改的 POSIX 应用程序开箱即用；如果没有 POSIX-y 接口，
 Rumprun 则允许构建高度自定义的解决方案，并且占用的空间最小。
 
@@ -572,8 +551,7 @@ Java、 Javascript (node.js)、 Python、 Ruby 和 Rust 等语言编写的应用
 
 \paragraph{1. Rump kernels 的相关介绍}\cite{bib:21-rump-kernel}\cite{bib:22-xen}
 
-Rump kernels 的目标并不是搭建一个 unikernel，它的目标是提供可重用的内核组件，
-其他组件可以在此基础上进行构建。开发者的目标是让每个使用它们组件的项目都不用去花费精力维护轮子。
+
 
 Rump kernels 的组件来自未经修改的 NetBSD，由此开发者提供了一个 POSIX-y API。
 Rump Kernel 项目以一种可用于构建轻量级、特殊用途虚拟机的形式提供了 NetBSD 的
