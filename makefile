@@ -1,6 +1,9 @@
 # runikraft的makefile
-# Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿
-# All rights reserved.
+#Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿
+
+# This file is part of Runikraft. Runikraft is free software,
+# which is released under the BSD 3-Clause License; see LICENSE for detail.
+# Runikraft is provided ``as is'', without any express or implied warrenties.
  
 #Depends:
 # doc
