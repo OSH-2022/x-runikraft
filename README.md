@@ -13,7 +13,7 @@ USTC 011705 (OSH) Course Project of Runikraft Group
 
 ## Project Summary
 
-<!--本人水平有限，这段翻译得很烂-->Runikraft is a unikernel written in Rust language that runs on RSIC-V + KVM. It is based on Unikraft implemented in C language; while inheriting the efficiency, customizablility, compatibility and security of Unikraft, it further simplifies the building process of the OS image, adds support to RISC-V and enhances the kernel security via Rust language.
+<!--本人水平有限，这段翻译得很烂-->Runikraft is a unikernel written in Rust language that runs on RSIC-V + KVM. It is based on Unikraft implemented in C language; while inheriting the efficiency, customizablility, good-compatibility and security of Unikraft, it further simplifies the building process of the OS image, adds support to RISC-V and enhances the kernel security via Rust language.
 
 ## Directories Description
 

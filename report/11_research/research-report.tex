@@ -88,7 +88,7 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 \vspace*{-5ex}
 \noindent\textrm{\hfill\textit{by #1}}
 \vspace*{2ex}\par}
-%\renewcommand{\today}{2022年3月27日}
+\renewcommand{\today}{2022年3月30日}
 
 \begin{document}
 \sffamily %为方便屏幕阅读，文档主要使用无衬线字体
@@ -101,8 +101,8 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 
 \section{项目简介}
 Runikraft 是用Rust语言编写的能在RISC-V + KVM上运行unikernel。
-它基于用C语言实现的Unikraft，在继承Unikraft的高效、可定制、兼容性好、
-安全的同时，进一步简化了构建系统镜像的流程，加入了RISC-V支持，并且
+它基于用C语言实现的Unikraft，在继承Unikraft的高效性、可定制性、良兼容性、
+安全性的同时，进一步简化了构建系统镜像的流程，加入了RISC-V支持，并且
 用Rust语言提供了更强的内核安全保证。
 \section{项目背景}
 \subsection{Rust语言}\sectionauthor{郭耸霄}
@@ -153,7 +153,7 @@ Rust 丰富的类型系统和所有权模型保证了内存安全和线程安全
   与其他系统级编程语言（例如C或C++）相比，Rust可以提供的最大好处是借阅检查器。
   这是编译器的一部分，负责确保引用不会超出引用的数据寿命，并有助于消除由于内存不安全而导致的
   所有类型的错误。与许多现有的系统编程语言不同，Rust不需要你将所有时间都花在细节上。当安全的Rust无法表达某些
-  概念时，\url{http://cliffle.com/p/dangerust/}可以使用不安全的 Rust。这样可以释放一些
+  概念时，可以使用不安全的 Rust。这样可以释放一些
   额外的功能，但作为交换，程序员现在有责任确保代码真正安全。然后，可以将这种不安全的代码包装在
   更高级别的抽象中，以确保抽象的所有使用都是安全的。\cite{bib:3-why-rust-pop}
 
@@ -208,7 +208,7 @@ Rust的严格要求会让第三方库的质量明显高很多。语言本身的�
 的ARMv8没有任何劣势。
 
 \subsubsection{RISC-V的特点}
-RISC-V(“RISC five”)的目标是成为一个通用的指令集架构(ISA):\cite{bib:risc-v-manual}
+RISC-V(“RISC five”)的目标是成为一个通用的指令集架构(ISA)：\cite{bib:risc-v-manual}
 \begin{itemize}
 \item 它要能适应包括从最袖珍的嵌入式控制器，到最快的高性能计算机等各种规模的
 处理器。
