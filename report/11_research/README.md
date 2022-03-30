@@ -1,20 +1,39 @@
-***本文件仅供参考，最终报告是`research-report.tex`***
+***本文件仅供参考，最终报告是`research-report.tex`，Release中有相应的PDF文件。***
 
 # Runikraft 调研报告
 
-本调研报告分为4个主要部分：Rust语言的优越性（郭耸霄调研）、当前时代的unikernel项目整理（陈建绿、蓝俊玮调研）、往年OSH-20xx课程小组的unikernel项目整理（吴骏东调研），以及unikernel的安全性问题（张子辰调研）。
-
-[TOC]
-
 ## 项目简介
 
-**本项目参考 Unikraft 的设计，用 Rust 语言实现模块化的 unikernel，在保持 Unikraft 的 POSIX 兼容性、可定制性的基础上，用 Rust 语言增强内核的安全性。**
+Runikraft 是用Rust语言编写的能在RISC-V + KVM上运行unikernel。它基于用C语言实现的Unikraft，在继承Unikraft的高效性、可定制性、良兼容性、安全性的同时，进一步简化了构建系统镜像的流程，加入了RISC-V支持，并且用Rust语言提供了更强的内核安全保证。
 
-Unikernel是专一用途的、单地址空间的轻量操作系统。Unikernels在虚拟机上运行时，能够提供比传统的容器更短的启动时间、更高的运行效率和更强的隔离性，因此unikernels通常被用在云计算领域。然而，为了追求轻量性，unikernels裁剪了传统的操作系统的众多组件，因此unikernels无法提供许多常用的库的应用程序接口，所以为了将现有的程序移植到某个unikernel平台，开发者不得不根据该unikernel的API重构程序。此外，为了轻量、快速，unikernels删去的许多基本的并且不会影响性能的安全措施，这导致unikernels相比容器更容易受到用户程序的安全漏洞的影响。
+## 立项依据
 
-Unikraft是一个充分考虑了兼容性和安全性的unikernel，它将系统分割成若干相对独立的模块，各个模块可以独立安装和更新，就像传统操作系统上的动态库。在创建系统镜像时，Unikraft提供的编译系统能够编译用户需要使用的模块，并将它们与用户代码一起连接成可引导镜像。
+我们小组计划仿照Unikraft的架构，用Rust语言编写能在RISC-V架构+ KVM平台上运行的unikernel——Runikraft。Runikraft的核心代码使用Rust编写，但允许用户代码使用任何语言编写。Runikraft强调构建系统镜像的简洁，用户只需要修改现有的项目的编译参数就可以构建基于Runikraft的系统镜像，而不必使用专用的工具链，更不需要重构代码。Runikraft是POSIX兼容的，所以它将支持内存管理、进程调度，甚至磁盘管理和进程通信。不过，这些功能都是可选的且可拓展的，如果用户不需要某项功能，他可以不将相关模块打包进系统镜像中，如果用户能够提供某些功能的更好实现，他可以用自己的实现替换原有的模块，甚至POSIX兼容层本身也是可选的，如果用户愿意为了效率重构代码，他也可以直接用Runikraft的专用API。Runikraft可以支持多进程，因为我们认为，将若干密切管理的程序打包到一个镜像会提高效率。与Unikraft一样，Runikraft在注重效率的同时兼顾安全性。我们计划实现ASLR、W^X政策、保护页、stack canary四项安全技术。
 
-我们小组计划仿照Unikraft的架构，用Rust语言编写能在RISC-V架构+ KVM平台上运行的unikernel——Runikraft。Runikraft的核心代码使用Rust编写，但允许用户代码使用任何语言编写——只要它能够被编译成入口为`main`的目标代码。Runikraft强调构建系统镜像的简洁，用户只需要修改现有的项目的编译参数就可以构建基于Runikraft的系统镜像，而不必使用专用的工具链，更不需要重构代码。Runikraft是POSIX兼容的，所以它将支持内存管理、进程调度，甚至磁盘管理和进程通信。不过，这些功能都是可选的且可拓展的，如果用户不需要某项功能，他可以不将相关模块打包进系统镜像中，如果用户能够提供某些功能的更好实现，他可以用自己的实现替换原有的模块，甚至POSIX兼容层本身也是可选的，如果用户愿意为了效率重构代码，他也可以直接用Runikraft的专用API。Runikraft可以支持多进程，因为我们认为，将若干密切管理的程序打包到一个镜像会提高效率。
+以往的unikernel项目的不足之处可以概况为（并不每个unikernel都有所有缺点）：
+
+- 无法兼顾效率和兼容性；
+- 系统内的组件耦合度过高，系统不易裁剪或拓展；
+- 需要使用专用的工具构建系统镜像；
+- 将安全性与隔离性等同，忽视了单个unikernel虚拟机的安全；
+- 不支持RISC-V架构；
+- 核心代码使用不安全的程序设计语言编写。
+
+而我们的项目将不具有以上缺点。
+
+如果时间允许，我们还会尝试：
+
+1. 支持更多架构，比如目前流行的AMD64和ARMv8；
+2. 支持在裸机上运行，虽然unikernel为云计算诞生，但这并不代表它只适合云计算领域，事实上，任何专一用途的设备上的系统都可以是unikernel，而且unikernels理论上可以具有比现有的实时系统更高效率；
+3. 支持调试，zos小组曾做过相关研究；
+4. 移植更多库。
+
+我们考虑过但最终不打算实现与Linux的二进制兼容，即unipanic小组的研究，因为我们认为不会出现需要移植无法获得源代码的程序的情况：
+
+- 如果源代码因著作权问题无法获取，那移植二进制文件也会侵犯著作权；
+- 如果源代码因软件无人维护无法获取，那这样的过时软件本身就不应该被继续使用。
+
+在系统架构方面，我们将主要参考Unikraft，并少量参考MirageOS和RustyHermit；在技术方面，我们将参考Chen and Wu的 *rCore Tutorial Book*。
 
 ## Rust语言的优越性
 
@@ -245,154 +264,6 @@ Rumprun 也有一些**限制**：
 
 这也许会对我们的项目有所帮助。
 
-## 往年OSH-20xx课程小组的unikernel项目整理
-
-### x-unipanic小组
-
-1. 项目简介
-
-​		该项目旨在已有项目的基础上，小组希望在保持 Unikernel 现有优势（高效、安全、轻量）的前提下，改善 Unikernel 对二进制程序的支持，做出可以即时打包、分发的 Unikernel。目前致力于提供二进制兼容性的 Unikernel 项目 **HermiTux** 仍有较大改进空间，因此该小组将改善 **HermiTux** 二进制兼容性作为立项目标。
-
-关键词：UniKernel, 进程调度
-
-参考项目：[HermiTux](https://github.com/ssrg-vt/hermitux)
-
-2. 项目可行性分析
-
-- 目前的 Unikernel 实现均要求对应用的重构，在实际应用中无法获取程序源码、程序依赖未被支持等问题非常常见
-- 将应用打包为 Unikernel 要求大量的专业知识，步骤繁琐
-- HermiTux设计了一个二进制分析工具，能够扫描一个可执行文件，并检测该程序可以进行的各种系统调用
-- HermiTux基于[hermitcore](https://github.com/hermitcore/rusty-hermit)这一Unikernel架构做了二进制支持，并重写syscall以保证性能。
-- HermiTux的内核中实现了一个基本的RAM文件系统——MiniFS，从而在这方面消除了对主机的依赖。
-
-3. 项目困难点分析
-
-- 如果无法获得程序源代码，重新编译和链接将无从进行，也就不可能打包到 Unikernel。对二进制文件的逆向往往会因为编译过程中的剥离和混淆难以进行，因此用unikernel层进行拆解和重新链接是不合适的。
-- 让 Unikernel 支持某种语言十分困难，Unikernel 通常只支持一小部分的内核特性和软件库。如果语言用到了不支持的内容，就需要重写应用，很多情况下这意味着应用完全不可能被移植。
-- Unikernel 使用复杂的构建工具，将一些传统应用的大型构建基础架构（大量的 Makefile、autotools/cmake 环境）加入 Unikernel 工具链是十分麻烦。并且，unikernel还缺乏一些开发工具，如调试器（debugger）和分析工具（profiler）。
-
-4. 项目成果分析
-
-​		该小组主要参照了KylinX和Hermitux这两个项目。KylinX项目提供实现fork的思路；Hermitux主要实现Unikernel的二进制支持，可以在Hermitux的源码上进行改动。主要的成果有：
-
-1. 支持fork。参照了KylinX实现fork的方式，通过复制hypervisor启动新的虚拟机作为子进程。但是这样实现的性能较低，增大了系统负担。
-
-2. 优化重写syscall。修改了syscall打包的判断方式，将向后打包扩展成向前打包，从而100%重写了syscall函数。保持Unikernel因没有系统调用而具有的优良运行速度。
-
-
-### x-KATA-Unikernel 小组
-
-1. 项目简介
-
-​		该项目利用 Unikernel 得天独厚的轻量和攻击面小的特性，结合虚拟化技术，为FaaS（Function As A Service）场景下的云服务提出一种解决方案：从客户端提交代码，到云平台进行 Serverless 运算。采用 KVM 的虚拟机接口，在虚拟化环境中以 Unikernel 减少资源开销，达到空间的高效利用和速度的极限提升。
-
-关键词：UniKernel, 虚拟化, 云计算
-
-参考项目：[Kata](https://github.com/kata-containers/kata-containers)、[gVisor](https://github.com/google/gvisor/blob/master/README.md)、[Firecracker文档](https://firecracker-microvm.github.io/)
-
-2. 项目可行性分析
-
-- Firecracker 是在 rust 众多 crates 基础上实现的 VMM。它拥有非常有限的设备模型，提供轻量级的服务并且暴露的攻击面极小，在 FaaS 场景下有极大的应用空间。但其本质上还是传统的虚拟机架构，不可避免地带来多层嵌套的性能损耗。
-- Google 提出的 gVisor 解决方案， 在容器的后端将所有的系统调用截断，凭借 gVisor 中用户程序来实现系统调用的API。 gVisor 极其轻量，隔离性相对不足。此外，其也面临着过多系统调用时无法忍受的上下文转换问题。并且，gVisor 采用了带有 GC 的 Go 语言编写，也有比较大的性能开销。
-- Unikernel 的缺点可以被 kata Container易于分发的优点改善，同时纳入 kubernetes 生态，使得 Unikernel 的应用更加广泛。
-- KVM 是采用硬件虚拟化技术的全虚拟化解决方案。其优势有：依赖 Linux 内核的内存管理、存储和客户机镜像格式多样、支持实时迁移与状态保存、支持高性能I/O接口、性能极强等。
-
-3. 项目困难点分析
-
-- Unikernel 的迁移问题。虽然 Unikernel 的概念被提出很久，市面上也涌现很多 Unikernel 的具体实现，但要找到易于适配 KVM，并且功能齐全的 core，是一件比较困难的事情。[项目使用了 Nanos解决]
-- 虚拟机对象问题。缺少统一的方式定义虚拟机的各种可管理对象。[项目使用了 libvirt 相关工具解决]
-- 人机交互问题。与客户端的交互需要将虚拟机内部的结果重定向到主机，此过程中对结果的保护和加密是十分重要的。但这需要较多的知识积累。
-
-4. 项目成果分析
-
-​		该小组针对当前常用的两种解决方案 Firecracker microVM 和 gVisor 进行了改造与借鉴，利用 Firecracker 基于 KVM 和 virIO 的架构获得优异的封装和性能提升，同时希望借鉴 gVisor 系统调用截断的方式，使其与 Unikernel 进行交互，取代 gVisor 中 sentry+gofer 的类内核架构，从而达到轻量高效的目的。相关成果如下：
-
-1. 使用了支持多种语言环境的 Nanos 内核，以 KVM 作为 Unikernel 的载体。
-2. 分离 Nanos 的编译编排工具 ops 中的 build 模块，对虚拟机进行硬件加速。
-3. 封装 libvirt API ，从而可以更加方便地创建与管理虚拟机。
-4. 使用 virt-viewer 工具实现了虚拟机可视化。
-
-​		改造后的 Unikernel 在算法性能上相较于传统 Linux 提升了约40%。后续还可以将 Nanos 进一步与 Firecracker 结合，microVM 与 Unikernel 的结合可以将性能发挥到极限。
-
-### x-orz小组
-
-1. 项目简介
-
-​		该项目将一般网络程序中的任务看作各种（并发的）基本服务的组合，抽象出一些常用的服务并让每个 Unikernel 与一个服务相对应，构成Unikernel实例的集群。通过合理地编排调度 Unikernel 集群，将各种并发的服务组合起来，处理任务请求，从而充分利用多核/多CPU资源，提高系统性能，同时又不破坏 Unikernel 原有的轻量、安全的特性。
-
-关键词：[Unikernel](http://unikernel.org/), 云计算, 高性能计算
-
-参考项目：[Firecracker](https://github.com/firecracker-microvm/firecracker) 、 x-Doudou 
-
-2. 项目可行性分析
-
-- Unikernel 省去了上下文切换、进程管理、资源竞争等工作带来的开销，但这样无法充分利用多核尤其是多 CPU 的资源。单个 Unikernel 进程通常仅使用一个核。支持多核的 Unikernel 往往需要引入OS中有关进程管理、资源分配的复杂模块，这样便会破坏 Unikernel 的高精简度。
-- 小规模的多进程任务可以将其修改为多线程从而装入同一个 Unikernel 。但大规模任务只能启动更多的 Unikernel 实例，从而造成相同模块的重复使用。
-- 服务的拆分提高了系统容错性。因为一个 Unikernel 实例相当于一个虚拟服务器，它的崩溃不会影响整个任务的执行，调度系统只需要再创建/调度另一个提供同样服务的 Unikernel 即可。
-- Firecracker 是一个由AWS开发的轻量级 Hypervisor，旨在加速他们的Serverless服务。其仅实现了五种必要的I/O设备：virtio-net、virtio-block、virtio-vsock、串口、键盘，而且它的的启动过程也更为简单，省去了实模式加载等步骤，有着显著的性能提升。
-
-3. 项目困难点分析
-
-- 相关 OSv 内核的管理工具大部分是为虚拟机或容器开发的，不容易保留原本 OSv+Firecracker 方案的优势（如冷启动时间）。
-
-4. 项目成果分析
-
-​		该小组参考研究了工业控制系统的结构。其大体的工作流程是在 Interface 部分利用传感器等采集信号，然后通过 Information Processing 部分进行信息的处理，最后在 Intelligence 部分对系统进行智能控制。该项目选取了其中的信息处理部分的一小部分，将应用进行解耦与模块化。将相对独立的功能封装进 Unikernel 运行，来发挥 Unikernel 快速，安全，轻量的优点，满足相应需求。相关成果如下：
-
-1. 选用支持多种语言的 OSv 作为 Unikernel 内核，并在此基础上对 OSv 中相关参数进行了修改，从而提升了 CPU 性能。
-2. 使用 Go 语言实现一个轻量的 OSv 管理工具 Uigniter，功能包括创建、启动、停止 OSv 实例。详细内容见[Uigniter 文档](https://github.com/richardlee159/uigniter/tree/e1c063341d658ec897a029b30874bc01bb852a1a)。
-
-​		Unikernel 的解决方案具有容器方案所没有的隔离性、安全性、多进程/线程方案所没有的低延迟、轻量性、高容错率与模块解耦的特性，在未来 IoT 互联领域有着相当不错的前景。
-
-### X-Doudou 小组
-
-1. 项目简介
-
-​		该项目设计并初步实现了一个面向开发人员和系统管理人员的平台 Cunik ，用于方便地构建、分发、运行、管理 Unikernel 应用。Cunik 的设计目标是克服 Unikernel 配置难、部署繁琐的缺点，同时发挥 Unikernel 隔离性好、性能优良的特点，使运维人员轻松地获益于 Unikernel 这一新兴的技术。
-
-关键词： Unikernel 、虚拟化、容器化
-
-参考项目：libvirt、Rumprun 、OSv 
-
-2. 项目可行性分析
-
-- Unikernel 在保持了原有的安全性、隔离性、易部署性的前提下，还做到了在启动速度、运行速度、内存开销等方面全面胜过 Docker。Unikernel 可以在不同的硬件平台上用不同的方法实现不同的应用程序，现在 Unikernel 正运行在世界各地的研究实验室、服务器机房以及各种低功耗设备上。
-- Cunik 向用户隐藏繁琐的细节，使用户可以轻松地构建、分发、获取和配置 Unikernel 应用，降低开发、部署和运维成本，并可以克服 Unikernel 开发难度高、分发部署困难、对系统管理人员要求高、对现有云计算架构改动大的缺点。借助 Unikernel 的优势，Cunik 可以使用户轻松获得显著的性能提升和更高的安全性、减小攻击面、降低资源占用。
-
-- libvirt 提供了便捷且功能强大的虚拟机管理工具。可以基于 libvirt 构建 Cunik-engine 的 VM Backends 和 VM Hypervisor 部分从而方便管理虚拟机。
-
-3. 项目困难点分析
-
-- 需要基于现有的 Unikernel 应用重新开发所需要的平台。
-
-4. 项目成果分析
-
-​		该小组通过 Python 完成了 Cunik-engine 和 Cunik-cli 的设计，并手动制作了包含 nginx(Rumprun)、redis(Rumprun) 和 redis(OSv) 的本地镜像仓库，用 Cunik 成功运行了这三种应用。最终在 redis(OSV) 这个应用上取得了比 Linux 上的原生进程更高的性能。
-
-​		Cunik-engine 架构如下：
-
-​		<img src="./pictures/resp1.png" alt="cunik-engine" style="zoom: 50%;" />
-
-​		其具体细节可参考[X-Doudou文档](https://github.com/OSH-2018/X-Doudou/tree/master/concluding-report)。调用 Cunik 后，程序会执行如下的内容：
-
-```
-1. 用户通过调用 Cunik API 中的 Creat、Run、Stop、Remove、Inspect 等 API 接口命令来启动 Cunik-engine。
-2. Cunik-engine 在接受到命令后，首先会生成一个 Cunik Config，用于生成 Cunik Object。
-3. 通过Cunik Models，engine 会生成 Cunik Object，并加入到 Cunik Registry 中，或对已有 Cunik Object 进行运行状态的修改。
-4. 然后，Unikernel Backends 会根据不同的 Cunik Object 选择不同的 Unikernel 实现方式。
-5. 接下来，根据所选择的 Unikernel 实现方式，并在 Image Regsitry 中查询 Unikernel 应用的 image ，然后由 VM Backends 生成 VM Config。
-6. VM Hypervisor 接收 VM Config 并选择合适的虚拟机来运行这个 Unikernel 应用。
-```
-
-​		该项目目前只实现了对 kvm/qemu 虚拟机、Rumprun 和 OSv 两种 Unikernel 实现的简单支持。可以改进的内容包括：
-
-- 整理当前 Cunik-engine 的架构；
-- 实现对更多虚拟机平台以及 Unikernel 实现的支持；
-- 持续支持新的 Unikernel 实现，并加入更多方便镜像打包与应用部署的特性，使其能够满足生产环境的需要；
-- 更好的交互体验：实现在用户发出 Request 后，自动为用户选择最合适的一系列 Cunik 应用，达成从前端到后端的一键式搭建服务。
-
-
-
 ### X-zos 小组
 
 1. 项目简介
@@ -433,49 +304,6 @@ Rumprun 也有一些**限制**：
 
 1. Unikernel 的调试工具必然需要提供一个通用的接口以实现对不同种类 Unikernel 的支持。目前的 Umonitor 已经实现了能同时对多个 Unikernel 的调试，所以下一步的目标可以是实现对多种 Unikernel 的通用接口。使其够方便的支持现阶段较为成熟的 Unikernel 实现的同时也能够通过用户友好的配置界面对其他 Unikernel 进行支持。
 2. Umonitor 在运行之后实际上仍然只能被动地接受被调试的 Unikernel 输出的调试信息，这样虽然能够在一次设置后找到对应的错误信息出现的位置，但想要在 Unikernel 运行中途添加调试信息输出或者更进一步的设置断点和逐句执行都还做不到。可以考虑添加交互式调试功能。
-
-## Unikernel的安全性问题
-
-根据[NCC Group](https://research.nccgroup.com/wp-content/uploads/2020/07/ncc_group-assessing_unikernel_security.pdf)，虽然 unikernel 相比容器体积更小、隔离性更好，但是由于不存在内核态-用户态隔离，且缺乏W^X、stack canary等安全特性，unikernel 其实比传统的容器更不安全。也就是说，攻击者可以利用 unikernel 上的程序的漏洞，控制 unikernel 所在的虚拟机，进而获取本不应该拥有的权限。以 unikernel 的传统应用领域云计算为例，如果某个 unikernel 负责处理用户的敏感数据——它通过网络获取用户的数据，然后将计算结果通过网络发回，则它一定拥有读用户数据的权限。那么，一旦这个 unikernel 存在安全漏洞，攻击者虽然不能控制 unikernel 所在的宿主机，但足够窃取用户的数据。所以，我们不能片面地把安全性与隔离性等同。而且我们不能片面地认为使用 Rust 这样的安全的程序设计语言就能保证安全，因为完整的 unikernel 上不只包含安全的系统代码（或者说库代码），还包含可能不安全的用户代码，而后者可以导致整个系统不安全。因此，要实现安全的 unikernel，不能仅仅依靠安全的程序设计语言，而需要额外的安全特性。
-
-NCC Group提到的安全特性：
-
-- 地址空间布局随机化 （ASLR）：将数据、函数的位置随机放在内存段中，这样将无法通过跳转到特定地址完成攻击。
-- 分页保护
-  - W^X政策：一段内存空间不能同时拥有执行权和写入权；
-  - 内部数据加固：防止程序读取与程序本身无关的数据，比如全局偏移表；
-  - 保护页：在不同数据段之间（比如.text段与.data）放置不可读写的页面；
-  - 空页面漏洞：`malloc`函数可能返回`nullptr`，而在 unikernel 上，`0x0`可能是有效地址，访问0不会引发segmentation fault。
-- 栈保护标志（stack canary，[典故](https://en.wikipedia.org/wiki/Animal_sentinel#Historical_examples)：金丝雀曾经被用来检查煤矿的有毒气体）：在栈的返回地址后加上一个随机的整型变量（canary），执行`ret`前检查 canary 是否被修改。
-- 堆加固：堆的结构通常是双向链表，链表的元数据（如指针）通常与数据块相邻，堆上的溢出可以改变这些数据块，导致内存的分配、释放算法出错，通常的加固方法是为元数据增加校验值。
-- 熵和随机数生成器：通常的 unikernel 缺乏足够产生密码学安全的伪随机数的硬件熵，这导致 unikernel 上生成的伪随机数的质量差，解决方法有使用 CPU 的专用随机数指令（如 x86 的 `rdrand`）
-- 标准库加固
-  - `printf` 的 `%n` 格式符：它将已经输出的字符的数量写入对应的参数指向的地址（没错，它不输出任何内容，而是写入内容），攻击者可以利用自定义的格式串和 `%n` 实现攻击，所以不应该支持它；
-  - 自定义格式符：它可能可以扩大攻击面；
-  - `_FORTIFY_SOURCE` 宏：定义它会导致一些函数执行轻量级的缓冲区溢出检查。
-
-NCC Group只测试了 rumprun 和 includeOS 两个 unikernels，并发现它们几乎没有实现任何安全特性。
-
-尽管 Unikraft 使用 C 语言实现，但它支持（或计划支持）以下安全特性：
-
-| Security feature                                             | Status           | Targets                      |
-| :----------------------------------------------------------- | :--------------- | :--------------------------- |
-| [Stack Smashing Protection (SP)](https://github.com/unikraft/unikraft/tree/staging/lib/uksp) | Upstream         | `ARCH_ARM_64 || ARCH_X86_64` |
-| [Undefined Behavior Sanitization (UBSAN)](https://github.com/unikraft/unikraft/tree/staging/lib/ubsan) | Upstream         | any                          |
-| [Rust internal libraries in Unikraft](https://github.com/unikraft/unikraft/tree/staging/lib/ukrust) | Upstream         | `ARCH_X86_64`                |
-| [ARM Pointer authentication (PAuth)](https://unikraft.org/#) | Under review     | `ARCH_ARM_64 || ARCH_ARM_32` |
-| [ARM Branch Target Identification (BTI)](https://github.com/unikraft/unikraft/pull/421) | Under review     | `ARCH_ARM_64`                |
-| [Kernel Address Sanitizer (KASAN)](https://github.com/unikraft/unikraft/pull/191) | Under review     | `PLAT_KVM && ARCH_X86_64`    |
-| [Position Independent Executables (PIE)](https://github.com/unikraft/unikraft/pull/239) | Under review     | `PLAT_KVM && ARCH_X86_64`    |
-| [True Random Number Generator](https://unikraft.org/#)       | Under review     | `ARCH_X86_64`                |
-| ARM Memory Tagging Extension (MTE)                           | Work-in-progress | ARM                          |
-| Intel Control-flow Enforcement Technology (CET)              | Planned          | `ARCH_X86_64`                |
-| Shadow stack                                                 | Planned          | any                          |
-| `FORTIFY_SOURCE`                                             | Planned          | any                          |
-| ARM Speculation Barrier (SB)                                 | Planned          | `ARCH_ARM_64`                |
-| Kernel Page Table Isolation (KPTI)                           | N/A              | N/A                          |
-| Supervisor Mode Access Prevention (SMAP)                     | N/A              | N/A                          |
-| Privileged Access Never (PAN)                                | N/A              | N/A                          |
 
 ## 参考资料
 
