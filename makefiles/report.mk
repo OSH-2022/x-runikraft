@@ -16,10 +16,16 @@ TEX_FLAGS := -interaction=nonstopmode
 
 all: report
 
-report: research-report.pdf
+report: research-report.pdf feasibility-report.pdf
 
 research-report.pdf: $(REPORT_ROOT_DIR)/11_research/research-report.tex
 	rm -f research-report.aux research-report.out research-report.toc
 	env TEXINPUTS=$(REPORT_ROOT_DIR)/11_research:$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(REPORT_ROOT_DIR)/11_research/research-report.tex >research-report-run1.stdout
 	env TEXINPUTS=$(REPORT_ROOT_DIR)/11_research:$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(REPORT_ROOT_DIR)/11_research/research-report.tex >research-report-run2.stdout
 	env TEXINPUTS=$(REPORT_ROOT_DIR)/11_research:$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(REPORT_ROOT_DIR)/11_research/research-report.tex >research-report-run3.stdout
+
+feasibility-report.pdf: $(REPORT_ROOT_DIR)/20_feasibility/feasibility-report.tex
+	rm -f feasibility-report.aux feasibility-report.out feasibility-report.toc
+	env TEXINPUTS=$(REPORT_ROOT_DIR)/20_feasibility:$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(REPORT_ROOT_DIR)/20_feasibility/feasibility-report.tex >feasibility-report-run1.stdout
+	env TEXINPUTS=$(REPORT_ROOT_DIR)/20_feasibility:$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(REPORT_ROOT_DIR)/20_feasibility/feasibility-report.tex >feasibility-report-run2.stdout
+	env TEXINPUTS=$(REPORT_ROOT_DIR)/20_feasibility:$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(REPORT_ROOT_DIR)/20_feasibility/feasibility-report.tex >feasibility-report-run3.stdout
