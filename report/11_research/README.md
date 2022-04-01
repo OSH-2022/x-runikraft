@@ -4,11 +4,11 @@
 
 ## 项目简介
 
-Runikraft 是用Rust语言编写的能在RISC-V + KVM上运行unikernel。它基于用C语言实现的Unikraft，在继承Unikraft的高效性、可定制性、良兼容性、安全性的同时，进一步简化了构建系统镜像的流程，加入了RISC-V支持，并且用Rust语言提供了更强的内核安全保证。
+Runikraft 是用Rust语言编写的能在RISC-V架构 + QEMU平台上运行unikernel。它基于用C语言实现的Unikraft，在继承Unikraft的高效性、可定制性、良兼容性、安全性的同时，进一步简化了构建系统镜像的流程，加入了RISC-V支持，并且用Rust语言提供了更强的内核安全保证。
 
 ## 立项依据
 
-我们小组计划仿照Unikraft的架构，用Rust语言编写能在RISC-V架构+ KVM平台上运行的unikernel——Runikraft。Runikraft的核心代码使用Rust编写，但允许用户代码使用任何语言编写。Runikraft强调构建系统镜像的简洁，用户只需要修改现有的项目的编译参数就可以构建基于Runikraft的系统镜像，而不必使用专用的工具链，更不需要重构代码。Runikraft是POSIX兼容的，所以它将支持内存管理、进程调度，甚至磁盘管理和进程通信。不过，这些功能都是可选的且可拓展的，如果用户不需要某项功能，他可以不将相关模块打包进系统镜像中，如果用户能够提供某些功能的更好实现，他可以用自己的实现替换原有的模块，甚至POSIX兼容层本身也是可选的，如果用户愿意为了效率重构代码，他也可以直接用Runikraft的专用API。Runikraft可以支持多进程，因为我们认为，将若干密切管理的程序打包到一个镜像会提高效率。与Unikraft一样，Runikraft在注重效率的同时兼顾安全性。我们计划实现ASLR、W^X政策、保护页、stack canary四项安全技术。
+我们小组计划仿照Unikraft的架构，用Rust语言编写能在RISC-V架构+ QEMU平台上运行的unikernel——Runikraft。Runikraft的核心代码使用Rust编写，但允许用户代码使用任何语言编写。Runikraft强调构建系统镜像的简洁，用户只需要修改现有的项目的编译参数就可以构建基于Runikraft的系统镜像，而不必使用专用的工具链，更不需要重构代码。Runikraft是POSIX兼容的，所以它将支持内存管理、进程调度，甚至磁盘管理和进程通信。不过，这些功能都是可选的且可拓展的，如果用户不需要某项功能，他可以不将相关模块打包进系统镜像中，如果用户能够提供某些功能的更好实现，他可以用自己的实现替换原有的模块，甚至POSIX兼容层本身也是可选的，如果用户愿意为了效率重构代码，他也可以直接用Runikraft的专用API。Runikraft可以支持多进程，因为我们认为，将若干密切管理的程序打包到一个镜像会提高效率。与Unikraft一样，Runikraft在注重效率的同时兼顾安全性。我们计划实现ASLR、W^X政策、保护页、stack canary四项安全技术。
 
 以往的unikernel项目的不足之处可以概况为（并不每个unikernel都有所有缺点）：
 

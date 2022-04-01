@@ -11,12 +11,16 @@
 # 	Noto Serif CJK and Noto Sans CJK (Ubuntu package: fonts-noto-cjk fonts-noto-cjk-extra)
 # 	SimKai, SimFang
 
-export MAKE_ROOT_DIR := $(shell pwd)/build
-export REPORT_ROOT_DIR := $(shell pwd)/report
+PWD := $(shell pwd)
+export MAKE_ROOT_DIR := $(PWD)/build
+export REPORT_ROOT_DIR := $(PWD)/report
 
 #currently nothing for all
 .PHONY: all
 all:
+
+.PHONY: everything
+everything: all report
 
 report: $(MAKE_ROOT_DIR)/report/makefile
 	cd $(MAKE_ROOT_DIR)/report && $(MAKE)

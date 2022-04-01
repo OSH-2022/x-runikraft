@@ -18,6 +18,7 @@
 \setCJKmainfont[ItalicFont={KaiTi},BoldItalicFont={KaiTi},
 BoldItalicFeatures={FakeBold=3}]{Noto Serif CJK SC}
 \setCJKsansfont[BoldFont={Noto Sans CJK SC Bold},
+BoldItalicFont={Noto Sans CJK SC Bold},
 AutoFakeSlant]{Noto Sans CJK SC DemiLight}
 \setCJKmonofont[AutoFakeBold=3,AutoFakeSlant]{FangSong}
 \setmainfont{cmun}[Extension=.otf,UprightFont=*rm,
@@ -95,7 +96,7 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 \vspace*{-5ex}
 \noindent\textrm{\hfill\textit{by #1}}
 \vspace*{2ex}\par}
-\renewcommand{\today}{2022年3月30日}
+\renewcommand{\today}{2022年4月1日}
 
 \begin{document}
 \sffamily %为方便屏幕阅读，文档主要使用无衬线字体
@@ -107,7 +108,7 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 \tableofcontents
 
 \section{项目简介}
-Runikraft 是用Rust语言编写的能在RISC-V + KVM上运行unikernel。
+Runikraft 是用Rust语言编写的能在RISC-V架构 + QEMU平台上运行unikernel。
 它基于用C语言实现的Unikraft，在继承Unikraft的高效性、可定制性、良兼容性、
 安全性的同时，进一步简化了构建系统镜像的流程，加入了RISC-V支持，并且
 用Rust语言提供了更强的内核安全保证。
@@ -413,7 +414,7 @@ unikernels裁剪了传统的操作系统的众多组件，因此unikernels无法
 和Unikraft等六个目前仍然在维护的unikernel项目。
 
 \section{立项依据}\sectionauthor{张子辰}
-我们小组计划仿照Unikraft的架构，用Rust语言编写能在RISC-V架构+ KVM平台上
+我们小组计划仿照Unikraft的架构，用Rust语言编写能在RISC-V架构+ QEMU平台上
 运行的unikernel——Runikraft。Runikraft的核心代码使用Rust编写，但
 允许用户代码使用任何语言编写
 %——只要它能够被编译成入口为\texttt{\_start}的目标代码
