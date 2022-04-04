@@ -76,7 +76,7 @@ Rust 的设计者们设计的所有权和类型系统这套强有力的工具集
 - 缓冲区溢出
 - 非法释放内存（释放未分配的指针或重复释放指针）
 
-这些问题在C/C++中都是需要开发者非常小心地自己处理。而 Rust 的语言特性则为上面的问题提供了解决方案[^3]：
+这些问题在C/C++中都是需要开发者非常小心地自己处理。而 Rust 的语言特性则为上面的问题提供了解决方案[^2]：
 
 |       问题       |                Rust 的解决方案                 |
 | :--------------: | :--------------------------------------------: |
@@ -157,5 +157,5 @@ pub extern "C" fn call_from_c() {
 Rust 所拥有的这些语言特性，使得它能够保证内存安全和线程安全，而且它的速度和C/C++同级；同时 Rust 支持与外部代码进行交互以及 unsafe Rust，这也增加了它的灵活性。因此我们可以自信地说，使用 Rust 编写操作系统是十分可行的。
 
 [^1]: [美]Steve Klabink,等.Rust权威指南[M/OL].毛靖凯,等,译.北京:电子工业出版社,2020.
-[^2]: https://rustmagazine.github.io/rust_magazine_2021/chapter_1/rust_ownership.html
-[^3]: [Rust线程安全编程分析——知乎](https://zhuanlan.zhihu.com/p/138394529Rust)
+[^2]: [Rust Magazine 2021](https://rustmagazine.github.io/rust_magazine_2021/chapter_1/rust_ownership.html)
+[^3]: [Rust线程安全编程分析——知乎](https://zhuanlan.zhihu.com/p/138394529)
