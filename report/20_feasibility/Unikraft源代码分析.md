@@ -209,7 +209,7 @@ uk_blkdev_unconfigure
 | `CONFIG_LIBUKSP`                               | uksp          | sp.h                                                         |
 |                                                | nolibc        | stdio.h、stddef.h、errno.h                                   |
 
-
+### `uksched`
 
 
 

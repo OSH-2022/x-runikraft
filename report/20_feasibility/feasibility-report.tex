@@ -113,9 +113,51 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 \section{概要设计}
 Runikraft的架构与Unikraft几乎相同。
 \begin{figure}[!hbt]
+\centering
+\begin{minipage}{0.49\linewidth}
+\centering
 \includegraphics[width=\linewidth]{assets/Unikraft-architecture.png}
 \caption{Unikraft的架构}\label{fig:unikraft-arch}
+\end{minipage}
+\begin{minipage}{0.49\linewidth}
+\centering
+\includegraphics[width=\linewidth]{assets/Runikraft-architecture.pdf}
+\caption{Runikraft的架构}\label{fig:runikraft-arch}
+\end{minipage}
 \end{figure}
+平台层将不同的平台封装成通用的\texttt{rkplat} API，它提供与平台/架构密切相关的功能，
+比如外设驱动、外中断处理、内存分页、定时器、原子操作、内存屏障，我们只计划支持RISC-V+QEMU virt
+一种平台。如果时间不足，我们可以将现成的OpenSBI\cite{bib:sbi}\cite{bib:opensbi}封装成\texttt{rkplat} API。
+
+\texttt{rknetdev}、\texttt{rkblkdev}、\texttt{rktime}、\texttt{rkswrand}、\texttt{rkboot}
+五个APIs的功能与平台密切相关，
+但是为了降低开发和维护难度，它们并没有直接实现，而是在\texttt{rkplat}提供的初级抽象的基础上实现。
+\texttt{rknetdev}和\texttt{rbblkdev}对应图\ \ref{fig:unikraft-arch}\ 的⑦和⑧，
+它们分别提供网络设备和块设备的支持。
+%与Unikraft的实现类似，这两个APIs的构造函数的参数接受指向\texttt{trait RKplat}的指针。
+\texttt{rktime}提供获取和修改系统时间的API，\texttt{rkswrand}提供密码学安全的随机数，
+\texttt{rkboot}负责完成系统的初始化并将控制权转交给用户的代码。
+
+\texttt{rkshed}和\texttt{rklock}是两个与调度器有关的APIs，前者负责创建、调度、撤销线程，后者负责线程间
+的同步和互斥。Runikraft支持多种调取器，比如，图\ \ref{fig:runikraft-arch}\ 中的RR的时间片轮转调度器、
+Mul-qu是多重队列调取器、EDF是截止日期有限调度器。我们计划先实现RR调度器。当然，为了系统镜像的轻量性，
+用户可以不使用任何调取器，这时，\texttt{rkshed}和\texttt{rklock}会被编译成空API，创建线程的行为
+将和函数调用相同。这保证了大部分使用仅仅并行加速的程序仍然能正确运行。
+
+Runikraft选择性地提供线程通信模块，如UNIX风格的信号（\texttt{rksignal}），信箱（\texttt{rkmbox}），
+无锁的环形缓冲队列（\texttt{rkring}）。
+
+我们目前没有计划区分线程和进程，Runikraft的线程同时具有传统的OSes的线程和进程的特性：
+线程之间没有隔离措施，但是线程之间又可以使用进程通信的方法更安全地同步。
+
+\texttt{rkalloc}是分配器API，它的后端可以是\texttt{buddy}、\texttt{tinyalloc}、\texttt{tlsf}、
+\texttt{mimalloc}等分配器。
+不过，我们可能只会实现其中的一个。
+
+Runikraft还提供了一些工具模块，比如调试工具\texttt{rkdebug}、命令行参数分析工具\texttt{rkparam}。
+
+文件系统支持虽然是OS元件的一部分，但是考虑到文件系统之前的功能不尽相同，完全隐藏差异会影响用户的操作能力，
+所以OS元件层并没有提供统一的文件系统API。
 
 \section*{许可协议}
 本文档以知识共享署名 4.0 国际 (CC BY 4.0)许可证发布。
@@ -149,5 +191,8 @@ Runikraft的架构与Unikraft几乎相同。
 本许可证的全文位于：\\
 \centerline{\url{https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans}}
 
-
+\begin{thebibliography}{99}
+\bibitem{bib:sbi} \url{https://github.com/riscv-non-isa/riscv-sbi-doc/releases/tag/v1.0.0}
+\bibitem{bib:opensbi} \url{https://github.com/riscv-software-src/opensbi/releases/tag/v1.0}
+\end{thebibliography}
 \end{document}
