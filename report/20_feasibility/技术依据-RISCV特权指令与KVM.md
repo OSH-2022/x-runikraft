@@ -1,7 +1,5 @@
-> 只是最初版本
->
-> 后续需要修改
->
+
+
 > by 吴骏东
 
 
@@ -38,7 +36,7 @@
 
 **用户级别（U）**：用于运行应用程序，适用于安全嵌入式系统。
 
-<img src="assets\1.png" alt="image-20220405231454106" style="zoom: 67%;" />
+<img src="assets\W1.png" alt="image-20220405231454106" style="zoom: 67%;" />
 
 ​		任何时候，一个 RISC-V 硬件线程都是运行在某个特权级上的，这个特权级由 CSR（control and status register，控制和状态寄存器）配置。且在正常情况下，线程将一直在这个特权等级下运行，除非进入trap（诸如软硬件中断、异常等）才有可能发生特权等级的转换。
 
@@ -74,11 +72,11 @@ CSR [9:8]：对访问最低权限进行约束
 
 ​		目前 RISC-V 支持的特权指令格式为：
 
-<img src="assets\2.png" alt="image-20220405233515809" style="zoom:67%;" />
+<img src="assets\W2.png" alt="image-20220405233515809" style="zoom:67%;" />
 
 ​		以 CSR 访存指令为例。其标准格式为：
 
-<img src="C:\Users\Huawei\Desktop\OS相关调研\assets\3.png" alt="image-20220405234139779" style="zoom:50%;" />
+<img src="assets\W3.png" alt="image-20220405234139779" style="zoom:50%;" />
 
 1. `csrrw`  (CSR read and write) ,这是读写操作，csr 中的值写入 rd，rs1 的值写入 csr 。
 2. `csrrwi` 是csrrw的立即数扩展，rs1 寄存器保存值变为一个立即数，对 csr 的操作是一致的。
@@ -131,7 +129,7 @@ void sbi_console_putchar(int ch)
 
 ### 2.1 KVM
 
-​		KVM (Kernel-based Virtual Machine，基于内核的虚拟机)  ，是一种内建于 Linux® 中的开源虚拟化技术。具体而言，KVM 可以将 Linux 转变为虚拟监控程序，从而使主机计算机能够运行多个隔离的虚拟环境，即虚拟客户机或虚拟机（VM）。
+​		KVM (Kernel-based Virtual Machine，基于内核的虚拟机)  ，是一种内建于 Linux 中的开源虚拟化技术。具体而言，KVM 可以将 Linux 转变为虚拟监控程序，从而使主机计算机能够运行多个隔离的虚拟环境，即虚拟客户机或虚拟机（VM）。
 
 ​		KVM 是 Linux 的一部分。其于 2006 年首次公布，并在一年后合并到主流 Linux 内核版本中。由于 KVM 属于现有的 Linux 代码，因此它能立即享受每一项新的 Linux 功能、修复和发展，而无需进行额外工程。
 
@@ -139,11 +137,47 @@ void sbi_console_putchar(int ch)
 
 ### 2.2 RISC-V 的虚拟化
 
-​		RISC-V 架构定义了专门的虚拟化特权模式 H 。它可用于设计 1 类和 2 类虚拟化软件。虚拟化 H 扩展定义了一个硬件状态位，称作 V 状态，可以为0或1，V状态不同，定义和访问的CSR寄存器也不同。当V为0时，以“s”开头的CSR寄存器表示当前操作系统的状态，“hs”开头的用于支持和实现虚拟化软件，而“vs”开头的代表运行在虚拟化技术上的系统状态。当V为1时，“s”开头的寄存器指向了前文以“vs”开头的寄存器。
+​		目前， RISC-V 基金会对于RISC-V 的虚拟化定义了 H-Extension 规范。目前该规范还没有得到正式的批准，但其中对于 CPU 本身的虚拟化部分已经比较稳定。 RISC-V 基金会对于 RISC-V 虚拟化定义了3个实现目标：
 
-​		通过与 Aarch64 架构的对比来看，RISC-V的虚拟化扩展设计不同。RISC-V没有为虚拟化软件设计专门的特权模式，这说明它对1类、2类虚拟化都有很好的支持。RISC-V可以通过核的CSR寄存器注入中断，因此不需要为虚拟化而特殊设计中断控制器外设。RISC-V可直接借助特殊的寄存器位支持嵌套虚拟化，而Aarch64要等到v8.3版本之后才支持这个功能。RISC-V的时钟和核间中断可通过SBI软件辅助完成，而Aarch64需要特殊设计的计时器外设来支持虚拟化功能。
+- 支持Guest OS能够无修改地运行在Type-1, Type-2和混杂模式的虚拟机(Hypervisor)上
+- 支持虚拟化嵌套
+- 虚拟化带来的性能损失和实现成本不应该有太大的变化。
 
-​		目前已有的实现有Xvisor和KVM。Xvisor是1类虚拟化软件，而KVM属于2类。Xvisor起初设计是为了嵌入式硬件的虚拟化，KVM则将Linux内核转变为一个虚拟化软件。
+
+
+<img src="assets\W4.png" alt="image-20220406095212809" style="zoom:67%;" />
+
+​		如上图所示。为了支持虚拟化，RISC-V 规范定义了 RISC-V H-extension ，在原来的3级特权架构的基础上对原有的 Supervisor 模式进行了扩展，引入了 **Hypervisor-Extended Supervisor mode** (HS)。此时，在 Machine Mode 下运行最高优先级的、对全部资源具备操作能力的 Firmware ，虚拟机软件 Hypervisor 运行在 HS 模式，虚拟机 VM 运行在虚拟化的 Supervisor 模式，应用程序继续运行在虚拟操作系统之上，运行在 Virtualized User mode。
+
+​		虚拟化 H 扩展定义了一个硬件状态 bit ，称作 V 状态。根据 V 状态的不同，定义和访问的 CSR 寄存器也不同。当 V 为 0 时，以 “s” 开头的 CSR 寄存器表示当前操作系统的状态， “hs” 开头的用于支持和实现虚拟化软件，而 “vs” 开头的代表运行在虚拟化技术上的系统状态。当 V 为 1 时， “s” 开头的寄存器指向了前文以 “vs” 开头的寄存器。
+
+​		为了支持 Hypervisor ，现有的 Machine 模式下的部分寄存器需要进行增强和修改，主要体现在如下 CSR:
+
+<img src="assets\W5.jpg" alt="img" style="zoom:67%;" />
+
+​		同时也为 Hypervisor 模式增加了一系列的 CSR , 主要包括：
+
+|    CSR     |                    描述                     |
+| :--------: | :-----------------------------------------: |
+|  hstatus   |              Hypervisor Status              |
+|  hideleg   |       Hypervisor Interrupt Delegation       |
+|  hedeleg   |    Hypervisor Trap/Exception Delegation     |
+|    hie     |         Hypervisor Interrupt Enable         |
+|   hgeie    | Hypervisor Guest External Interrupt Enable  |
+| htimedelta |         Hypervisor Guest Time Delta         |
+| hcounteren |          Hypervisor Counter Enable          |
+|   htval    |            Hypervisor Trap Value            |
+|   htinst   |         Hypervisor Trap Instruction         |
+|    hip     |        Hypervisor Interrupt Pending         |
+|    hvip    |    Hypervisor Virtual Interrupt Pending     |
+|   hgeip    | Hypervisor Guest External Interrupt Pending |
+|   hgatp    |    Hypervisor Guest Address Translation     |
+
+​		为了实现 Supervisor 与 Hypervisor-extended supervisor 模式的切换，RSIC-V 将原来 Supervisor 模式下的 CSR 复制一份到Hypervisor，从而让每个硬件线程拥有两份 supervisor 寄存器，加快两个模式之间的切换过程。
+
+​		由于 RISC-V 没有为不同虚拟化软件设计专门的特权模式，而是设计了统一的特权模式，这说明它对 1类、 2类虚拟化软件都有很好的支持。 RISC-V 可以通过 CSR 寄存器注入中断，因此不需要为虚拟化而特殊设计中断控制器外设。此外，RISC-V 可直接借助特殊的寄存器位支持嵌套虚拟化，而 Aarch64 要等到 v8.3 版本之后才支持这个功能。RISC-V 的时钟和核间中断可通过 SBI 软件辅助完成，而 Aarch64 需要特殊设计的计时器外设来支持虚拟化功能。
+
+​		目前已有的虚拟化实现有 Xvisor 和 KVM 。其中 Xvisor 是1类虚拟化软件，而 KVM 属于2类。 Xvisor 起初设计是为了嵌入式硬件的虚拟化，KVM 则将 Linux 内核转变为一个虚拟化软件。
 
 
 
@@ -152,4 +186,5 @@ void sbi_console_putchar(int ch)
 1. [RISC-V特权等级与Linux内核的启动 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/164394603)
 2. [RISC-V基本介绍_辣椒油li的博客-CSDN博客_risc-v](https://blog.csdn.net/lijianyi0219/article/details/122634356)
 3. [RISC-V 特权指令结构 - orangeQWJ - 博客园 (cnblogs.com)](https://www.cnblogs.com/orangeQWJ/p/15912780.html)
-4. **The RISC-V Instruction Set Manual Volume II: Privileged Architecture**
+4. [闲聊RISC-V虚拟化（1）-CPU虚拟化 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/408197895)
+5. **The RISC-V Instruction Set Manual Volume II: Privileged Architecture**
