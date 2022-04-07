@@ -31,6 +31,7 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 \newcommand{\tildechar}{\raisebox{-0.35em}{\textasciitilde}}
 \usepackage[a4paper,hmargin=1.2in,vmargin=1in]{geometry}
 \usepackage{graphicx,tikz,float,subfig,multicol,makecell,multirow,longtable}
+\usepackage{verbatim}
 \usepackage[normalem]{ulem}
 \usepackage{CJKfntef}
 \usepackage[perpage]{footmisc}
@@ -96,7 +97,7 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 \vspace*{-5ex}
 \noindent\textrm{\hfill\textit{by #1}}
 \vspace*{2ex}\par}
-\renewcommand{\today}{2022年4月1日}
+%\renewcommand{\today}{2022年4月8日}
 
 \begin{document}
 \sffamily %为方便屏幕阅读，文档主要使用无衬线字体
@@ -113,366 +114,14 @@ Runikraft 是用Rust语言编写的能在RISC-V架构 + QEMU平台上运行unike
 安全性的同时，进一步简化了构建系统镜像的流程，加入了RISC-V支持，并且
 用Rust语言提供了更强的内核安全保证。
 \section{项目背景}
-\subsection{Rust语言}\sectionauthor{郭耸霄}
-
-Rust 是由 Mozilla 研究室
-主导开发的一门现代系统编程语言，自 2015 年 5 月发布 1.0 之后，一直以每 6 周
-一个小版本的开发进度稳定向前推进。语言设计上跟 C++ 一样强调零开销抽象和 RAII。
-拥有极小的运行时和高效的 C 绑定，使其运行效率与 C/C++ 一个级别，非常适合对性能
-要求较高的系统编程领域。利用强大的类型系统和独特的生命周期管理实现了编译期内存管理，
-保证内存安全和线程安全的同时使编译后的程序运行速度极快，Rust 还提供函数式编程语言
-的模式匹配和类型推导，让程序写起来更简洁优雅。\cite{bib:2-why-rust}
-总地来说，Rust是一门赋予每个人 构建可靠且高效软件能力的语言。\cite{bib:1-rust-lang}
-它具有以下三个方面的优越性。
-
-\subsubsection{高性能（Performance）}
-
-Rust 速度惊人且内存利用率极高。由于没有运行时和垃圾回收，它能够胜任对性能要求
-特别高的服务，可以在嵌入式设备上运行，还能轻松和其他语言集成。\cite{bib:1-rust-lang}
-
-\begin{itemize}
-\item 可执行文件：\\
-  Rust是编译语言，这意味着程序直接转换为可执行的机器代码，因此可以将程序作为单个
-  二进制文件进行部署；与 Python 和 Ruby 等解释型语言不同，无需随程序一起分发解释器，
-  大量库和依赖项，这是一大优势。与解释型语言相比，Rust 程序非常快。\cite{bib:4-rust-go-cmp}
-
-\item 对动态类型语言与静态类型的平衡\\
-  动态类型语言在调试、运行时具有不确定性，而静态类型的语言减少了程序理解的开销和动态
-  运行的不确定性，但并不是所有静态类型系统都是高效的。Rust的静态类型尽
-  最大努力避免程序员的麻烦，同时鼓励长期的可维护性。一些静态类型的语言给程序员带来了沉重的
-  负担，要求他们多次重复变量的类型，这阻碍了可读性和重构。其他静态类型的语言允许在全局进行
-  数据类型推断。虽然在最初的开发过程中很方便，但是这会降低编译器在类型不再匹配时提供有用的
-  错误信息的能力。Rust可以从这两种样式中学习，并要求顶层项具有显式类型，
-  同时允许在函数体内部进行类型推断。\cite{bib:3-why-rust-pop}
-
-\item 解决垃圾回收问题\\
-  Rust可以选择将数据存储在堆栈上还是堆上，并在编译时确定何时不再需要内存并可以对其进行清理。
-  这样可以有效利用内存，并实现更高性能的内存访问。Rust项目非常适合被其他编程语言通过外部功能接口用作库。
-  这使现有项目可以用快速的Rust代码替换对性能至关重要的代码，而不会产生其他系统编程语言固有的内存安全风险。
-  \cite{bib:3-why-rust-pop}
-\end{itemize}
-
-\subsubsection{可靠性（Reliability）}
-
-Rust 丰富的类型系统和所有权模型保证了内存安全和线程安全，让您在编译期就能够消除各种各样的错误。\cite{bib:1-rust-lang}
-
-\begin{itemize}
-\item 处理系统级编程\\
-  与其他系统级编程语言（例如C或C++）相比，Rust可以提供的最大好处是借阅检查器。
-  这是编译器的一部分，负责确保引用不会超出引用的数据寿命，并有助于消除由于内存不安全而导致的
-  所有类型的错误。与许多现有的系统编程语言不同，Rust不需要你将所有时间都花在细节上。当安全的Rust无法表达某些
-  概念时，可以使用不安全的 Rust。这样可以释放一些
-  额外的功能，但作为交换，程序员现在有责任确保代码真正安全。然后，可以将这种不安全的代码包装在
-  更高级别的抽象中，以确保抽象的所有使用都是安全的。\cite{bib:3-why-rust-pop}
-
-\item Concurrent programming made easier\\
-  Rust makes it easier to write concurrent programs by preventing data races at
-  compile time. Rust language can
-  check if we are performing any incorrect operations and inform
-  us at compile time.\cite{bib:6-why-rust-pop-2}
-\end{itemize}
-
-\subsubsection{生产力（Productivity）}
-
-Rust 拥有出色的文档、友好的编译器和清晰的错误提示信息，还集成了一流的工具——包管理器
-和构建工具， 智能地自动补全和类型检验的多编辑器支持， 以及自动格式化代码等等。\cite{bib:1-rust-lang}
-
-\begin{itemize}
-\item Cargo包管理器\\
-  Rust 由于有 Cargo 这样一个非常出色的包管理工具，周边的第三方库发展非常迅速，
-  各个领域都有比较成熟的库，比如 HTTP 库有 Hyper，异步 IO 库有 Tokio, mio 等，
-  基本上构建后端应用必须的库 Rust 都已经比较齐备。 总体来说，现阶段 Rust 定位的方向
-  还是高性能服务器端程序开发，另外类型系统和语法层面上的创新也使得其可以作为开发 DSL
-  的利器。\cite{bib:2-why-rust}\\
-\end{itemize}
-\subsubsection{Rust语言的兼容性}
-
-The Rust language is fast evolving, and because of this certain compatibility
-issues can arise, despite efforts to ensure forwards-compatibility wherever possible.
-
-Rust, like many programming languages, has the concept of ``keywords". These
-identifiers mean something to the language, and so you cannot use them in places
-like variable names, function names, and other places. Raw identifiers let you use
-keywords where they would not normally be allowed. This is particularly useful
-when Rust introduces new keywords, and a library using an older edition of Rust
-has a variable or function with the same name as a keyword introduced in a newer edition.\cite{bib:8-rust-compatibility}
-
-\subsubsection{相比其他语言Rust的优势}
-
-\begin{itemize}
-\item Go：Rust语言表达能力更强，性能更高，同时线程安全方面Rust也更强，不容易写出错误的代码，
-包管理Rust也更好，Go虽然在1.10版本后提供了包管理，但是目前还比不上Rust的。
-\item C++：与C++相比，Rust的性能相差无几，但是在安全性方面会更优，特别是使用第三方库时，
-Rust的严格要求会让第三方库的质量明显高很多。语言本身的学习，Rust的前中期学习曲线会更陡峭，
-但是对于未来使用场景和生态的学习，C++会更难、更复杂。
-\item Java：除了极少部分纯粹的数字计算性能，Rust的性能是全面领先于Java的，同时Rust占用内存小的多，
-因此实现同等规模的服务，Rust所需的硬件成本会显著降低。
-\item Python：性能自然是Rust完胜，同时Rust对运行环境要求较低，这两点差不多就足够抉择了，
-因为python和rust的彼此适用面其实不太冲突。\cite{bib:5-why-rust2}
-\end{itemize}
-
-\subsection{RISC-V指令集架构}\sectionauthor{张子辰}
-这一部分解释我们为什么要选择RISC-V架构，并且说明RISC-V相比所谓的“成熟”“生态好”
-的ARMv8没有任何劣势。
-
-\subsubsection{RISC-V的特点}
-RISC-V(“RISC five”)的目标是成为一个通用的指令集架构(ISA)：\cite{bib:risc-v-manual}
-\begin{itemize}
-\item 它要能适应包括从最袖珍的嵌入式控制器，到最快的高性能计算机等各种规模的
-处理器。
-\item 它应该能兼容各种流行的软件栈和编程语言。
-\item 它应该适应所有实现技术，包括现场可编程门阵列(FPGA)
- 、专用集成电路(ASIC) 、全定制芯片，甚至未来的设备技术。
-\item 它应该对所有微体系结构样式都有效:例如微编码或硬连线控制;顺序或乱序执行
-流水线; 单发射或超标量等等。
-\item 它应该支持广泛的专业化，成为定制加速器的基础，因为随着摩尔定律的消退，
-加速器的重要性日益提高。
-\item 它应该是稳定的，基础的指令集架构不应该改变。更重要的是，它不能像以前的
-专有指令集架构一样被弃用，例如AMD Am29000、Digital Alpha、Digital VAX、
-Hewlett Packard PA-RISC、Intel i860、Intel i960、Motorola 88000、以及Zilog
-Z8000。
-\end{itemize}
-
-RISC-V的不同寻常不仅在于它是一个最近诞生的指令集架构(它诞生于最近十
-年，而大多数其他指令集都诞生于20世纪70到80年代)，而且在于它是一个开源的指
-令集架构。与几乎所有的旧架构不同，它的未来不受任何单一公司的浮沉或一时兴起
-的决定的影响(这一点让许多过去的指令集架构都遭了殃)。它属于一个开放的，非
-营利性质的基金会。RISC-V基金会的目标是保持RISC-V的稳定性，仅仅出于技术原
-因缓慢而谨慎地发展它，并力图让它之于硬件如同Linux之于操作系统一样受欢迎。
-
-RISC-V的另一个不同寻常之处在于和几乎所
-有以往的ISA不同，它是\textit{模块化}的。它的核心是一个名为RV32I的基础ISA，
-运行一个完整的软件栈。RV32I是固定的，永远不会改变。这为编译器编写者，操作系统开发人员和汇
-编语言程序员提供了稳定的目标。模块化来源于可选的标准扩展，根据应用程序的需要，
-硬件可以包含或不包含这些扩展。这种模块化特性使得RISC-V具有了袖珍化、低能耗的特
-点，而这对于嵌入式应用可能至关重要。RISC-V编译器得知当前硬件包含哪些扩展后，便
-可以生成当前硬件条件下的最佳代码。惯例是把代表扩展的字母附加到指令集名称之后作
-为指示。例如，RV32IMFD将乘法(RV32M)，单精度浮点(RV32F)和双精度浮点
-(RV32D)的扩展添加到了基础指令集(RV32I)中。
-
-\subsubsection{RISC-V的支持}
-自诞生以来，RISC-V就得到了Google、华为、IBM、Microsoft、삼성等著名企业\cite{bib:risc-v-manual}和
-众多自由软件开发者的支持，所以RISC-V发展迅猛。
-尽管历史不长，RISC-V目前已经得到相当完善的软件和硬件方面的支持。
-在软件方面，GCC\cite{bib:riscv-gcc}和LLVM\cite{bib:riscv-llvm}都
-支持RISC-V架构，这一味着以LLVM为后端的
-rustc也支持RISC-V架构。Linux内核自4.15版开设支持RISC-V架构，
-到2020年底，Linux 5.10已经支持RISC-V架构的UEFI引导。\cite{bib:riscv-linux}
-在Debian发行版中，已经有超过95\%的软件包支持RISC-V架构。\cite{bib:riscv-debian}
-
-在硬件方面，目前已有相当多的RISC-V架构的处理器，比如：\cite{bib:riscv-support}
-\begin{itemize}
-\item The \href{https://beagleboard.org/beaglev}{BeagleV}, a low-cost single board computer than can run Linux
-\item The \href{https://www.sifive.com/boards/hifive1-rev-b}{HiFive1 Rev B} microcontroller
-\item The \href{https://www.seeedstudio.com/Perf-V-Based-on-Xilinx-Artix-7-FPGA-RISC-V-opensource-p-4058.html}{Seeed Studio Perf-V} based on a Xilinx Artix-7 RISC-V FPGA
-\item The \href{https://www.sparkfun.com/products/15594}{SparkFun RED-V RedBoard}, a microcontroller in an Arduino form factor
-\item The \href{https://www.digikey.ca/en/products/detail/groupgets-llc/LOFIVE-R1/10186935}{LoFive} RISC-V SoC evaluation kit
-\end{itemize}
-\subsubsection{RISC-V的优势}
-RISC-V在设计时考虑了成本、简洁性、性能、架构和具体实现的分离、提升空间、
-程序大小和易于编程/编译/链接七个因素，并且充分从过去的错误
-中吸取了教训：\cite{bib:risc-v-manual}
-\begin{longtable}{|p{0.08\linewidth}|*{3}{p{0.27\linewidth}|}}
-\hline
-&ARM-32 (1986)&x86-32 (1978)&RV32I (2011)\\\hline
-\endhead
-成本&必须支持整数乘除法&
-8 位以及 16 位操作、必须支持整数乘除法&
-无 8 位、16 位操作、可选的整数乘 除 法 支 持(RV32M)\\\hline
-简洁性&
-无零寄存器、条件指令执行、复杂的寻址模式、栈操作指令(push/pop)、算术/逻辑指令中存在移位&
-无零寄存器、复杂的过程调用指令(enter/leave)、栈指令(push/pop) 、复杂寻址模式、
-循环指令&
-  寄存器 x0 专门
-  用于存放常数 0、
-  立即数只进行符
-  号扩展 、一种数
-  据寻址模式、没
-  有条件执行、没
-  有复杂的函数调
-  用指令以及栈指
- 令、算术指令不
- 抛异常、使用单
- 独的移位指令来
- 处理移位操作\\\hline
-性能&
-分支指令使用条
- 件码、在不同格
- 式的指令中，源
- 和目的寄存器的
- 位置不同、加载
- 多个计算得到的
- 立即数、 PC 是一
- 个通用寄存器&
- 分支指令使用
-  条件码、每个指
-  令中最多只能
-  使用两个寄存
-  器&
-使用同一条指令
-实现比较及跳转
-(不使用条件
-码)、每条指令三
-个寄存器 、不能
-一次 load 多个数
-据、不同指令格
-式中，源及目的
-寄存器字段位置
-固定、立即数是
-常数(不是由计
-算得出的)、PC
-不是通用寄存器\\\hline
-架构和具体实现的分离&
-将 PC 像 普 通 寄
- 存器一样读写，
- 这样暴露了流水
- 线长度&
- 寄存器不是通
-  用
- 的
-  (AX，CX，DX，
-  DI，SI 有 特 殊 用
- 途)&
-不是通用寄存器
- 分支指令没有延
- 迟槽、Load 指令
- 无延迟槽、通用
- 寄存器\\\hline
-提升空间&
-有限的指令码空间&
-&
-大量可用的指令
-码空间位指令位\\\hline
-程序大小&
-仅 有 32bit 指 令
- (Thumb-2 是一个独立的ISA)&
- 仅 32bit 指 令&
- 32 位 指 令 +16 位
- RV32C 扩展\\\hline
-易于编程/编译/链接&
-仅 15 个寄存器、
- 内存数据必须对
- 齐、不规则的数
- 据寻址模式、不
- 一致的性能计数
- 器&
-  仅 8 个通用寄存器、
-  内存数据必须
-  对齐、不规则的
-  数据寻址模式、
-  不一致的性能
-  计数器&
- 31 个寄存器、数
- 据可用不对齐、
- PC 相对的数据
- 寻址模式 、对称
- 的数据寻址模
- 式、定义在架构
-中的性能计数器\\\hline
-\end{longtable}
-
-而且，从学习成本上看，RISC-V相比ARMv8和AMD64也有明显的优势：
-RISC-V的“规范”只有4卷，238\cite{bib:riscv-spec1}+155\cite{bib:riscv-spec2}+141\cite{bib:riscv-spec3}+80\cite{bib:riscv-spec4}=614页,
-AMD64的“程序员手册”有5卷，3273页\cite{bib:amd64-manual}\footnote{这是AMD提供的手册，
-Intel提供的手册更长，有4卷，4830页\cite{bib:amd64-manual-intel}}，ARMv8的“参考手册”更是
-长达11卷，11530页\cite{bib:armv8-reference}。按两分钟读一页，一天工作八小时，一周工作五天计算，
-读完RISC-V的手册需要不到三天，读完AMD64的手册需要将近三周，而读完AMDv8的手册需要两个多月。
-
-\subsection{Unikernel}
-Unikernel是专一用途的、单地址空间的轻量操作系统。Unikernels在虚拟机
-上运行时，能够提供比传统的容器更短的启动时间、更高的运行效率和更强的
-隔离性，因此unikernels通常被用在云计算领域。\cite{bib:unikernel}
-然而，为了追求轻量性，
-unikernels裁剪了传统的操作系统的众多组件，因此unikernels无法提供许多
-常用的库的应用程序接口，所以为了将现有的程序移植到某个unikernel平台，开发者
-不得不根据该unikernel的API重构程序。\cite{bib:unikraft}
-此外，为了轻量、快速，unikernels
-删去的许多基本的并且不会影响性能的安全措施，这导致unikernels相比容器
-更容易受到用户程序的安全漏洞的影响。\cite{bib:unikernel-secuirty}
-
-\noindent 目前已经有很多 Unikernel 项目，它们的实现方式大致可以分为两种：
-\begin{itemize}
-\item 全新的方式(Clean-slate)：在构建单一用途的操作系统的假设下，
-自由地使用现代工具来进行构建，比如模块化(modularity)、
-声明性代码(declarative code)、避开样板文件(avoiding boilerplate)等。
-并且从头开始思考操作系统和应用程序层的实现，
-使用高级语言进行系统库的编写，从而使得实现更加可掌控，得到的系统库质量更高。
-用 OCmal 语言编写的 MirageOS 就是使用 Clean-slate 方式实现的。
-\item 传统的方式(Legacy)：在不进行修改或只进行一些小的修改的前提下，
-运行现有的软件。这通常通过将现有的操作系统代码库重构到库操作系统中来实现。
-用 C 语言编写的 Rumprun 是使用 Legacy 方式实现的。
-\end{itemize}
-
-\noindent 现有的unikernels普遍存在以下问题：\cite{bib:unikraft}
-\begin{itemize}
-\item 编译它们并让它们达到高效率需要大量专业的工作，而且这些工作通常
-需要对每个目标应用程序重做。
-\item 它们通常不是POSIX兼容的，需要移植程序和语言环境。
-\end{itemize}
-
-\ref{subsec:famous-unikernel-projects}\ 小节将简要介绍我们小组详细调研的ClickOS、MirageOS、IncludeOS、Rusty-Hermit、Rumprun
-和Unikraft等六个目前仍然在维护的unikernel项目。
-
-\section{立项依据}\sectionauthor{张子辰}
-我们小组计划仿照Unikraft的架构，用Rust语言编写能在RISC-V架构+ QEMU平台上
-运行的unikernel——Runikraft。Runikraft的核心代码使用Rust编写，但
-允许用户代码使用任何语言编写
-%——只要它能够被编译成入口为\texttt{\_start}的目标代码
-。Runikraft强调构建系统镜像的简洁，用户只需要
-修改现有的项目的编译参数就可以构建基于Runikraft的系统镜像，而不必使用
-专用的工具链，更不需要重构代码。Runikraft是POSIX兼容的，所以它将支持
-内存管理、进程调度，甚至磁盘管理和进程通信。不过，这些功能都是可选的且可
-拓展的，如果用户不需要某项功能，他可以不将相关模块打包进系统镜像中，
-如果用户能够提供某些功能的更好实现，他可以用自己的实现替换原有的模块，
-甚至POSIX兼容层本身也是可选的，如果用户愿意为了效率重构代码，他也可以
-直接用Runikraft的专用API。
-Runikraft可以支持多进程，因为我们认为，将若干密切管理的程序打包到一个
-镜像会提高效率。
-与Unikraft一样，Runikraft在注重效率的同时兼顾安全性。我们计划实现
-ASLR、W\^{}X政策、保护页、stack canary四项安全技术。
-
-以往的unikernel项目的不足之处可以概况为（并不每个unikernel都有所有缺点）：
-\begin{itemize}
-\item 无法兼顾效率和兼容性；
-\item 系统内的组件耦合度过高，系统不易裁剪或拓展；
-\item 需要使用专用的工具构建系统镜像；
-\item 将安全性与隔离性等同，忽视了单个unikernel虚拟机的安全；
-\item 不支持RISC-V架构；
-\item 核心代码使用不安全的程序设计语言编写。
-\end{itemize}
-而我们的项目将不具有以上缺点。
-
-如果时间允许，我们还会尝试：
-\begin{enumerate}
-\item 支持更多架构，比如目前流行的AMD64和ARMv8；
-\item 支持在裸机上运行，虽然unikernel为云计算诞生，但这并不代表它只适合
-    云计算领域，事实上，任何专一用途的设备上的系统都可以是unikernel，
-    而且unikernels理论上可以具有比现有的实时系统更高效率；
-\item 支持调试，zos小组\textsuperscript{\ref{ssubsec:x-zos}}曾做过相关研究；
-\item 移植更多库。
-\end{enumerate}
-
-我们考虑过但最终不打算实现与Linux的二进制兼容，即
-unipanic\textsuperscript{\ref{ssubsec:x-unipanic}}小组的研究，因为
-我们认为不会出现需要移植无法获得源代码的程序的情况：
-\begin{itemize}
-\item 如果源代码因著作权问题无法获取，那移植二进制文件也会侵犯著作权；
-\item 如果源代码因软件无人维护无法获取，那这样的过时软件本身就不应该被继续使用。
-\end{itemize}
-
-在系统架构方面，我们将主要参考Unikraft，并少量参考MirageOS和RustyHermit；
-在技术方面，我们将参考Chen and Wu的\textit{rCore Tutorial Book}\cite{bib:rcore-os}。
-
-\section{前瞻性/重要性分析}\sectionauthor{张子辰}
-Rust和RISC-V都是新兴事物，并且它们都是在吸取旧事物的教训的基础上诞生的，
-而且，实践表明，两者都正在经历蓬勃的发展，并正在分别逐步取代旧事物。
-而unikernel本身也是比较新颖的操作系统结构，它在云计算领域正在逐步取代
-传统的容器，并且有在嵌入式领域取代传统的嵌入式实时系统的潜能。
-因此，用Rust在RISC-V上开发unikernel顺应了历史的趋势。
-
-此外，我们在开发的Runikraft将努力避免现有的unikernels的缺点，集中现有的unikernels
-的优点，所以，Runikraft在unikernel领域内部也属于新事物，它将能促进unikernel的发展。
-\section{相关工作}
+\subsection{操作系统的架构}
+\subsection{虚拟化}
+\subsubsection{虚拟机}
+\subsubsection{沙盒}
+\subsubsection{Unikernel}
+\subsection{Unikernel的研究与发展}
+\subsubsection{Unikernel面临的问题}
+\subsubsection{Unikernel的架构}
 \subsection{知名的Unikernel项目}\label{subsec:famous-unikernel-projects}
 本小节简要介绍我们详细了的六个近两年仍然在维护unikernel项目。在下面的介绍中，我们假定读者对
 unikernel已经有了基本的认知，因此我们略去了unikernels都具有的特性，比如启动时间短、
@@ -808,6 +457,374 @@ Intel CET、\texttt{FORTIFY\_SOURCE}、ARM SB等安全特性。\cite{bib:unikraf
 总的来说，Unikraft是我们发现的最好的unikernel项目，所以我们的项目将
 主要参考它。
 
+\subsubsection{比较}
+
+\section{立项依据}\sectionauthor{张子辰}
+我们小组计划仿照Unikraft的架构，用Rust语言编写能在RISC-V架构+ QEMU平台上
+运行的unikernel——Runikraft。Runikraft的核心代码使用Rust编写，但
+允许用户代码使用任何语言编写
+%——只要它能够被编译成入口为\texttt{\_start}的目标代码
+。Runikraft强调构建系统镜像的简洁，用户只需要
+修改现有的项目的编译参数就可以构建基于Runikraft的系统镜像，而不必使用
+专用的工具链，更不需要重构代码。Runikraft是POSIX兼容的，所以它将支持
+内存管理、进程调度，甚至磁盘管理和进程通信。不过，这些功能都是可选的且可
+拓展的，如果用户不需要某项功能，他可以不将相关模块打包进系统镜像中，
+如果用户能够提供某些功能的更好实现，他可以用自己的实现替换原有的模块，
+甚至POSIX兼容层本身也是可选的，如果用户愿意为了效率重构代码，他也可以
+直接用Runikraft的专用API。
+Runikraft可以支持多进程，因为我们认为，将若干密切管理的程序打包到一个
+镜像会提高效率。
+与Unikraft一样，Runikraft在注重效率的同时兼顾安全性。我们计划实现
+ASLR、W\^{}X政策、保护页、stack canary四项安全技术。
+
+以往的unikernel项目的不足之处可以概况为（并不每个unikernel都有所有缺点）：
+\begin{itemize}
+\item 无法兼顾效率和兼容性；
+\item 系统内的组件耦合度过高，系统不易裁剪或拓展；
+\item 需要使用专用的工具构建系统镜像；
+\item 将安全性与隔离性等同，忽视了单个unikernel虚拟机的安全；
+\item 不支持RISC-V架构；
+\item 核心代码使用不安全的程序设计语言编写。
+\end{itemize}
+而我们的项目将不具有以上缺点。
+
+如果时间允许，我们还会尝试：
+\begin{enumerate}
+\item 支持更多架构，比如目前流行的AMD64和ARMv8；
+\item 支持在裸机上运行，虽然unikernel为云计算诞生，但这并不代表它只适合
+    云计算领域，事实上，任何专一用途的设备上的系统都可以是unikernel，
+    而且unikernels理论上可以具有比现有的实时系统更高效率；
+\item 支持调试，zos小组\textsuperscript{\ref{ssubsec:x-zos}}曾做过相关研究；
+\item 移植更多库。
+\end{enumerate}
+
+我们考虑过但最终不打算实现与Linux的二进制兼容，即
+unipanic\textsuperscript{\ref{ssubsec:x-unipanic}}小组的研究，因为
+我们认为不会出现需要移植无法获得源代码的程序的情况：
+\begin{itemize}
+\item 如果源代码因著作权问题无法获取，那移植二进制文件也会侵犯著作权；
+\item 如果源代码因软件无人维护无法获取，那这样的过时软件本身就不应该被继续使用。
+\end{itemize}
+
+在系统架构方面，我们将主要参考Unikraft，并少量参考MirageOS和RustyHermit；
+在技术方面，我们将参考Chen and Wu的\textit{rCore Tutorial Book}\cite{bib:rcore-os}。
+\subsection{Rust语言}\sectionauthor{郭耸霄}
+
+Rust 是由 Mozilla 研究室
+主导开发的一门现代系统编程语言，自 2015 年 5 月发布 1.0 之后，一直以每 6 周
+一个小版本的开发进度稳定向前推进。语言设计上跟 C++ 一样强调零开销抽象和 RAII。
+拥有极小的运行时和高效的 C 绑定，使其运行效率与 C/C++ 一个级别，非常适合对性能
+要求较高的系统编程领域。利用强大的类型系统和独特的生命周期管理实现了编译期内存管理，
+保证内存安全和线程安全的同时使编译后的程序运行速度极快，Rust 还提供函数式编程语言
+的模式匹配和类型推导，让程序写起来更简洁优雅。\cite{bib:2-why-rust}
+总地来说，Rust是一门赋予每个人 构建可靠且高效软件能力的语言。\cite{bib:1-rust-lang}
+它具有以下三个方面的优越性。
+
+\subsubsection{高性能（Performance）}
+
+Rust 速度惊人且内存利用率极高。由于没有运行时和垃圾回收，它能够胜任对性能要求
+特别高的服务，可以在嵌入式设备上运行，还能轻松和其他语言集成。\cite{bib:1-rust-lang}
+
+\begin{itemize}
+\item 可执行文件：\\
+  Rust是编译语言，这意味着程序直接转换为可执行的机器代码，因此可以将程序作为单个
+  二进制文件进行部署；与 Python 和 Ruby 等解释型语言不同，无需随程序一起分发解释器，
+  大量库和依赖项，这是一大优势。与解释型语言相比，Rust 程序非常快。\cite{bib:4-rust-go-cmp}
+
+\item 对动态类型语言与静态类型的平衡\\
+  动态类型语言在调试、运行时具有不确定性，而静态类型的语言减少了程序理解的开销和动态
+  运行的不确定性，但并不是所有静态类型系统都是高效的。Rust的静态类型尽
+  最大努力避免程序员的麻烦，同时鼓励长期的可维护性。一些静态类型的语言给程序员带来了沉重的
+  负担，要求他们多次重复变量的类型，这阻碍了可读性和重构。其他静态类型的语言允许在全局进行
+  数据类型推断。虽然在最初的开发过程中很方便，但是这会降低编译器在类型不再匹配时提供有用的
+  错误信息的能力。Rust可以从这两种样式中学习，并要求顶层项具有显式类型，
+  同时允许在函数体内部进行类型推断。\cite{bib:3-why-rust-pop}
+
+\item 解决垃圾回收问题\\
+  Rust可以选择将数据存储在堆栈上还是堆上，并在编译时确定何时不再需要内存并可以对其进行清理。
+  这样可以有效利用内存，并实现更高性能的内存访问。Rust项目非常适合被其他编程语言通过外部功能接口用作库。
+  这使现有项目可以用快速的Rust代码替换对性能至关重要的代码，而不会产生其他系统编程语言固有的内存安全风险。
+  \cite{bib:3-why-rust-pop}
+\end{itemize}
+
+\subsubsection{可靠性（Reliability）}
+
+Rust 丰富的类型系统和所有权模型保证了内存安全和线程安全，让您在编译期就能够消除各种各样的错误。\cite{bib:1-rust-lang}
+
+\begin{itemize}
+\item 处理系统级编程\\
+  与其他系统级编程语言（例如C或C++）相比，Rust可以提供的最大好处是借阅检查器。
+  这是编译器的一部分，负责确保引用不会超出引用的数据寿命，并有助于消除由于内存不安全而导致的
+  所有类型的错误。与许多现有的系统编程语言不同，Rust不需要你将所有时间都花在细节上。当安全的Rust无法表达某些
+  概念时，可以使用不安全的 Rust。这样可以释放一些
+  额外的功能，但作为交换，程序员现在有责任确保代码真正安全。然后，可以将这种不安全的代码包装在
+  更高级别的抽象中，以确保抽象的所有使用都是安全的。\cite{bib:3-why-rust-pop}
+
+\item Concurrent programming made easier\\
+  Rust makes it easier to write concurrent programs by preventing data races at
+  compile time. Rust language can
+  check if we are performing any incorrect operations and inform
+  us at compile time.\cite{bib:6-why-rust-pop-2}
+\end{itemize}
+
+\subsubsection{生产力（Productivity）}
+
+Rust 拥有出色的文档、友好的编译器和清晰的错误提示信息，还集成了一流的工具——包管理器
+和构建工具， 智能地自动补全和类型检验的多编辑器支持， 以及自动格式化代码等等。\cite{bib:1-rust-lang}
+
+\begin{itemize}
+\item Cargo包管理器\\
+  Rust 由于有 Cargo 这样一个非常出色的包管理工具，周边的第三方库发展非常迅速，
+  各个领域都有比较成熟的库，比如 HTTP 库有 Hyper，异步 IO 库有 Tokio, mio 等，
+  基本上构建后端应用必须的库 Rust 都已经比较齐备。 总体来说，现阶段 Rust 定位的方向
+  还是高性能服务器端程序开发，另外类型系统和语法层面上的创新也使得其可以作为开发 DSL
+  的利器。\cite{bib:2-why-rust}\\
+\end{itemize}
+\subsubsection{Rust语言的兼容性}
+
+The Rust language is fast evolving, and because of this certain compatibility
+issues can arise, despite efforts to ensure forwards-compatibility wherever possible.
+
+Rust, like many programming languages, has the concept of ``keywords". These
+identifiers mean something to the language, and so you cannot use them in places
+like variable names, function names, and other places. Raw identifiers let you use
+keywords where they would not normally be allowed. This is particularly useful
+when Rust introduces new keywords, and a library using an older edition of Rust
+has a variable or function with the same name as a keyword introduced in a newer edition.\cite{bib:8-rust-compatibility}
+
+\subsubsection{相比其他语言Rust的优势}
+
+\begin{itemize}
+\item Go：Rust语言表达能力更强，性能更高，同时线程安全方面Rust也更强，不容易写出错误的代码，
+包管理Rust也更好，Go虽然在1.10版本后提供了包管理，但是目前还比不上Rust的。
+\item C++：与C++相比，Rust的性能相差无几，但是在安全性方面会更优，特别是使用第三方库时，
+Rust的严格要求会让第三方库的质量明显高很多。语言本身的学习，Rust的前中期学习曲线会更陡峭，
+但是对于未来使用场景和生态的学习，C++会更难、更复杂。
+\item Java：除了极少部分纯粹的数字计算性能，Rust的性能是全面领先于Java的，同时Rust占用内存小的多，
+因此实现同等规模的服务，Rust所需的硬件成本会显著降低。
+\item Python：性能自然是Rust完胜，同时Rust对运行环境要求较低，这两点差不多就足够抉择了，
+因为python和rust的彼此适用面其实不太冲突。\cite{bib:5-why-rust2}
+\end{itemize}
+
+\subsection{RISC-V指令集架构}\sectionauthor{张子辰}
+这一部分解释我们为什么要选择RISC-V架构，并且说明RISC-V相比所谓的“成熟”“生态好”
+的ARMv8没有任何劣势。
+
+\subsubsection{RISC-V的特点}
+RISC-V(“RISC five”)的目标是成为一个通用的指令集架构(ISA)：\cite{bib:risc-v-manual}
+\begin{itemize}
+\item 它要能适应包括从最袖珍的嵌入式控制器，到最快的高性能计算机等各种规模的
+处理器。
+\item 它应该能兼容各种流行的软件栈和编程语言。
+\item 它应该适应所有实现技术，包括现场可编程门阵列(FPGA)
+ 、专用集成电路(ASIC) 、全定制芯片，甚至未来的设备技术。
+\item 它应该对所有微体系结构样式都有效:例如微编码或硬连线控制;顺序或乱序执行
+流水线; 单发射或超标量等等。
+\item 它应该支持广泛的专业化，成为定制加速器的基础，因为随着摩尔定律的消退，
+加速器的重要性日益提高。
+\item 它应该是稳定的，基础的指令集架构不应该改变。更重要的是，它不能像以前的
+专有指令集架构一样被弃用，例如AMD Am29000、Digital Alpha、Digital VAX、
+Hewlett Packard PA-RISC、Intel i860、Intel i960、Motorola 88000、以及Zilog
+Z8000。
+\end{itemize}
+
+RISC-V的不同寻常不仅在于它是一个最近诞生的指令集架构(它诞生于最近十
+年，而大多数其他指令集都诞生于20世纪70到80年代)，而且在于它是一个开源的指
+令集架构。与几乎所有的旧架构不同，它的未来不受任何单一公司的浮沉或一时兴起
+的决定的影响(这一点让许多过去的指令集架构都遭了殃)。它属于一个开放的，非
+营利性质的基金会。RISC-V基金会的目标是保持RISC-V的稳定性，仅仅出于技术原
+因缓慢而谨慎地发展它，并力图让它之于硬件如同Linux之于操作系统一样受欢迎。
+
+RISC-V的另一个不同寻常之处在于和几乎所
+有以往的ISA不同，它是\textit{模块化}的。它的核心是一个名为RV32I的基础ISA，
+运行一个完整的软件栈。RV32I是固定的，永远不会改变。这为编译器编写者，操作系统开发人员和汇
+编语言程序员提供了稳定的目标。模块化来源于可选的标准扩展，根据应用程序的需要，
+硬件可以包含或不包含这些扩展。这种模块化特性使得RISC-V具有了袖珍化、低能耗的特
+点，而这对于嵌入式应用可能至关重要。RISC-V编译器得知当前硬件包含哪些扩展后，便
+可以生成当前硬件条件下的最佳代码。惯例是把代表扩展的字母附加到指令集名称之后作
+为指示。例如，RV32IMFD将乘法(RV32M)，单精度浮点(RV32F)和双精度浮点
+(RV32D)的扩展添加到了基础指令集(RV32I)中。
+
+\subsubsection{RISC-V的支持}
+自诞生以来，RISC-V就得到了Google、华为、IBM、Microsoft、삼성等著名企业\cite{bib:risc-v-manual}和
+众多自由软件开发者的支持，所以RISC-V发展迅猛。
+尽管历史不长，RISC-V目前已经得到相当完善的软件和硬件方面的支持。
+在软件方面，GCC\cite{bib:riscv-gcc}和LLVM\cite{bib:riscv-llvm}都
+支持RISC-V架构，这一味着以LLVM为后端的
+rustc也支持RISC-V架构。Linux内核自4.15版开设支持RISC-V架构，
+到2020年底，Linux 5.10已经支持RISC-V架构的UEFI引导。\cite{bib:riscv-linux}
+在Debian发行版中，已经有超过95\%的软件包支持RISC-V架构。\cite{bib:riscv-debian}
+
+在硬件方面，目前已有相当多的RISC-V架构的处理器，比如：\cite{bib:riscv-support}
+\begin{itemize}
+\item The \href{https://beagleboard.org/beaglev}{BeagleV}, a low-cost single board computer than can run Linux
+\item The \href{https://www.sifive.com/boards/hifive1-rev-b}{HiFive1 Rev B} microcontroller
+\item The \href{https://www.seeedstudio.com/Perf-V-Based-on-Xilinx-Artix-7-FPGA-RISC-V-opensource-p-4058.html}{Seeed Studio Perf-V} based on a Xilinx Artix-7 RISC-V FPGA
+\item The \href{https://www.sparkfun.com/products/15594}{SparkFun RED-V RedBoard}, a microcontroller in an Arduino form factor
+\item The \href{https://www.digikey.ca/en/products/detail/groupgets-llc/LOFIVE-R1/10186935}{LoFive} RISC-V SoC evaluation kit
+\end{itemize}
+\subsubsection{RISC-V的优势}
+RISC-V在设计时考虑了成本、简洁性、性能、架构和具体实现的分离、提升空间、
+程序大小和易于编程/编译/链接七个因素，并且充分从过去的错误
+中吸取了教训：\cite{bib:risc-v-manual}
+\begin{longtable}{|p{0.08\linewidth}|*{3}{p{0.27\linewidth}|}}
+\hline
+&ARM-32 (1986)&x86-32 (1978)&RV32I (2011)\\\hline
+\endhead
+成本&必须支持整数乘除法&
+8 位以及 16 位操作、必须支持整数乘除法&
+无 8 位、16 位操作、可选的整数乘 除 法 支 持(RV32M)\\\hline
+简洁性&
+无零寄存器、条件指令执行、复杂的寻址模式、栈操作指令(push/pop)、算术/逻辑指令中存在移位&
+无零寄存器、复杂的过程调用指令(enter/leave)、栈指令(push/pop) 、复杂寻址模式、
+循环指令&
+  寄存器 x0 专门
+  用于存放常数 0、
+  立即数只进行符
+  号扩展 、一种数
+  据寻址模式、没
+  有条件执行、没
+  有复杂的函数调
+  用指令以及栈指
+ 令、算术指令不
+ 抛异常、使用单
+ 独的移位指令来
+ 处理移位操作\\\hline
+性能&
+分支指令使用条
+ 件码、在不同格
+ 式的指令中，源
+ 和目的寄存器的
+ 位置不同、加载
+ 多个计算得到的
+ 立即数、 PC 是一
+ 个通用寄存器&
+ 分支指令使用
+  条件码、每个指
+  令中最多只能
+  使用两个寄存
+  器&
+使用同一条指令
+实现比较及跳转
+(不使用条件
+码)、每条指令三
+个寄存器 、不能
+一次 load 多个数
+据、不同指令格
+式中，源及目的
+寄存器字段位置
+固定、立即数是
+常数(不是由计
+算得出的)、PC
+不是通用寄存器\\\hline
+架构和具体实现的分离&
+将 PC 像 普 通 寄
+ 存器一样读写，
+ 这样暴露了流水
+ 线长度&
+ 寄存器不是通
+  用
+ 的
+  (AX，CX，DX，
+  DI，SI 有 特 殊 用
+ 途)&
+不是通用寄存器
+ 分支指令没有延
+ 迟槽、Load 指令
+ 无延迟槽、通用
+ 寄存器\\\hline
+提升空间&
+有限的指令码空间&
+&
+大量可用的指令
+码空间位指令位\\\hline
+程序大小&
+仅 有 32bit 指 令
+ (Thumb-2 是一个独立的ISA)&
+ 仅 32bit 指 令&
+ 32 位 指 令 +16 位
+ RV32C 扩展\\\hline
+易于编程/编译/链接&
+仅 15 个寄存器、
+ 内存数据必须对
+ 齐、不规则的数
+ 据寻址模式、不
+ 一致的性能计数
+ 器&
+  仅 8 个通用寄存器、
+  内存数据必须
+  对齐、不规则的
+  数据寻址模式、
+  不一致的性能
+  计数器&
+ 31 个寄存器、数
+ 据可用不对齐、
+ PC 相对的数据
+ 寻址模式 、对称
+ 的数据寻址模
+ 式、定义在架构
+中的性能计数器\\\hline
+\end{longtable}
+
+而且，从学习成本上看，RISC-V相比ARMv8和AMD64也有明显的优势：
+RISC-V的“规范”只有4卷，238\cite{bib:riscv-spec1}+155\cite{bib:riscv-spec2}+141\cite{bib:riscv-spec3}+80\cite{bib:riscv-spec4}=614页,
+AMD64的“程序员手册”有5卷，3273页\cite{bib:amd64-manual}\footnote{这是AMD提供的手册，
+Intel提供的手册更长，有4卷，4830页\cite{bib:amd64-manual-intel}}，ARMv8的“参考手册”更是
+长达11卷，11530页\cite{bib:armv8-reference}。按两分钟读一页，一天工作八小时，一周工作五天计算，
+读完RISC-V的手册需要不到三天，读完AMD64的手册需要将近三周，而读完AMDv8的手册需要两个多月。
+
+\subsection{Unikernel}
+Unikernel是专一用途的、单地址空间的轻量操作系统。Unikernels在虚拟机
+上运行时，能够提供比传统的容器更短的启动时间、更高的运行效率和更强的
+隔离性，因此unikernels通常被用在云计算领域。\cite{bib:unikernel}
+然而，为了追求轻量性，
+unikernels裁剪了传统的操作系统的众多组件，因此unikernels无法提供许多
+常用的库的应用程序接口，所以为了将现有的程序移植到某个unikernel平台，开发者
+不得不根据该unikernel的API重构程序。\cite{bib:unikraft}
+此外，为了轻量、快速，unikernels
+删去的许多基本的并且不会影响性能的安全措施，这导致unikernels相比容器
+更容易受到用户程序的安全漏洞的影响。\cite{bib:unikernel-secuirty}
+
+\noindent 目前已经有很多 Unikernel 项目，它们的实现方式大致可以分为两种：
+\begin{itemize}
+\item 全新的方式(Clean-slate)：在构建单一用途的操作系统的假设下，
+自由地使用现代工具来进行构建，比如模块化(modularity)、
+声明性代码(declarative code)、避开样板文件(avoiding boilerplate)等。
+并且从头开始思考操作系统和应用程序层的实现，
+使用高级语言进行系统库的编写，从而使得实现更加可掌控，得到的系统库质量更高。
+用 OCmal 语言编写的 MirageOS 就是使用 Clean-slate 方式实现的。
+\item 传统的方式(Legacy)：在不进行修改或只进行一些小的修改的前提下，
+运行现有的软件。这通常通过将现有的操作系统代码库重构到库操作系统中来实现。
+用 C 语言编写的 Rumprun 是使用 Legacy 方式实现的。
+\end{itemize}
+
+\noindent 现有的unikernels普遍存在以下问题：\cite{bib:unikraft}
+\begin{itemize}
+\item 编译它们并让它们达到高效率需要大量专业的工作，而且这些工作通常
+需要对每个目标应用程序重做。
+\item 它们通常不是POSIX兼容的，需要移植程序和语言环境。
+\end{itemize}
+
+\ref{subsec:famous-unikernel-projects}\ 小节将简要介绍我们小组详细调研的ClickOS、MirageOS、IncludeOS、Rusty-Hermit、Rumprun
+和Unikraft等六个目前仍然在维护的unikernel项目。
+
+
+\section{前瞻性/重要性分析}\sectionauthor{张子辰}
+Rust和RISC-V都是新兴事物，并且它们都是在吸取旧事物的教训的基础上诞生的，
+而且，实践表明，两者都正在经历蓬勃的发展，并正在分别逐步取代旧事物。
+而unikernel本身也是比较新颖的操作系统结构，它在云计算领域正在逐步取代
+传统的容器，并且有在嵌入式领域取代传统的嵌入式实时系统的潜能。
+因此，用Rust在RISC-V上开发unikernel顺应了历史的趋势。
+
+此外，我们在开发的Runikraft将努力避免现有的unikernels的缺点，集中现有的unikernels
+的优点，所以，Runikraft在unikernel领域内部也属于新事物，它将能促进unikernel的发展。
+\section{相关工作}
+\subsection{安全容器}
+\subsection{嵌入式系统}
+\subsection{实时系统}
+\subsection{用Rust编写的操作系统}
+
+\begin{comment}
 \subsection{往年Unikernel项目}\sectionauthor{吴骏东}
 本小节介绍往年的操作系统原理与设计(H)课程的与unikernel有关的项目，
 以体现我们的项目的独特之处。
@@ -1125,6 +1142,7 @@ vga 输出界面打印调试信息会造成很大的切换和检索的麻烦，�
 但想要在 Unikernel 运行中途添加调试信息输出或者更进一步的设置断点和
 逐句执行都还做不到。可以考虑添加交互式调试功能。
 \end{enumerate}
+\end{comment}
 
 \section*{许可协议}
 本文档以知识共享署名 4.0 国际 (CC BY 4.0)许可证发布。
