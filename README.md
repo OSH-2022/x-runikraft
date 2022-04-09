@@ -53,9 +53,9 @@ make doc
 
 ## License
 
-Most part of Runikraft is distributed under the BSD 3-Clause License; see `LICENSE` for details.
+Most of Runikraft is distributed under the BSD-3-Clause license; see `LICENSE` for details. Each source file should identify its license. Source files that do not identify a specific license are covered by the BSD-3-Clause license.
 
-The documentations and reports of Runikraft are distributed under the CC-BY-4.0 License; see `report/LICENSE` for details.
+The documentations and reports of Runikraft are distributed under the CC-BY-4.0 license; see `report/LICENSE` for details. 
 
 ## Contact Us
 
