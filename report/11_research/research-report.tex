@@ -234,6 +234,13 @@ unikernels裁剪了传统的操作系统的众多组件，因此unikernels无法
 用 C 语言编写的 Rumprun 是使用 Legacy 方式实现的。
 \end{itemize}
 
+\subsection{Unikernels面临的问题}
+Unikernel是为了解决容器的隔离性差和传统的虚拟机启动慢而诞生的，所以unikernels
+必须做到启动快、延迟低、吞吐量大。Unikernels的目标是取代容器，成为云计算领域的
+最佳选择，所以它们必须提供高效的网络支持。为了方便现有的程序移植到unikernels上，
+unikernel应该考虑兼容性问题，它们应该以最小的代价提供目前常用的系统APIs，并且
+移植目前常用的库。此外，unikernels的构建不应该过于繁琐。
+
 \subsection{知名的Unikernel项目}\label{subsec:famous-unikernel-projects}
 下面简要介绍我们详细调研了的七个近两年仍然在维护unikernel项目。
 
@@ -592,25 +599,25 @@ API&专用API&OCaml标准库，和大量其他用OCaml实现的库&不完整的C
 \end{longtable}
 \normalsize
 
-\subsection{Unikernels面临的问题}
-
-我们调研的unikernel项目的不足之处可以概括为（并不每个unikernel都有所有缺点）：
-\begin{itemize}
-\item 系统内的组件耦合度过高，系统不易裁剪或拓展。在拓展方面做得比较好的unikernels有
-MirageOS、Rumprun和Unikraft。
-\item 需要使用专用的工具构建系统镜像。对于只有几个源文件的小型项目，使用专用的工具并不
-是什么大问题，但是，对于由成千上万个源文件组成的大型项目，更改构建环境本身就是一项浩大
-的工程。目前，Nanos允许用户程序使用独立的工具构建，MirageOS和RustHermit的构建工具
-是它们的语言的默认工具。
-\item 将安全性与隔离性等同，忽视了单个unikernel虚拟机的安全。目前，在文档中明确提到
-安全措施的unikernels有RustyHermit、Nanos和Unikraft。
-\item 核心代码使用不安全的程序设计语言编写。使用安全的编程语言写的unikernels只有MirageOS和
-RustyHermit。用不安全的程序设计语言难以避免实现时引入的安全漏洞。
-\item 不支持RISC-V架构。目前只有Nanos支持RISC-V架构。
-\end{itemize}
-
-虽然说兼容性也是unikernels面临的一大问题，但是许多unikernels的开发者已经在尽力解决
-它，以至于目前的unikernels都提供了或多或少的C标准库支持。
+%\subsection{Unikernels面临的问题}
+%
+%我们调研的unikernel项目的不足之处可以概括为（并不每个unikernel都有所有缺点）：
+%\begin{itemize}
+%\item 系统内的组件耦合度过高，系统不易裁剪或拓展。在拓展方面做得比较好的unikernels有
+%MirageOS、Rumprun和Unikraft。
+%\item 需要使用专用的工具构建系统镜像。对于只有几个源文件的小型项目，使用专用的工具并不
+%是什么大问题，但是，对于由成千上万个源文件组成的大型项目，更改构建环境本身就是一项浩大
+%的工程。目前，Nanos允许用户程序使用独立的工具构建，MirageOS和RustHermit的构建工具
+%是它们的语言的默认工具。
+%\item 将安全性与隔离性等同，忽视了单个unikernel虚拟机的安全。目前，在文档中明确提到
+%安全措施的unikernels有RustyHermit、Nanos和Unikraft。
+%\item 核心代码使用不安全的程序设计语言编写。使用安全的编程语言写的unikernels只有MirageOS和
+%RustyHermit。用不安全的程序设计语言难以避免实现时引入的安全漏洞。
+%\item 不支持RISC-V架构。目前只有Nanos支持RISC-V架构。
+%\end{itemize}
+%
+%虽然说兼容性也是unikernels面临的一大问题，但是许多unikernels的开发者已经在尽力解决
+%它，以至于目前的unikernels都提供了或多或少的C标准库支持。
 
 \section{立项依据}\sectionauthor{张子辰}
 我们小组计划仿照Unikraft的架构，用Rust语言编写能在RISC-V架构+ QEMU平台上
