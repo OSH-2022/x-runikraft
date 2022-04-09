@@ -168,17 +168,74 @@ Runikraft 是用Rust语言编写的能在RISC-V架构 + QEMU平台上运行unike
 由于云计算上运行的用户程序对计算资源的提供商并不可信，所以，提供商希望将用户
 程序与系统的其他部分隔离，这就需要狭义上的虚拟机。
 
-最初的云计算服务就是向用户提供一台完整的虚拟机
+最初的云计算服务就是向用户提供一台完整的远程虚拟机。通常的远程虚拟机帮助用户提供
+网络服务，也就是作为服务器。服务器其实不需要每时每刻都保持运行，而只需要在有人请求这项网络
+服务时运行，但是为了确保网络服务的可用性，服务器必须保持开机，用户必须
+持续为这台作为服务器的远程虚拟机付费。为了更细粒度地分配计算资源，云计算服务的提供商
+推出了serverless服务。在serverless中，原本的服务器被拆分成若干“函数”，其实也就是
+一个响应网络请求的程序。当网络服务被请求时，这个程序被启动，响应这个请求，然后退出。
+如果最初的云服务方案，这需要一台虚拟机能够快速启动，可是传统的虚拟机无法满足要求。
 
-\subsubsection{沙盒}
+\subsubsection{容器}
+一种解决方案是不使用虚拟机，而使用更加轻量的方式实现隔离，比如容器。
+传统容器使用 Namespace/Cgroup 实现，这套容器技术实际上同样是从进程调度的角度入手，
+对内核进行的功能扩展，优势上来说，操作界面很 Linux、很方便，开销也很低，
+可以被用来无负担地套在已有应用外面来构建隔离的环境，并且它是纯软件方案，
+不和其他层面的物理机、虚拟机相冲突。然而，
+随着容器技术的不断发展，传统容器隔离性不足的缺陷逐渐暴露了出来。
+Namespace/Cgroup 是内核的一个部分，其中运行的容器仍然使用主机的 Linux 内核，他解决不了Linux内核中隔离性差的问题，攻击者可以利用Linux内核的漏洞来
+实施攻击，进而实现容器逃逸，然后便可以直接对宿主机进行攻击。
+
+基于操作系统本身的容器机制没办法解决安全性问题，需要一个隔离层；
+而虚拟机是一个现成的隔离层，AWS这样的云服务已经让全世界相信，
+对用户来说，“secure of VM” 是可以满足需求的；
+虚拟机里面只要有个内核，就可以支持 OCI 规范的语义，
+在内核上跑个 Linux 应用这并不太难实现。所以，安全容器的隔离层让应用的
+问题——不论是恶意攻击，还是意外错误——都不至于影响宿主机，
+也不会在不同的 Pod 之间相互影响。而且实际上，额外隔离层带来的影响并不仅是安全，
+对于调度、服务质量和应用信息的保护都有好处。目前的安全容器有两个主流实现：
+\begin{itemize}
+\item Kata Container 是MicroVM的一个经典的实现实现，它提供了一个MicroVM，
+并且有专门提供给 Kubernetes 使用的接口，有比较好的安全性和运行效率，
+现在已经开始逐步使用。但是其启动时间和内存占用与传统容器还有一定的差距。
+\item  gVisor 是基于进程虚拟化的容器实现，他拥有很好的隔离性，
+很小的内存占用和启动时间，但是系统调用效率不高。
+\end{itemize}
+
+容器虽然解决了传统虚拟机启动时间长的问题，但是无法兼顾效率和隔离性。
+
 \subsubsection{Unikernel}
-\subsection{Unikernel的研究与发展}
-\subsubsection{Unikernel面临的问题}
-\subsubsection{Unikernel的架构}
+Unikernel在MicroVM的基础上更进一步，它放弃了系统内的隔离，让用户程序
+和系统程序运行在同一个地址空间下，用户通过函数调用而不是系统调用使用
+系统提供的服务，这大幅提高了系统调用的效率。
+高效的系统调用甚至使unikernel的响应时间和吞吐率优于容器。
+由于unikernel本质上是运行在虚拟上
+的独立操作系统，它拥有良好的隔离性。Unikernel的系统镜像中只包含了用户程序
+需要的代码，这使unikernel的镜像非常轻量，甚至比传统的Docker容器还小。
+
+然而，为了追求轻量性，
+unikernels裁剪了传统的操作系统的众多组件，因此unikernels无法提供许多
+常用的库的应用程序接口，所以为了将现有的程序移植到某个unikernel平台，开发者
+不得不根据该unikernel的API重构程序。\cite{bib:unikraft}
+此外，为了轻量、快速，unikernels
+没有启用许多基本的并且不会影响性能的安全措施，这导致unikernels相比容器
+更容易受到用户程序的安全漏洞的影响。\cite{bib:unikernel-secuirty}
+
+目前的Unikernel 按实现方式大致可以分为两种：
+\begin{itemize}
+\item 全新的方式(Clean-slate)：在构建单一用途的操作系统的假设下，
+自由地使用现代工具来进行构建，比如模块化(modularity)、
+声明性代码(declarative code)、避开样板文件(avoiding boilerplate)等。
+并且从头开始思考操作系统和应用程序层的实现，
+使用高级语言进行系统库的编写，从而使得实现更加可掌控，得到的系统库质量更高。
+用 OCmal 语言编写的 MirageOS 就是使用 Clean-slate 方式实现的。
+\item 传统的方式(Legacy)：在不进行修改或只进行一些小的修改的前提下，
+运行现有的软件。这通常通过将现有的操作系统代码库重构到库操作系统中来实现。
+用 C 语言编写的 Rumprun 是使用 Legacy 方式实现的。
+\end{itemize}
+
 \subsection{知名的Unikernel项目}\label{subsec:famous-unikernel-projects}
-本小节简要介绍我们详细了的六个近两年仍然在维护unikernel项目。在下面的介绍中，我们假定读者对
-unikernel已经有了基本的认知，因此我们略去了unikernels都具有的特性，比如启动时间短、
-镜像小、延迟低、用在云计算领域。
+下面简要介绍我们详细调研了的七个近两年仍然在维护unikernel项目。
 
 \subsubsection{ClickOS}\sectionauthor{蓝俊玮}
 
@@ -378,7 +435,7 @@ Rumprun 也有一些限制：
 
 我在调研的过程中发现，rump kernel 的好多官方文档都会重定向到
 \url{https://rumpkernel.org}这个网址，而这个网址目前只有一些 IT News，
-并非和 rump kernel 相关的内容，所以\textit{猜测该项目目前已经无人维护}。
+并非和 rump kernel 相关的内容，所以猜测该项目目前已经无人维护。
 
 \subsubsection{Nanos}\sectionauthor{陈建绿}
 
@@ -511,6 +568,49 @@ Intel CET、\texttt{FORTIFY\_SOURCE}、ARM SB等安全特性。\cite{bib:unikraf
 主要参考它。
 
 \subsubsection{比较}
+表\ \ref{table:unikernel-compare}\ 比较了我们详细调研的unikernels。因为现有的
+资料并没有包含我们需要的所有信息，表中的一些信息是依靠阅读源代码获取的。
+\small
+\begin{longtable}{|c*{7}{|>{\centering\arraybackslash}p{0.095\linewidth}}|}
+\caption{Unikernels的比较}\label{table:unikernel-compare}\\
+\hline
+&ClickOS&\resizebox{\linewidth}{\height}{MirageOS}&\resizebox{\linewidth}{\height}{IncludeOS}&\resizebox{\linewidth}{\height}{RustyHermit}&Nanos&Rumprun&Unikraft\\\hline
+\endhead
+实现语言&C++&OCaml&C++&Rust&C&C&C\\\hline
+支持架构&x86-32、x86-64&x86-64、ARM-64&x86-32、x86-64、ARM-64&x86-64、ARM-64&x86-64、ARM-64、RISCV-64gc&x86-32、x86-64、ARM-64&x86-64、ARM-32、ARM-64\\\hline
+支持平台&Xen&KVM、Xen&KVM、Virtual Box、VMWare&QEMU、Uhyve&众多，包括但不限于Xen、KVM、WMWare、Virtual Box等&Xen、嵌入式设备&KVM、Xen、Solo5、Linux用户态\\\hline
+支持语言&C、C++&OCaml&C、C++&Rust、C、C++、Go、Fortran&众多，包括但不限于C、Go、PHP、Node、Ruby、Lua、Perl等，理论上支持任何ELF文件&众多，包括但不限于C、C++、Erlang、Go、Java、Javascript (node.js)、Python、Ruby 、Rust等&众多，包括但不限于C、C++、Go、Python、Ruby、Web Assembly、Lua等\\\hline
+构建系统&Click configuration language&Opam&Conan、CMake&cargo、CMake&系统与用户程序分别构建，系统使用Makefile构建&buildrump&Kraft、Kconfig\\\hline
+安全性&不详&用安全语言实现，支持random device&较差，甚至关闭了一些C++编译器支持的安全特性&
+用安全语言实现，支持堆栈保护、应用程序堆栈与操作系统库堆栈分离，有支持页保护的衍生作品&支持ASLR、页保护&有限，\texttt{.text}段不可写，有一定的堆保护，默认引入大量无用库&支持Stack SP、UBSAN、ARM BTI、PIE、Intel CET、random device等安全特性\\\hline
+API&专用API&OCaml标准库，和大量其他用OCaml实现的库&不完整的C、C++、POSIX API支持&Rust标准库，部分C、C++、Go、Fortran API&无，依靠系统调用与用户程序通信&C、POSIX API和大量软件包，默认开启系统调用&专用API、POSIX API、C API和众多库\\\hline
+网络&有&有&有&用smoltcp实现&有&有&可选择lwip和mtcp两种实现\\\hline
+内存管理&有&有，支持垃圾回收&有&有&有&有&有，可以选择多种分配器\\\hline
+线程管理&有&无抢占，有进程通信支持&有&有，支持优先级&有&无抢占&支持抢占和无抢占两种调度器，有进程通信支持\\\hline
+文件管理&无&支持FAT和mmap&支持mmap和读FAT32&可以支持多种文件系统后端，目前支持virtio-fs&有&有&支持9pfs和mmap\\\hline
+备注&基于MiniOS&&&&相比unikernel，Nanos更像一个微型内核&包含大量NetBSD的代码&\\\hline
+\end{longtable}
+\normalsize
+
+\subsection{Unikernels面临的问题}
+
+我们调研的unikernel项目的不足之处可以概括为（并不每个unikernel都有所有缺点）：
+\begin{itemize}
+\item 系统内的组件耦合度过高，系统不易裁剪或拓展。在拓展方面做得比较好的unikernels有
+MirageOS、Rumprun和Unikraft。
+\item 需要使用专用的工具构建系统镜像。对于只有几个源文件的小型项目，使用专用的工具并不
+是什么大问题，但是，对于由成千上万个源文件组成的大型项目，更改构建环境本身就是一项浩大
+的工程。目前，Nanos允许用户程序使用独立的工具构建，MirageOS和RustHermit的构建工具
+是它们的语言的默认工具。
+\item 将安全性与隔离性等同，忽视了单个unikernel虚拟机的安全。目前，在文档中明确提到
+安全措施的unikernels有RustyHermit、Nanos和Unikraft。
+\item 核心代码使用不安全的程序设计语言编写。使用安全的编程语言写的unikernels只有MirageOS和
+RustyHermit。用不安全的程序设计语言难以避免实现时引入的安全漏洞。
+\item 不支持RISC-V架构。目前只有Nanos支持RISC-V架构。
+\end{itemize}
+
+虽然说兼容性也是unikernels面临的一大问题，但是许多unikernels的开发者已经在尽力解决
+它，以至于目前的unikernels都提供了或多或少的C标准库支持。
 
 \section{立项依据}\sectionauthor{张子辰}
 我们小组计划仿照Unikraft的架构，用Rust语言编写能在RISC-V架构+ QEMU平台上
@@ -530,15 +630,7 @@ Runikraft可以支持多进程，因为我们认为，将若干密切管理的�
 与Unikraft一样，Runikraft在注重效率的同时兼顾安全性。我们计划实现
 ASLR、W\^{}X政策、保护页、stack canary四项安全技术。
 
-以往的unikernel项目的不足之处可以概况为（并不每个unikernel都有所有缺点）：
-\begin{itemize}
-\item 无法兼顾效率和兼容性；
-\item 系统内的组件耦合度过高，系统不易裁剪或拓展；
-\item 需要使用专用的工具构建系统镜像；
-\item 将安全性与隔离性等同，忽视了单个unikernel虚拟机的安全；
-\item 不支持RISC-V架构；
-\item 核心代码使用不安全的程序设计语言编写。
-\end{itemize}
+
 而我们的项目将不具有以上缺点。
 
 如果时间允许，我们还会尝试：
@@ -831,27 +923,8 @@ Intel提供的手册更长，有4卷，4830页\cite{bib:amd64-manual-intel}}，A
 \subsection{Unikernel}
 Unikernel是专一用途的、单地址空间的轻量操作系统。Unikernels在虚拟机
 上运行时，能够提供比传统的容器更短的启动时间、更高的运行效率和更强的
-隔离性，因此unikernels通常被用在云计算领域。\cite{bib:unikernel}
-然而，为了追求轻量性，
-unikernels裁剪了传统的操作系统的众多组件，因此unikernels无法提供许多
-常用的库的应用程序接口，所以为了将现有的程序移植到某个unikernel平台，开发者
-不得不根据该unikernel的API重构程序。\cite{bib:unikraft}
-此外，为了轻量、快速，unikernels
-删去的许多基本的并且不会影响性能的安全措施，这导致unikernels相比容器
-更容易受到用户程序的安全漏洞的影响。\cite{bib:unikernel-secuirty}
+隔离性，因rn此unikeels通常被用在云计算领域。\cite{bib:unikernel}
 
-\noindent 目前已经有很多 Unikernel 项目，它们的实现方式大致可以分为两种：
-\begin{itemize}
-\item 全新的方式(Clean-slate)：在构建单一用途的操作系统的假设下，
-自由地使用现代工具来进行构建，比如模块化(modularity)、
-声明性代码(declarative code)、避开样板文件(avoiding boilerplate)等。
-并且从头开始思考操作系统和应用程序层的实现，
-使用高级语言进行系统库的编写，从而使得实现更加可掌控，得到的系统库质量更高。
-用 OCmal 语言编写的 MirageOS 就是使用 Clean-slate 方式实现的。
-\item 传统的方式(Legacy)：在不进行修改或只进行一些小的修改的前提下，
-运行现有的软件。这通常通过将现有的操作系统代码库重构到库操作系统中来实现。
-用 C 语言编写的 Rumprun 是使用 Legacy 方式实现的。
-\end{itemize}
 
 \noindent 现有的unikernels普遍存在以下问题：\cite{bib:unikraft}
 \begin{itemize}
