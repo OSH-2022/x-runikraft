@@ -3,11 +3,11 @@
 % All rights reserved.
 
 % This file is part of Runikraft. Runikraft is free software,
-% which is released under the BSD 3-Clause License, see LICENSE for detail.
+% which is released under the BSD 3-Clause License, see LICENSE for details.
 % Runikraft is provided ``as is'', without any express or implied warrenties.
 
 % The reports of Runikraft are released under the Creative Commons
-% Attribution 4.0 International License; see report/LICENSE for detail.
+% Attribution 4.0 International License; see report/LICENSE for details.
 \documentclass[UTF8,fontset=none,linespread=1.15]{ctexart}
 \ctexset
 {
@@ -30,7 +30,8 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 %Computer Modern Unicode 的\textasciitilde和\~{}的高度相同，所以用\tildechar表示居中的波浪线~
 \newcommand{\tildechar}{\raisebox{-0.35em}{\textasciitilde}}
 \usepackage[a4paper,hmargin=1.2in,vmargin=1in]{geometry}
-\usepackage{graphicx,tikz,float,subfig,multicol,makecell,multirow,longtable}
+\usepackage{graphicx,tikz,float,multicol,makecell,multirow,longtable}
+\usepackage{verbatim}
 \usepackage[normalem]{ulem}
 \usepackage{CJKfntef}
 \usepackage[perpage]{footmisc}
@@ -43,6 +44,10 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 \titlerule*[5pt]{$\cdot$}\contentspage}
 \titlecontents{subsubsection}[7.2em]{}{\contentslabel{3.3em}}{}{%
 \titlerule*[5pt]{$\cdot$}\contentspage}
+
+%图表标题
+\usepackage{caption}
+\captionsetup{font={sf}}
 
 %代码环境
 \usepackage{listings}
@@ -156,8 +161,13 @@ Runikraft选择性地提供线程通信模块，如UNIX风格的信号（\texttt
 
 Runikraft还提供了一些工具模块，比如调试工具\texttt{rkdebug}、命令行参数分析工具\texttt{rkparam}。
 
-文件系统支持虽然是OS元件的一部分，但是考虑到文件系统之前的功能不尽相同，完全隐藏差异会影响用户的操作能力，
-所以OS元件层并没有提供统一的文件系统API。
+在 Unikraft 中,文件系统 API vfscore 是 POSIX 兼容层的一部分,我们沿用了它的设
+计,将 \texttt{vfscore} 放在了兼容层。Runikraft计划支持RAM上的临时文件系统和Plan 9 OS的9fps。
+
+位于最顶层的是语言标准库，这一层可以帮助Runikraft支持多种语言。
+虽然语言标准库层被画在了兼容层之上，但它其实是直接用OS元件层的APIs实现的，这能避免分层系统
+的低效。
+我们只打算实现Rust标准库和C标准库的部分内容。
 
 \section*{许可协议}
 本文档以知识共享署名 4.0 国际 (CC BY 4.0)许可证发布。
