@@ -163,7 +163,7 @@ Runikraft 是用Rust语言编写的能在RISC-V架构 + QEMU平台上运行unike
 得益于互联网技术的发展和云计算的兴起，在云计算中，用户通过网络操作远程的虚拟机，
 这些远程虚拟机可以向外界提供网络服务。
 
-\subsubsection{虚拟机}
+\subsubsection{虚拟机}\sectionauthor{张子辰}
 广义上的虚拟机是模拟硬件或解释高级语言的程序，比如Apple在两次macOS架构迁移时
 分别推出的Rosetta和Rosetta 2就是硬件模拟器，CPython就是高级语言解释器，
 而OpenJDK JRE可以视为硬件模拟器，只不过它模拟的是不存在的硬件。这三个示例
@@ -181,7 +181,7 @@ Runikraft 是用Rust语言编写的能在RISC-V架构 + QEMU平台上运行unike
 一个响应网络请求的程序。当网络服务被请求时，这个程序被启动，响应这个请求，然后退出。
 这需要一台虚拟机能够快速启动，可是传统的虚拟机无法满足要求。
 
-\subsubsection{容器}
+\subsubsection{容器}\sectionauthor{蓝俊玮}
 一种解决方案是不使用虚拟机，而使用更加轻量的方式实现隔离，比如容器。
 以Docker为代表的传统容器是为了便捷地打包程序及其依赖诞生的，而并不强调隔离性。
 传统容器使用 Namespace/Cgroup 实现，这套容器技术实际上是从进程调度的角度入手，
@@ -212,7 +212,7 @@ Namespace/Cgroup 是内核的一个部分，其中运行的容器仍然使用主
 
 容器虽然解决了传统虚拟机启动时间长的问题，但是无法兼顾效率和隔离性。
 
-\subsubsection{Unikernel}
+\subsubsection{Unikernel}\sectionauthor{张子辰 and 陈建绿}
 Unikernel在MicroVM的基础上更进一步，它放弃了运行在虚拟机上的系统内的隔离，让用户程序
 和系统程序运行在同一个地址空间下，用户通过函数调用（如\texttt{call}指令）
 而不是软中断或陷入（如\texttt{int}、\texttt{syscall}、\texttt{ecall}等指令）使用
@@ -583,12 +583,15 @@ Intel CET、ARM SB等安全特性。\cite{bib:unikraft-secuirty}
 %总的来说，Unikraft是我们发现的最好的unikernel项目，所以我们的项目将
 %主要参考它。
 
-\subsubsection{比较}
+\subsubsection{比较}\sectionauthor{张子辰}
 表\ \ref{table:unikernel-compare}\ 比较了我们详细调研的unikernels。因为现有的
 资料并没有包含我们需要的所有信息，表中的一些信息是依靠阅读源代码获取的。
 \small
 \begin{longtable}{|c*{7}{|>{\centering\arraybackslash}p{0.095\linewidth}}|}
 \caption{Unikernels的比较}\label{table:unikernel-compare}\\
+\hline
+&ClickOS&\resizebox{\linewidth}{\height}{MirageOS}&\resizebox{\linewidth}{\height}{IncludeOS}&\resizebox{\linewidth}{\height}{RustyHermit}&Nanos&Rumprun&Unikraft\\\hline
+\endfirsthead
 \hline
 &ClickOS&\resizebox{\linewidth}{\height}{MirageOS}&\resizebox{\linewidth}{\height}{IncludeOS}&\resizebox{\linewidth}{\height}{RustyHermit}&Nanos&Rumprun&Unikraft\\\hline
 \endhead
@@ -712,7 +715,7 @@ Unikernel是专一用途的、单地址空间的轻量操作系统。Unikernels�
 
 \section{前瞻性/重要性分析}
 
-\subsection{使用先进的工具构建}
+\subsection{使用先进的工具构建}\sectionauthor{郭耸霄 and 张子辰}
 
 Rust和RISC-V都是新兴事物，它们都是在吸取旧事物的教训的基础上诞生的，
 而且，实践表明，两者都正在经历蓬勃的发展，并正在分别逐步取代旧事物。
@@ -748,7 +751,7 @@ RISC-V是于2010年诞生自加州大学伯克利分校的精简指令集架构�
 目前的unikernel中，使用/支持两者中的一个的都很少，而根本没有将两者结合者。Runi\-kraft的
 亮点之一就是将两者结合。
 
-\subsection{模块化设计}
+\subsection{模块化设计}\sectionauthor{张子辰}
 目前的大多数unikernel强调“uni-”，它们的设计者认为这样有利于提高效率，
 所以系统被设计成了一个整体，这个整体向用户提供能够调用函数。具体的表现就是
 系统的源代码堆在一起，ClickOS、IncludeOS、MirageOS、RustyHermit都有这样
@@ -763,7 +766,7 @@ RISC-V是于2010年诞生自加州大学伯克利分校的精简指令集架构�
 
 \section{相关工作}
 
-\subsection{安全容器}
+\subsection{安全容器}\sectionauthor{蓝俊玮}
 《项目背景》中已指出，容器是云计算领域的常用的隔离手段，而由于容器并不是沙盒，
 它提供的隔离能力不足以运行潜在的恶意代码，安全容器应运而生。从设计目标看，安全
 容器的隔离能力与unikernels等同。安全容器的目标是能够直接运行ELF二进制文件，
@@ -797,7 +800,7 @@ gVisor的特点：\cite{bib:gvisor}
 \item[跨平台] Modern infrastructure spans multiple cloud services and data centers, often with a mix of managed services and virtualized or traditional servers. The pluggable platform architecture of gVisor allows it to run anywhere, enabling consistent security policies across multiple environments without having to rearchitect your infrastructure.
 \end{description}
 
-\subsection{嵌入式系统}
+\subsection{嵌入式系统}\sectionauthor{陈建绿}
 大部分unikernels只打算在虚拟机上运行，但是IncludeOS和Rumprun支持在嵌入式设备上运行，
 往年的ridiculous-includeos小组也做过将unikernel移植到嵌入式设备的研究。
 可见嵌入式设备也是unikernel潜在的应用领域。嵌入式系统的类型丰富多样，这里着重介绍物联网（IoT）系统。
@@ -836,6 +839,9 @@ Rust语言的目标之一就是取代C语言，成为用于系统开发的底层
 
 \begin{longtable}{|>{\bfseries}l|p{0.11\linewidth}|p{0.02\linewidth}|p{0.02\linewidth}|p{0.08\linewidth}|p{0.06\linewidth}|p{0.02\linewidth}|p{0.02\linewidth}|p{0.05\linewidth}|p{0.08\linewidth}|p{0.08\linewidth}|}
 \caption{用Rust实现的操作系统比较}\\
+\hline
+名称&\textbf{架构}&\textbf{纯} \rotatebox[origin=c]{-90}{\textbf{Rust}}&\textbf{活跃}&\textbf{内核架构}&\textbf{目标}&\textbf{用户态}&\rotatebox{-90}{\textbf{GUI}}&\textbf{贡献者数}&\textbf{文件系统}&\textbf{许可}\\\hline
+\endfirsthead
 \hline
 名称&\textbf{架构}&\textbf{纯} \rotatebox[origin=c]{-90}{\textbf{Rust}}&\textbf{活跃}&\textbf{内核架构}&\textbf{目标}&\textbf{用户态}&\rotatebox{-90}{\textbf{GUI}}&\textbf{贡献者数}&\textbf{文件系统}&\textbf{许可}\\\hline
 \endhead
