@@ -3,11 +3,11 @@
 % All rights reserved.
 
 % This file is part of Runikraft. Runikraft is free software,
-% which is released under the BSD 3-Clause License, see LICENSE for detail.
+% which is released under the BSD 3-Clause License, see LICENSE for details.
 % Runikraft is provided ``as is'', without any express or implied warrenties.
 
 % The reports of Runikraft are released under the Creative Commons
-% Attribution 4.0 International License; see report/LICENSE for detail.
+% Attribution 4.0 International License; see report/LICENSE for details.
 \documentclass[UTF8,fontset=none,linespread=1.15]{ctexart}
 \ctexset
 {
@@ -30,7 +30,7 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 %Computer Modern Unicode 的\textasciitilde和\~{}的高度相同，所以用\tildechar表示居中的波浪线~
 \newcommand{\tildechar}{\raisebox{-0.35em}{\textasciitilde}}
 \usepackage[a4paper,hmargin=1.2in,vmargin=1in]{geometry}
-\usepackage{graphicx,tikz,float,subfig,multicol,makecell,multirow,longtable}
+\usepackage{graphicx,tikz,float,multicol,makecell,multirow,longtable}
 \usepackage{verbatim}
 \usepackage[normalem]{ulem}
 \usepackage{CJKfntef}
@@ -44,6 +44,10 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 \titlerule*[5pt]{$\cdot$}\contentspage}
 \titlecontents{subsubsection}[7.2em]{}{\contentslabel{3.3em}}{}{%
 \titlerule*[5pt]{$\cdot$}\contentspage}
+
+%图表标题
+\usepackage{caption}
+\captionsetup{font={sf}}
 
 %代码环境
 \usepackage{listings}
@@ -97,7 +101,7 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 \vspace*{-5ex}
 \noindent\textrm{\hfill\textit{by #1}}
 \vspace*{2ex}\par}
-%\renewcommand{\today}{2022年4月8日}
+\renewcommand{\today}{2022年4月10日}
 
 \begin{document}
 \sffamily %为方便屏幕阅读，文档主要使用无衬线字体
@@ -122,8 +126,8 @@ Runikraft 是用Rust语言编写的能在RISC-V架构 + QEMU平台上运行unike
 随着操作系统的
 发展，分层系统出现了，这种系统被分割成若干层，最低层为硬件层，最高层为用户
 层，每一层都在较低层基础上实现，并为较高层提供一组能调用的程序集。分层系统
-简化了构造和调试系统的难度，并且有注意局部优化系统。
-然而合理的定义各层并不容易，有时低层组件可能需要
+简化了构建和调试系统的难度，并且有助于局部优化系统。
+然而合理地定义各层并不容易，有时低层组件可能需要
 高层组件提供的服务；而且分层会导致用户层执行的操作需要多次转发才能映射到硬件
 操作，效率稍差。
 
@@ -133,26 +137,27 @@ Runikraft 是用Rust语言编写的能在RISC-V架构 + QEMU平台上运行unike
 在用户态下的独立服务进程，这些服务进程依靠消息传递机制相互使用。微内核诞生后，原本
 的分层系统的内核被称为宏内核。典型的微内核的
 代码量在一万行以下，这有助于用形式化方法严格验证内核的正确性，确保内核没有安全漏洞
-和功能缺陷，与此同时，运行在用户态下的服务进程之间相对独立，进程的权限恰能提供
-相应的服务，一个进程的崩溃不会波及整个系统，所以微内核系统相比宏内核更安全、
+和功能缺陷。与此同时，运行在用户态下的服务进程之间相对独立，进程的权限恰能提供
+相应的服务，一个进程的崩溃不会波及整个系统。所以，微内核系统相比宏内核更安全、
 更健壮。虽然与宏内核相比，消息传递会降低系统模块之间的通信效率，但这可以通过共享内存缓解。
 
-受微内核系统的启发，宏内核系统引入了可加载内核模块，即运行一项服务在系统启动后链入内核，
-这样内核的核心组件只需要包含CPU调度、内存管理、进程通信等基本的功能，而其他内核功能可以
+受微内核系统的启发，宏内核系统引入了可加载内核模块，即一项服务可以在系统启动后随时链入内核，
+或从内核中卸载。
+这样，内核的核心组件只需要包含CPU调度、内存管理、进程通信等基本的功能，而其他内核功能可以
 根据需要启动。不过，与微内核不同，这些可加载内核模块运行在内核态，它们中的安全漏洞可以
 威胁整个内核。\cite{bib:os-concept}
 
 传统上，操作系统应该为用户程序提供尽可能全面的服务，并且要负责在用户程序和系统间、
 用户程序之间建立屏障，以防止用户程序的错误影响整个系统。但是，随着计算机的普及，
 专为一个用途建造的计算机愈来愈多，这些计算机上只会运行一个用户程序，而这个用户程序
-的崩溃也意味着系统的崩溃，所以传统操作系统中的隔离在这种高度专一的计算机中毫无意义，
+的崩溃也意味着系统的崩溃，所以传统操作系统中的隔离在这种高度专用的计算机中毫无意义，
 而消除隔离能减小上下文切换的开销，进而提高效率。当今，需要大量使用专用系统的领域
 包括物联网、工业控制和云计算。前两者主要需要实时系统，而后一者与虚拟化密切相关。
 
 \subsection{虚拟化}
-在1960s，大型机的运算速度已经远超过人类的操作速度，为了
+在1960s，大型机的运算速度已经远超过了人类的操作速度。为了
 充分利用大型机的算力，一台大型机配置了多个终端，多个用户可以同时通过终端与大型机交互，
-多个用户的程序轮转使用CPU时间，由于轮转速度很快，用户无法感受到自己的程序没有连续运行，
+多个用户的程序轮转使用CPU时间。由于轮转速度很快，用户无法感受到自己的程序没有连续运行，
 所以在每个用户看来，他都拥有一台计算机。这种运行在大型机上的分时系统是最初的虚拟化。
 然而，随着个人计算机的发展，这种基于分时系统的虚拟化逐渐没落。虚拟化的再次兴起
 得益于互联网技术的发展和云计算的兴起，在云计算中，用户通过网络操作远程的虚拟机，
@@ -161,12 +166,12 @@ Runikraft 是用Rust语言编写的能在RISC-V架构 + QEMU平台上运行unike
 \subsubsection{虚拟机}
 广义上的虚拟机是模拟硬件或解释高级语言的程序，比如Apple在两次macOS架构迁移时
 分别推出的Rosetta和Rosetta 2就是硬件模拟器，CPython就是高级语言解释器，
-而OpenJDK JRE可以视为硬件模拟器，不过它模拟的是不存在的硬件。不过，这些示例
-都侧重运行辅助程序，而几乎没有隔离措施。狭义的虚拟机是一个模拟完整的计算机系统
+而OpenJDK JRE可以视为硬件模拟器，只不过它模拟的是不存在的硬件。这三个示例
+都侧重协助运行程序，而几乎没有隔离措施。狭义的虚拟机是一个模拟完整的计算机系统
 的程序，在虚拟机上运行的系统看来，虚拟机和物理机没有明显区别，而且，虚拟机上
 运行的系统不能随意访问宿主机的资源，Virtual Box、WMWare就是这类虚拟机。
-由于云计算上运行的用户程序对计算资源的提供商并不可信，所以，提供商希望将用户
-程序与系统的其他部分隔离，这就需要狭义上的虚拟机。
+由于云计算平台上运行的用户程序对计算资源的提供商并不可信，所以，提供商希望将用户
+程序与系统的其他部分隔离。这需要狭义的虚拟机。
 
 最初的云计算服务就是向用户提供一台完整的远程虚拟机。通常的远程虚拟机帮助用户提供
 网络服务，也就是作为服务器。服务器其实不需要每时每刻都保持运行，而只需要在有人请求这项网络
@@ -174,32 +179,34 @@ Runikraft 是用Rust语言编写的能在RISC-V架构 + QEMU平台上运行unike
 持续为这台作为服务器的远程虚拟机付费。为了更细粒度地分配计算资源，云计算服务的提供商
 推出了serverless服务。在serverless中，原本的服务器被拆分成若干“函数”，其实也就是
 一个响应网络请求的程序。当网络服务被请求时，这个程序被启动，响应这个请求，然后退出。
-如果最初的云服务方案，这需要一台虚拟机能够快速启动，可是传统的虚拟机无法满足要求。
+这需要一台虚拟机能够快速启动，可是传统的虚拟机无法满足要求。
 
 \subsubsection{容器}
 一种解决方案是不使用虚拟机，而使用更加轻量的方式实现隔离，比如容器。
 以Docker为代表的传统容器是为了便捷地打包程序及其依赖诞生的，而并不强调隔离性。
-传统容器使用 Namespace/Cgroup 实现，这套容器技术实际上同样是从进程调度的角度入手，
-对内核进行的功能扩展，优势上来说，操作界面很 Linux、很方便，开销也很低，
-可以被用来无负担地套在已有应用外面来构建隔离的环境，并且它是纯软件方案，
+传统容器使用 Namespace/Cgroup 实现，这套容器技术实际上是从进程调度的角度入手，
+对内核进行的功能扩展。优势上来说，操作界面很 Linux、很方便，开销也很低，
+可以被用来无负担地套在已有应用外面来构建隔离的环境。并且它是纯软件方案，
 不和其他层面的物理机、虚拟机相冲突。然而，
 随着容器技术的不断发展，传统容器隔离性不足的缺陷逐渐暴露了出来。
-Namespace/Cgroup 是内核的一个部分，其中运行的容器仍然使用主机的 Linux 内核，他解决不了Linux内核中隔离性差的问题，攻击者可以利用Linux内核的漏洞来
-实施攻击，进而实现容器逃逸，然后便可以直接对宿主机进行攻击。\cite{bib:docker-security-selinux}
+Namespace/Cgroup 是内核的一个部分，其中运行的容器仍然使用主机的 Linux 内核，
+它解决不了Linux内核中隔离性差的问题，攻击者可以利用Linux内核的漏洞
+实现容器逃逸，然后便可以直接对宿主机进行攻击。\cite{bib:docker-security-selinux}
 
-基于操作系统本身的容器机制没办法解决安全性问题，需要一个隔离层；
+基于操作系统本身的容器机制没办法解决安全性问题，需要一个隔离层。
 而虚拟机是一个现成的隔离层，AWS这样的云服务已经让全世界相信，
-对用户来说，“secure of VM” 是可以满足需求的；
+对用户来说，“secure of VM” 是可以满足需求的。
 虚拟机里面只要有个内核，就可以支持 OCI 规范的语义，
-在内核上跑个 Linux 应用这并不太难实现。所以，安全容器的隔离层让应用的
+在内核上跑个 Linux 应用并不太难实现。所以，安全容器的隔离层让应用的
 问题——不论是恶意攻击，还是意外错误——都不至于影响宿主机，
 也不会在不同的 Pod 之间相互影响。而且实际上，额外隔离层带来的影响并不仅是安全，
 对于调度、服务质量和应用信息的保护都有好处。目前的安全容器有两个主流实现：
 \begin{itemize}
-\item \href{https://github.com/kata-containers/kata-containers}{Kata Container} 是MicroVM的一个经典的实现实现，它提供了一个MicroVM，
-并且有专门提供给 Kubernetes 使用的接口，有比较好的安全性和运行效率，
+\item \href{https://github.com/kata-containers/kata-containers}{Kata Container} 是MicroVM的一个经典的实现，它提供了一个MicroVM，
+并且有专门提供给 Kubernetes 的接口，有比较好的安全性和运行效率，
 现在已经开始逐步使用。但是其启动时间和内存占用与传统容器还有一定的差距。
-\item  \href{https://github.com/google/gvisor}{gVisor} 是基于进程虚拟化的容器实现，他拥有很好的隔离性，
+\item  \href{https://github.com/google/gvisor}{gVisor} 是
+基于进程虚拟化的容器实现，它拥有很好的隔离性，
 很小的内存占用和启动时间，但是系统调用效率不高。
 \end{itemize}
 
@@ -207,12 +214,13 @@ Namespace/Cgroup 是内核的一个部分，其中运行的容器仍然使用主
 
 \subsubsection{Unikernel}
 Unikernel在MicroVM的基础上更进一步，它放弃了运行在虚拟机上的系统内的隔离，让用户程序
-和系统程序运行在同一个地址空间下，用户通过函数调用而不是系统调用使用
-系统提供的服务，这大幅提高了系统调用的效率。
+和系统程序运行在同一个地址空间下，用户通过函数调用（如\texttt{call}指令）
+而不是软中断或陷入（如\texttt{int}、\texttt{syscall}、\texttt{ecall}等指令）使用
+系统提供的服务，这免去了上下文切换的开销，大幅提高了系统调用的效率。
 高效的系统调用甚至使unikernel的响应时间和吞吐率优于容器。
 由于unikernel本质上是运行在虚拟上
 的独立操作系统，它拥有良好的隔离性。Unikernel的系统镜像中只包含了用户程序
-需要的代码，这使unikernel的镜像非常轻量，甚至比传统的Docker容器还小。
+需要的代码，这使unikernel的镜像非常轻量，甚至比Docker镜像还小。
 
 然而，为了追求轻量性，
 unikernels裁剪了传统的操作系统的众多组件，因此unikernels无法提供许多
@@ -240,10 +248,10 @@ Unikernel是为了解决容器的隔离性差和传统的虚拟机启动慢而�
 必须做到启动快、延迟低、吞吐量大。Unikernels的目标是取代容器，成为云计算领域的
 最佳选择，所以它们必须提供高效的网络支持。为了方便现有的程序移植到unikernels上，
 unikernel应该考虑兼容性问题，它们应该以最小的代价提供目前常用的系统APIs，并且
-移植目前常用的库。此外，unikernels的构建不应该过于繁琐。
+移植目前常用的库。此外，unikernels镜像的构建不应该过于繁琐。
 
-\subsection{知名的Unikernel项目}\label{subsec:famous-unikernel-projects}
-下面简要介绍我们详细调研了的七个近两年仍然在维护unikernel项目。
+\subsection{知名的Unikernels}\label{subsec:famous-unikernel-projects}
+下面简要介绍我们详细调研了的七个近两年仍然在维护unikernels。
 
 \subsubsection{ClickOS}\sectionauthor{蓝俊玮}
 
@@ -316,7 +324,7 @@ IncludeOS可被视为低延迟，可预测的操作系统。
 \item 对网络的支持很好，与 Linux 相比表现出色。
 \item IncludeOS 系统作为一个整体进行编译和优化。在编译器和连接器阶段，
 优化器可以更多地了解整个系统正在做什么，并且有可能进一步优化。
-\item IncludeOS 中的所有 IRQ 处理程序将简单地(原子地)更新计数器，
+\item IncludeOS 中的所有 IRQ 处理程序简单地（原子地）更新计数器，
 并在有时间时将进一步的处理推迟到主事件循环。这消除了对上下文切换的需要，
 同时也消除了与并发相关的问题，如竞争条件。
 通过使所有 I/O 都是异步的，CPU 保持忙碌，这样就不会发生阻塞。
@@ -383,12 +391,12 @@ Java、 Javascript (node.js)、 Python、 Ruby 和 Rust 等语言编写的应用
 中可以找到用于 Rumprun 的现成软件包，比如 \texttt{LevelDB},
 \texttt{Memcached}, \texttt{nanomsg}, \texttt{Nginx} 和 \texttt{Redis}。
 
-\paragraph{1. Rump kernels 的相关介绍}\cite{bib:21-rump-kernel}\cite{bib:22-xen}
+\paragraph{1. Rump kernels}~
 
 Rump kernels 的组件来自未经修改的 NetBSD，由此开发者提供了一个 POSIX-y API。
 Rump Kernel 项目以一种可用于构建轻量级、特殊用途虚拟机的形式提供了 NetBSD 的
 模块化驱动程序。因为开发者没有做会将错误引入到应用程序运行时(application runtime)、
-libc 或驱动程序中的移植工作，所以程序可以很稳定地工作。
+libc 或驱动程序中的移植工作，所以程序可以很稳定地工作。\cite{bib:21-rump-kernel}
 \begin{figure}[!hbt]
 \includegraphics[width=\linewidth]{pictures/rumprun-1.png}
 \caption{Anykernel、
@@ -400,12 +408,12 @@ Rump kernel 和 Rumprun Unikernel 的关系}
 \hspace*{\fill}——维基百科
 \end{quote}
 
-\paragraph{2. Rumprun 的相关介绍}\cite{bib:23-mirageos}\cite{bib:24-rumrun}
+\paragraph{2. Rumprun}~
 
 Rumprun 可用于将几乎任何与 POSIX 兼容的程序转换为一个可工作的
 Unikernel。使用 Rumprun，理论上可以将 Linux 或者 类Unix系统上的大部分
 程序编译成 Unikernel。Rumprun 以开发 NetBSD 内核中的驱动程序并在用户空间
-中进行测试的需求为出发点，主要的工作是重构这个代码库，使其看起来像一个库操作系统。
+中进行测试的需求为出发点，主要的工作是重构这个代码库，使其看起来像一个库操作系统。\cite{bib:24-rumrun}
 
 \begin{figure}[!hbt]
 \begin{minipage}{0.49\linewidth}
@@ -447,7 +455,7 @@ Rumprun 也有一些限制：
 
 \subsubsection{Nanos}\sectionauthor{陈建绿}
 
-我在调研过程中发现一个比较新的正在开发中的 Unikernel：\href{https://github.com/nanovms/nanos}{Nanos(Github)}。下面是它的一些介绍：
+\href{https://github.com/nanovms/nanos}{Nanos(Github)}一个比较新的正在开发中的 Unikernel。
 
 \begin{itemize}
 \item Nanos 是一个新的内核，旨在虚拟化环境中运行一个且仅有一个应用程序。
@@ -458,10 +466,10 @@ Rumprun 也有一些限制：
 \item Nanos 并不打算在裸金属上运行，所以开发者努力使其内核\textit{尽可能简单}。
 \end{itemize}
 
-这也许会对我们的项目有所帮助。
+%这也许会对我们的项目有所帮助。
 
 \subsubsection{Unikraft}\sectionauthor{张子辰}
-Unikraft是一个比较新的unikernel。可以说，它在设计时就充分考虑
+Unikraft是一个比较新的unikernel。它在设计时就充分考虑
 了现有的unikernels的优缺点。它在保持unikernel的极简化、
 高效的同时，兼容了完整的POSIX兼容层，使开发者可以轻松地将现有的为Linux
 编写的代码移植到unikernel上。Unikraft由若干低耦合的模块组成，内存分配器、
@@ -479,22 +487,22 @@ Unikraft遵从如下设计原则：
 的微型库即可拓展它们功能。
 \end{itemize}
 
-目前，Unikraft已经SQLite, nginx, Redis等程序，C/C++, Go, Python, Ruby,
+目前，Unikraft已经支持SQLite, nginx, Redis等程序，C/C++, Go, Python, Ruby,
 Web Assembly and Lua等编程语言或运行环境。
 
 在架构方面，Unikraft融合了宏内核的单地址空间带来的高效性和微内核的模块化带来的
 可拓展性。OS的功能被分割成若干细粒子度的组件，而各个组件之间通过良定义的APIs
 通信。Unikraft用精心设计的APIs和静态链接获得高效率，而不是为了效率破坏API
 的边界。Unikraft大致分为两部分：
-\begin{itemize}
-\item \textbf{微型库}：微型库是实现一部分的Unikraft的APIs的软件组件，
+\begin{description}
+\item[微型库]微型库是实现一部分的Unikraft的APIs的软件组件，
 Unikraft的作者有意将它们分割到了不同的库中，并尽可能降低它们之间的依赖。
 实现相同APIs的微型库可以相互替换。比如，Unikraft内核就提供了多种实现
 \texttt{ukalloc}接口的内存分配器。
-\item \textbf{构建系统}：它为用户提供基于Kconfig的配置菜单\footnote{在实验1中，
+\item[构建系统]它为用户提供基于Kconfig的配置菜单\footnote{在实验1中，
 我们在定制Linux内核时，运行\texttt{make menuconfig}后看到的就是Kconfig菜单。}，
 用户可用它选择要用哪些微型库，要为哪个平台和哪个CPU架构构建。
-\end{itemize}
+\end{description}
 \begin{figure}[!hbt]
 \includegraphics[width=\linewidth]{pictures/Unikraft-architecture.png}
 \caption{Unikraft的架构（黑色框内的是APIs）允许用户程序接入不同层次的APIs，也
@@ -508,14 +516,13 @@ Unikraft的作者有意将它们分割到了不同的库中，并尽可能降低
 更高的吞吐量，因为在Unikraft中，系统调用是高效的函数调用。
 
 类似地，程序的开发者可以轻松选择合适的内存分配器（⑥）以达到最高效率，甚至
-在同一个unikernel中使用多种分配器（如为引导程序选择简单、快速的内存分配器，
-并为程序本身选用默认分配器）。
+在同一个unikernel中使用多种分配器。
 
 关注快速引导的开发者也可以使用自己的遵守\texttt{ukboot} API的引导代码（⑤）。
 对于网络密集型程序，开发者可以使用标准的套接字接口（②），或者使用更底层、更高效
 的\texttt{uknetdev} API（⑦）以便大幅提高吞吐量。
 
-类似地，数据库这样的硬盘密集型程序可以使用标志的\texttt{vfscore}微型库（③），
+类似地，数据库这样的硬盘密集型程序可以使用标准的\texttt{vfscore}微型库（③），
 或者用\texttt{ukblock} API提高吞吐量（⑧）。
 
 调度器也是可以插拔的（④），而且每个CPU核可以运行不同的调度器。
@@ -549,7 +556,7 @@ Unikraft在提升效率的同时兼顾了安全性。根据NCC Group\cite{bib:un
 %然后将计算结果通过网络发回，则它一定拥有读用户数据的权限。那么，
 %一旦这个 unikernel 存在安全漏洞，攻击者虽然不能控制 unikernel 所在的宿主机，
 %但足够窃取用户的数据。
-所以，我们不能片面地把安全性与隔离性等同。而且我们不能
+所以，不能片面地把安全性与隔离性等同。而且我们不能
 片面地认为使用 Rust 这样的安全的程序设计语言就能保证安全，
 因为完整的 unikernel 上不只包含安全的系统代码（或者说库代码），还包含可能不安全的用户代码，
 而后者可以导致整个系统不安全。因此，要实现安全的 unikernel，不能仅仅依靠安全的程序设计语言，
@@ -569,11 +576,12 @@ NCC Group提到了ASLR、分页保护（如W\^{}X政策、内部数据加固、�
 
 尽管 Unikraft 使用 C 语言实现，但它支持（或计划支持）
 \href{https://github.com/unikraft/unikraft/tree/staging/lib/uksp}{Stack SP}、
-\href{https://github.com/unikraft/unikraft/tree/staging/lib/ubsan}{UBSAN}、ARM PAuth、\href{https://github.com/unikraft/unikraft/pull/421}{ARM BTI}、\href{https://github.com/unikraft/unikraft/pull/191}{KASAN}、\href{https://github.com/unikraft/unikraft/pull/239}{PIE}、True Random Number Generator、ARM MTE、
-Intel CET、\texttt{FORTIFY\_SOURCE}、ARM SB等安全特性。\cite{bib:unikraft-secuirty}
+\href{https://github.com/unikraft/unikraft/tree/staging/lib/ubsan}{UBSAN}、
+\href{https://github.com/unikraft/unikraft/pull/421}{ARM BTI}、\href{https://github.com/unikraft/unikraft/pull/191}{KASAN}、\href{https://github.com/unikraft/unikraft/pull/239}{PIE}、True Random Number Generator、
+Intel CET、ARM SB等安全特性。\cite{bib:unikraft-secuirty}
 
-总的来说，Unikraft是我们发现的最好的unikernel项目，所以我们的项目将
-主要参考它。
+%总的来说，Unikraft是我们发现的最好的unikernel项目，所以我们的项目将
+%主要参考它。
 
 \subsubsection{比较}
 表\ \ref{table:unikernel-compare}\ 比较了我们详细调研的unikernels。因为现有的
@@ -618,13 +626,13 @@ RustyHermit。用不安全的程序设计语言难以避免实现时引入的安
 \item 不支持RISC-V架构。目前只有Nanos支持RISC-V架构。
 \end{itemize}
 虽然说兼容性也是unikernels的一大不足，但是许多unikernels的开发者已经在尽力解决
-它，以至于目前的unikernels都提供了或多或少的C标准库支持。
+它，以至于除了MirageOS外的unikernels都提供了或多或少的C标准库支持。
 
 Nanos在兼容性、易构建性方面做得都很好，也支持RISC-V架构，可是它似乎为了支持
 直接运行ELF文件，抛弃了unikernels的最重要的无系统调用的特性；Unikraft声称可
 配置为POSIX兼容，而且系统架构比较清晰，可惜它不支持RISC-V，而且镜像的构建需要专用
 工具。Nanos和Unikraft的共同缺陷是使用不安全的C语言编写。MirageOS使用安全的语言编写，
-并且有丰富的软件包资源，可是完全不支持现有的程序，想将程序移植到MirageOS上必须用OCaml
+并且有丰富的软件包资源，可是完全不支持现有的程序；想将程序移植到MirageOS上必须用OCaml
 重构程序。RustHermit是对用C语言实现的HermitCore的重构，我们受它的启发，也决定用Rust
 重构一个现有的unikernel。
 
@@ -664,13 +672,19 @@ Runikraft的目标是提供比较完整的POSIX兼容层、Linux兼容层和C标
 %\end{enumerate}
 
 我们考虑过改善unikernel的调试，即zos小组的研究，
-但是我们发现，QEMU事实上已经支持交互式的虚拟机调试。
+但是我们发现，QEMU事实上已经支持交互式的虚拟机调试了。
 
 我们考虑过但最终不打算实现与Linux的二进制兼容，即
 unipanic小组的研究，因为
 我们认为不会出现需要移植无法获得源代码的程序的情况：
 \begin{itemize}
-\item 如果源代码因著作权问题无法获取，那移植二进制文件也会侵犯著作权；
+\item 如果源代码因著作权问题无法获取，
+    \begin{enumerate}
+    \item 修改二进制文件移植，即把\texttt{syscall}指令替换为\texttt{jmp}
+    指令后移植。这样可以保持效率，但会侵犯著作权。
+    \item 直接移植未修改的二进制文件。这需要\texttt{syscall}，会引入上下文切换
+    开销，效率难以保证。
+    \end{enumerate}
 \item 如果源代码因软件无人维护无法获取，那这样的过时软件本身就不应该被继续使用。
 \end{itemize}
 
@@ -714,16 +728,24 @@ Rust 是由 Mozilla 研究室
 保证内存安全和线程安全的同时使编译后的程序运行速度极快，Rust 还提供函数式编程语言
 的模式匹配和类型推导，让程序写起来更简洁优雅。\cite{bib:2-why-rust}
 总地来说，Rust是一门赋予每个人 构建可靠且高效软件能力的语言。\cite{bib:1-rust-lang}
+Rust具有高性能、可靠性、生产力三方面的优势。
 
-RISC-V（“RISC five”）是于2010年诞生自加州大学伯克利分校的精简指令集架构（ISA），
+RISC-V是于2010年诞生自加州大学伯克利分校的精简指令集架构，
 它的目标是成为一个通用的指令集架构，它能适应包括从最袖珍的嵌入式控制器，
 到最快的高性能计算机等各种规模的处理器；它能兼容各种流行的软件栈和编程语言；
 它能适应所有实现技术，包括现场可编程门阵列(FPGA)
  、专用集成电路(ASIC) 、全定制芯片，甚至未来的设备技术；它对所有微体系结构样式都有效，
 例如微编码或硬连线控制、顺序或乱序执行流水线、单发射或超标量等；它支持广泛的专业化，
 成为定制加速器的基础；它是稳定的，基础的指令集架构不应该改变。\cite{bib:risc-v-manual}
+与以往的ISA不同，RISC-V是\textit{模块化}的。它的核心是一个名为RV32I的基础ISA，
+运行一个完整的软件栈。RV32I是固定的，永远不会改变。这为编译器编写者，操作系统开发人员和汇
+编语言程序员提供了稳定的目标。模块化来源于可选的标准扩展，根据应用程序的需要，
+硬件可以包含或不包含这些扩展。这种模块化特性使得RISC-V具有了袖珍化、低能耗的特
+点，而这对于嵌入式应用可能至关重要。RISC-V在设计时考虑了成本、简洁性、性能、
+架构和具体实现的分离、提升空间、
+程序大小和易于编程/编译/链接七个方面的因素。
 
-目前的unikernel中，使用/支持两者中的一个的都很少，而根本没有将两者结合者。Runikraft的
+目前的unikernel中，使用/支持两者中的一个的都很少，而根本没有将两者结合者。Runi\-kraft的
 亮点之一就是将两者结合。
 
 \subsection{模块化设计}
@@ -732,10 +754,11 @@ RISC-V（“RISC five”）是于2010年诞生自加州大学伯克利分校的�
 系统的源代码堆在一起，ClickOS、IncludeOS、MirageOS、RustyHermit都有这样
 的问题。系统缺乏明确的功能组件，所以系统必须作为一个整体维护。
 
-在Runikraft中，只有极少数平台层的代码被放到了系统的核心组件中，包括调度器、
-分配器在内的组件一律是micro-libraies。这些micro-libraires遵循一套明确
+在Runikraft中，只有极少数平台层的代码被放到了系统的核心组件中，而调度器、
+分配器等组件一律是micro-libraies。这些micro-libraires遵循一套明确
 定义的APIs，同一个系统模块可以有多种实现，用户可以轻松为自己的需求选择合适的系统组件的实现。
-Rust语言中的trait非常适合这种接口与实现分离的设计。此外，从Unikraft给出
+%Rust语言中的trait非常适合这种接口与实现分离的设计。
+从Unikraft给出
 的基准测试数据看，这种模块划分不会降低系统的效率。
 
 \section{相关工作}
@@ -761,9 +784,9 @@ blown virtual machines; standard interfaces make it easy to plug in and get star
 \end{description}
 
 gVisor的实现思路是半虚拟化操作系统，它在用户空间运行，以拦截系统调用的方式为
-应用程序提供服务。与传统容器相比，它的关键区别是没有简单地将应用程序的系统调用重定向
+应用程序提供服务。它与传统容器的关键区别是没有简单地将应用程序的系统调用重定向
 给宿主机内核，而是实现了大多数内核原语，并基于这些原语实现系统调用。gVisor与unikernel的
-关键区别是gVisor没有模拟硬件，而只是模拟了一个Linux内核；
+区别是gVisor没有模拟硬件，而只是模拟了一个Linux内核；
 unikernel本身是一个运行在虚拟硬件上的操作系统。
 gVisor的特点：\cite{bib:gvisor}
 \begin{description}
