@@ -52,6 +52,19 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 %代码环境
 \usepackage{listings}
 \lstset{basicstyle={\normalfont\ttfamily},breaklines,tabsize=4}
+\renewcommand{\lstlistingname}{代码}
+\renewcommand{\lstlistlistingname}{代码}
+%Rust
+\lstdefinelanguage{Rust}
+{
+    morekeywords={as,async,await,break,const,continue,crate,dyn,else,enum,extern,false,fn,for,if,impl,in,let,loop,match,mod,move,mut,pub,ref,return,Self,self,static,struct,super,trait,true,type,union,unsafe,use,where,while,abstract,become,box,do,final,macro,override,priv,try,typeof,unsized,virtual,yield},
+    sensitive=true,
+    morecomment=[l]{//},
+    morecomment=[s]{/*}{*/},
+    morestring=[b]{"},
+    morestring=[b]{'}
+}
+
 
 \usepackage{enumitem}
 \setlistdepth{5}
@@ -219,6 +232,7 @@ Runikraft还提供了一些工具模块，比如调试工具\texttt{rkdebug}、�
 虽然语言标准库层被画在了兼容层之上，但它其实是直接用OS元件层的APIs实现的，这能避免分层系统
 的低效。
 我们只打算实现Rust标准库和C标准库的部分内容。
+
 
 \section*{许可协议}
 本文档以知识共享署名 4.0 国际 (CC BY 4.0)许可证发布。
