@@ -113,6 +113,57 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 \tableofcontents
 
 \section{理论依据}
+\subsection{Rust Language}
+
+A language empowering everyone to build reliable and efficient software.
+
+\subsubsection{Advantages}
+\paragraph{Performance}Rust is blazingly fast and memory-efficient: with no runtime or garbage collector, it can power performance-critical services, run on embedded devices, and easily integrate with other languages.
+
+\paragraph{Reliability}Rust’s rich type system and ownership model guarantee memory-safety and thread-safety — enabling you to eliminate many classes of bugs at compile-time.
+
+\paragraph{Productivity}Rust has great documentation, a friendly compiler with useful error messages, and top-notch tooling — an integrated package manager and build tool, smart multi-editor support with auto-completion and type inspections, an auto-formatter, and more.
+
+\subsubsection{Applications}
+
+用Rust改写项目已经成为一种解决问题的有效手段，如zalando公司从Scala转向Rust的成功故事。\cite{3}
+
+\subsection{RISC-V Architecture}
+
+RISC-V is a free and open ISA enabling a new era of processor innovation through open standard collaboration.
+
+The RISC-V ISA delivers a new level of free, extensible software and hardware freedom on architecture, paving the way for the next 50 years of computing design and innovation.
+
+\subsubsection{Advantages}
+
+1. RISC（精简指令集计算）架构具有一组指令，因此高级语言编译器可以生成更有效的代码。
+2. 由于其简单性，它允许自由使用微处理器上的空间。
+3. 许多RISC处理器使用寄存器来传递参数和保存局部变量。
+4. RISC函数仅使用几个参数，而RISC处理器无法使用调用指令，因此，使用易于流水线化的固定长度指令。
+5. 操作速度可以最大化，执行时间可以最小化。
+6. 所需的指令格式数量很少，所需的指令数量和寻址方式也很少。\cite{4}
+
+\subsubsection{Applications}
+
+目前基于RISC-V架构的开源处理器有很多，既有标量处理器Rocket，也有超标量处理器BOOM，还有面向嵌入式领域的Z-scale、PicoRV32等。\cite{2}
+
+\subsection{QEMU}
+
+QEMU is a generic and open source machine emulator and virtualizer.
+
+When used as a machine emulator, QEMU can run OSes and programs made for one machine (e.g. an ARM board) on a different machine (e.g. your own PC). By using dynamic translation, it achieves very good performance.
+
+When used as a virtualizer, QEMU achieves near native performance by executing the guest code directly on the host CPU. QEMU supports virtualization when executing under the Xen hypervisor or using the KVM kernel module in Linux. When using KVM, QEMU can virtualize x86, server and embedded PowerPC, 64-bit POWER, S390, 32-bit and 64-bit ARM, and MIPS guests.\cite{1}
+
+\subsubsection{Advantages}
+
+\paragraph{Full-system emulation}Run operating systems for any machine, on any supported architecture.
+
+\paragraph{User-mode emulation}Run programs for another Linux/BSD target, on any supported architecture.
+
+\paragraph{Virtualization}Run KVM and Xen virtual machines with near native performance.\cite{1}
+
+
 \section{技术依据}
 \section{创新点}
 \section{概要设计}
@@ -132,12 +183,12 @@ Runikraft的架构与Unikraft几乎相同。
 \end{figure}
 平台层将不同的平台封装成通用的\texttt{rkplat} API，它提供与平台/架构密切相关的功能，
 比如外设驱动、外中断处理、内存分页、定时器、原子操作、内存屏障，我们只计划支持RISC-V+QEMU virt
-一种平台。如果时间不足，我们可以将现成的OpenSBI\cite{bib:sbi}\cite{bib:opensbi}封装成\texttt{rkplat} API。
+一种平台。如果时间不足，我们可以将现成的OpenSBI\cite{5}\cite{6}封装成\texttt{rkplat} API。
 
 \texttt{rknetdev}、\texttt{rkblkdev}、\texttt{rktime}、\texttt{rkswrand}、\texttt{rkboot}
 五个APIs的功能与平台密切相关，
 但是为了降低开发和维护难度，它们并没有直接实现，而是在\texttt{rkplat}提供的初级抽象的基础上实现。
-\texttt{rknetdev}和\texttt{rbblkdev}对应图\ \ref{fig:unikraft-arch}\ 的⑦和⑧，
+\texttt{rknetdev}和\texttt{rbblkdev}对应图\ \ref{fig:un{}ikraft-arch}\ 的⑦和⑧，
 它们分别提供网络设备和块设备的支持。
 %与Unikraft的实现类似，这两个APIs的构造函数的参数接受指向\texttt{trait RKplat}的指针。
 \texttt{rktime}提供获取和修改系统时间的API，\texttt{rkswrand}提供密码学安全的随机数，
@@ -200,9 +251,6 @@ Runikraft还提供了一些工具模块，比如调试工具\texttt{rkdebug}、�
 
 本许可证的全文位于：\\
 \centerline{\url{https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans}}
-
-\begin{thebibliography}{99}
-\bibitem{bib:sbi} \url{https://github.com/riscv-non-isa/riscv-sbi-doc/releases/tag/v1.0.0}
-\bibitem{bib:opensbi} \url{https://github.com/riscv-software-src/opensbi/releases/tag/v1.0}
-\end{thebibliography}
+\bibliographystyle{IEEEtran}
+\bibliography{feasibility-report}
 \end{document}
