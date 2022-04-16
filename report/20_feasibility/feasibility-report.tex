@@ -126,40 +126,129 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 \tableofcontents
 
 \section{理论依据}
-\subsection{Rust Language}
+我们的项目的可行性要点在于使用Rust语言改写与基于RISC-V架构开发，这两个新事物都有很多优点，而且已经有了很多应用。为了实现一个安全的Unikernel，在理论部分还需要考虑程序设计语言保证内存和线程安全的方式，以及架构对特权指令的支持。
 
-A language empowering everyone to build reliable and efficient software.
+Rust 所拥有的语言特性，使得它能够保证内存安全和线程安全，而且它的速度和C/C++同级；同时 Rust 支持与外部代码进行交互以及 unsafe Rust，这也增加了它的灵活性。因此我们可以自信地说，使用 Rust 编写操作系统是十分可行的。
 
-\subsubsection{Advantages}
-\paragraph{Performance}Rust is blazingly fast and memory-efficient: with no runtime or garbage collector, it can power performance-critical services, run on embedded devices, and easily integrate with other languages.
+\textbf{Rust Language}
 
-\paragraph{Reliability}Rust’s rich type system and ownership model guarantee memory-safety and thread-safety — enabling you to eliminate many classes of bugs at compile-time.
+A language empowering everyone to build reliable and efficient software.\cite{7}用Rust改写项目已经成为一种解决问题的有效手段，如zalando公司从Scala转向Rust的成功故事。\cite{3}
 
-\paragraph{Productivity}Rust has great documentation, a friendly compiler with useful error messages, and top-notch tooling — an integrated package manager and build tool, smart multi-editor support with auto-completion and type inspections, an auto-formatter, and more.
+\textbf{RISC-V Architecture}
 
-\subsubsection{Applications}
+RISC-V is a free and open ISA enabling a new era of processor innovation through open standard collaboration.\cite{0}目前基于RISC-V架构的开源处理器有很多，既有标量处理器Rocket，也有超标量处理器BOOM，还有面向嵌入式领域的Z-scale、PicoRV32等。\cite{2}
+\subsection{Rust保证内存安全的方式}
+在高级语言中，某个内存位置要在程序中能被访问，必然就会与一个或多个变量建立关联关系。这会引出内存的不正确访问引发的内存安全问题。这些问题在C/C++中都是需要开发者非常小心地自己处理。而 Rust 的语言特性则为上面的问题提供了解决方案。\cite{8}
+\begin{table}[H]
+\centering
+\caption{Rust对内存安全问题的解决方案}
+\begin{tabular}{|c|c|}
+\hline
+\textbf{问题} & \textbf{Rust 的解决方案}\\\hline
+使用未初始化内存&编译器禁止变量读取未赋值变量\\\hline
+对空指针解引用&使用\texttt{Option}枚举替代空指针\\\hline
+悬垂指针&生命周期标识与编译器检查\\\hline
+缓冲区溢出&编译器检查，拒绝超越缓冲区边界的数据访问\\\hline
+非法释放内存&语言级的 RAII 机制，唯一的所有者才有权释放内存\\\hline
+\end{tabular}
+\end{table}
+\subsection{Rust保证线程安全的方式}
+Rust 通过一整套设计非常精良的基础设施来保证这一点，这些基础设施配合类型检查和借用模型“强迫”程序员写出正确的代码，把别的语言在运行时的崩溃或泄露暴露在编译期，从而保证线程安全。
 
-用Rust改写项目已经成为一种解决问题的有效手段，如zalando公司从Scala转向Rust的成功故事。\cite{3}
+\textbf{基础设施}
 
-\subsection{RISC-V Architecture}
+1. 进行语义限制的\texttt{Send} / \texttt{Sync} 、\texttt{Trait}。
 
-RISC-V is a free and open ISA enabling a new era of processor innovation through open standard collaboration.
+2. 共享不可变所有权的\texttt{Arc} (\texttt{Rc}的多线程版本)。
 
-The RISC-V ISA delivers a new level of free, extensible software and hardware freedom on architecture, paving the way for the next 50 years of computing design and innovation.
+3. 提供内部可变性的\texttt{Mutex} / \texttt{Rwlock}。
 
-\subsubsection{Advantages}
+4. 管道模型\texttt{channel}。
 
-1. RISC（精简指令集计算）架构具有一组指令，因此高级语言编译器可以生成更有效的代码。
-2. 由于其简单性，它允许自由使用微处理器上的空间。
-3. 许多RISC处理器使用寄存器来传递参数和保存局部变量。
-4. RISC函数仅使用几个参数，而RISC处理器无法使用调用指令，因此，使用易于流水线化的固定长度指令。
-5. 操作速度可以最大化，执行时间可以最小化。
-6. 所需的指令格式数量很少，所需的指令数量和寻址方式也很少。\cite{4}
+5. 其他的一些线程相关的API。
 
-\subsubsection{Applications}
+\textbf{线程相关的常见API与设施}
 
-目前基于RISC-V架构的开源处理器有很多，既有标量处理器Rocket，也有超标量处理器BOOM，还有面向嵌入式领域的Z-scale、PicoRV32等。\cite{2}
+1. \texttt{std::thread::spawn}，\texttt{spawn}接收一个闭包并执行,返回一个\texttt{JoinHandle}类型的值，它拥有线程所有权；
 
+2. \texttt{join()}函数，该函数作用在线程句柄\texttt{JoinHandle}类型的值上，使得父线程能够等待子线程执行完毕；
+
+3. \texttt{move}+闭包，\texttt{move}闭包常常与\texttt{thread}和\texttt{spawn}一起使用，它允许我们在一个线程中使用另外一个线程的数据，使用\texttt{move}关键字强制闭包获取其使用的环境值的所有权。
+
+Rust 所拥有的这些设施以及自身的特性可以让我们编写出正确的代码从而保证线程安全。\cite{9}
+
+\subsection{RISC-V对特权指令的支持}
+截至目前(2022.4)，RISC-V 共定义了四个特权级别，由高到低排列顺次为：
+
+\textbf{机器级别（M）}：RISC-V中硬件线程可以执行的最高权限模式。在M模式下运行的 hart 对内存、I/O 和一些对于启动和配置系统来说必要的底层功能有着完全的使用权。因此它是唯一所有标准 RISC-V 处理器都必须实现的权限模式。\cite{a}
+
+\textbf{超级监管者级别（H）}：为了支持虚拟机监视器。但目前该级别并没有被正式加入到文档中。
+
+\textbf{监管者级别（S）}：为了支持现代类 Unix 操作系统，如 Linux ， FreeBSD 和 Windows 。
+
+\textbf{用户级别（U）}：用于运行应用程序，适用于安全嵌入式系统。
+
+标准的 RISC-V 为超过4000个 CSR 预留了12位的编码空间([11：0])。其中，[11：8] 位根据特权级别对 CSR 的读写权限进行编码。注意：任何试图访问不存在的 CSR 的行为均会引发指令异常，尝试写入只读寄存器也会引发指令异常。剩余的8位编码 [7 :  0] 将指定相应的寄存器地址位置。具体细节如下所示：\cite{b}\cite{c}
+
+\begin{lstlisting}[numbers=left]
+CSR [11:10]：对读写模式进行约束
+00		read/write
+01		read/write
+10		read/write
+11		read-only
+CSR [9:8]：对访问最低权限进行约束
+00		Unprivileged and User-Level CSRs
+01		Supervisor-Level CSRs
+10		Hypervisor and VS CSRs
+11		Machine-Level CSRs
+\end{lstlisting}
+除目前 RISC-V 支持的特权指令格式外，\texttt{ECALL}指令在Linux中用于系统调用。如下为\texttt{arch/riscv/kernel/sbi.c}中的部分代码，使用\texttt{ECALL}指令时，将异常类型写在a7 寄存器， 参数写在 a0-a5 寄存器，后面会根据异常类型的不同调用不同的异常处理函数。
+​		例如实现一个putchar函数用于打印一个字符到系统控制台上，就如下通过ECALL来实现：
+\begin{lstlisting}[numbers=left]
+void sbi_console_putchar(int ch)
+{
+	sbi_ecall(SBI_EXT_0_1_CONSOLE_PUTCHAR, 0, ch, 0, 0, 0, 0, 0);
+}
+\end{lstlisting}
+\section{技术依据}
+我们的项目是使用 Rust 改写 Unikraft，来实现一个Unikernel。而 Unikraft 是使用 C 编写的，故我们在实现的过程中可能会因为某些原因保留少部分 C 代码，因此需要在 Rust 中调用这部分外部代码，即要实现 Rust 与 C 的交互。由于RISC-V开发板难以获得，我们决定在虚拟环境上搭建RISC-V架构。KVM恰满足了我们的需求。为了更方便地运行与调试KVM程序，我们决定使用QEMU。
+\subsection{Rust与C交互}
+Rust 中提供了\texttt{extern}关键字来简化创建和使用外部接口（Foreign Function Interface, FFI）的过程。FFI 是编程语言定义函数的一种方式，它允许其他（外部的）编程语言来调用这些函数。
+下面是一个集成了C标准库中的\texttt{abs}函数的示例代码：
+\begin{lstlisting}[numbers=left]
+extern "C" {
+	fn abs(input: i32) -> i32;
+}
+fn main(){
+	unsafe {
+		println!("Absolue value of -3 according to C: {}", abs(-3));
+	}
+}
+\end{lstlisting}
+这段代码在\texttt{extern "C"}块中列出了它想要调用的外部函数和签名，其中的\texttt{"C"}指明了外部函数使用的应用二进制接口（Application Binary Interface, ABI）：它被用来定义函数在汇编层面的调用方式。
+
+要在其他语言中调用 Rust 函数，同样可以使用\texttt{extern}来创建一个允许其他语言调用 Rust 函数的接口。创建时需要将\texttt{extern}关键字及对应的 ABI 添加到函数签名的\texttt{fn}关键字前，并为该函数添加\texttt{\#[no\_mangle]}注解来避免 Rust 在编译时改变它的名称。下面是一个可以在编译并链接后被 C 语言代码访问的函数定义：
+\begin{lstlisting}[numbers=left]
+#[no_mangle]
+pub extern "C" fn call_from_c() {
+	println!("Just called a Rust function from C!");
+}
+\end{lstlisting}
+这一类型的\texttt{extern}功能不需要使用\texttt{unsafe}。
+\subsection{KVM对RISC-V架构的支持}
+KVM (Kernel-based Virtual Machine，基于内核的虚拟机)  ，是一种内建于 Linux 中的开源虚拟化技术。具体而言，KVM 可以将 Linux 转变为虚拟监控程序，从而使主机计算机能够运行多个隔离的虚拟环境，即虚拟客户机或虚拟机（VM）。
+\begin{figure}[!hbt]
+	\centering
+	\includegraphics[width=0.7\linewidth]{assets/W4}
+	\caption{虚拟化下的特权等级}
+	\label{fig:w4}
+\end{figure}
+
+如图\ref{fig:w4}，为了支持虚拟化，RISC-V 规范定义了 RISC-V H-extension ，在原来的3级特权架构的基础上对原有的 Supervisor 模式进行了扩展，引入了 Hypervisor-Extended Supervisor mode(HS)。此时，在 Machine Mode 下运行最高优先级的、对全部资源具备操作能力的 Firmware ，虚拟机软件 Hypervisor 运行在 HS 模式，虚拟机 VM 运行在虚拟化的 Supervisor 模式，应用程序继续运行在虚拟操作系统之上，运行在 Virtualized User mode。
+
+为了实现 Supervisor 与 Hypervisor-extended supervisor 模式的切换，RSIC-V 将原来 Supervisor 模式下的 CSR 复制一份到Hypervisor，从而让每个硬件线程拥有两份 supervisor 寄存器，加快两个模式之间的切换过程。
+
+由于 RISC-V 没有为不同虚拟化软件设计专门的特权模式，而是设计了统一的特权模式，这说明它对 1类（如Xvisor）、 2类（如KVM）虚拟化软件都有很好的支持。 RISC-V 可以通过 CSR 寄存器注入中断，因此不需要为虚拟化而特殊设计中断控制器外设。此外，RISC-V 可直接借助特殊的寄存器位支持嵌套虚拟化，而 Aarch64 要等到 v8.3 版本之后才支持这个功能。RISC-V 的时钟和核间中断可通过 SBI 软件辅助完成，而 Aarch64 需要特殊设计的计时器外设来支持虚拟化功能。\cite{d}
 \subsection{QEMU}
 
 QEMU is a generic and open source machine emulator and virtualizer.
@@ -168,7 +257,7 @@ When used as a machine emulator, QEMU can run OSes and programs made for one mac
 
 When used as a virtualizer, QEMU achieves near native performance by executing the guest code directly on the host CPU. QEMU supports virtualization when executing under the Xen hypervisor or using the KVM kernel module in Linux. When using KVM, QEMU can virtualize x86, server and embedded PowerPC, 64-bit POWER, S390, 32-bit and 64-bit ARM, and MIPS guests.\cite{1}
 
-\subsubsection{Advantages}
+\textbf{QEMU具有如下优点：}
 
 \paragraph{Full-system emulation}Run operating systems for any machine, on any supported architecture.
 
@@ -176,8 +265,6 @@ When used as a virtualizer, QEMU achieves near native performance by executing t
 
 \paragraph{Virtualization}Run KVM and Xen virtual machines with near native performance.\cite{1}
 
-
-\section{技术依据}
 \section{创新点}
 \section{概要设计}
 Runikraft的架构与Unikraft几乎相同。
