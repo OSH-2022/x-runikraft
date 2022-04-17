@@ -21,5 +21,8 @@ report: research-report.pdf feasibility-report.pdf
 research-report.pdf: $(REPORT_ROOT_DIR)/11_research/research-report.tex
 	env TEXINPUTS=$(REPORT_ROOT_DIR)/11_research:$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(REPORT_ROOT_DIR)/11_research/research-report.tex
 
-feasibility-report.pdf: $(REPORT_ROOT_DIR)/20_feasibility/feasibility-report.tex
+feasibility-report.bib: $(REPORT_ROOT_DIR)/20_feasibility/feasibility-report.bib
+	cp $(REPORT_ROOT_DIR)/20_feasibility/feasibility-report.bib feasibility-report.bib
+
+feasibility-report.pdf: $(REPORT_ROOT_DIR)/20_feasibility/feasibility-report.tex feasibility-report.bib
 	env TEXINPUTS=$(REPORT_ROOT_DIR)/20_feasibility:$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(REPORT_ROOT_DIR)/20_feasibility/feasibility-report.tex
