@@ -288,7 +288,7 @@ Runikraft的架构与Unikraft几乎相同。
 \texttt{rknetdev}、\texttt{rkblkdev}、\texttt{rktime}、\texttt{rkswrand}、\texttt{rkboot}
 五个APIs的功能与平台密切相关，
 但是为了降低开发和维护难度，它们并没有直接实现，而是在\texttt{rkplat}提供的初级抽象的基础上实现。
-\texttt{rknetdev}和\texttt{rbblkdev}对应图\ \ref{fig:un{}ikraft-arch}\ 的⑦和⑧，
+\texttt{rknetdev}和\texttt{rbblkdev}对应图\ \ref{fig:unikraft-arch}\ 的⑦和⑧，
 它们分别提供网络设备和块设备的支持。
 %与Unikraft的实现类似，这两个APIs的构造函数的参数接受指向\texttt{trait RKplat}的指针。
 \texttt{rktime}提供获取和修改系统时间的API，\texttt{rkswrand}提供密码学安全的随机数，
