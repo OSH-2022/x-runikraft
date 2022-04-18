@@ -1,6 +1,7 @@
 //TODO: arg
 
 use super::sbi::*;
+use super::*;
 use core::arch;
 
 arch::global_asm!(include_str!("entry.asm"));
@@ -20,6 +21,7 @@ extern "C" {
 /// 
 #[no_mangle]
 pub fn __runikraft_entry_point()->!{
+    time::init();
     unsafe{main();}
     halt();
 }

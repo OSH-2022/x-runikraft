@@ -1,7 +1,8 @@
 #![no_std]
 
-//extern crate alloc;
-//use alloc::alloc::{GlobalAlloc,Layout};
+//alloc的alloc_error_handler是unstable API
+// extern crate alloc;
+// use alloc::alloc::{GlobalAlloc,Layout};
 
 //TODO: 暂时不支持分页，所有线程在同一个地址空间下执行
 pub trait RKalloc {
@@ -31,6 +32,7 @@ union AllocWrapper{
 //#[global_allocator]
 static mut ALLOC: AllocWrapper = AllocWrapper{s:0};
 
+//Rust 风格的分配器
 // #[alloc_error_handler]
 // fn allocate_fail(layout: Layout) -> ! {
 //     panic!("Allocation fail: layout = {:?}", layout);
@@ -82,5 +84,3 @@ pub unsafe fn addmem(base: *const u8, size: usize)->i32{
     (*ALLOC.p).addmem(base,size)
 }
 
-
-//Rust 风格的分配器
