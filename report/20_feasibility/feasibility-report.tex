@@ -125,7 +125,8 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 
 \tableofcontents
 \section{项目介绍}
-我们选择的课题是使用Rust语言改写Unikraft\ Unikernel。
+我们选择的课题是使用Rust语言改写Unikraft Unikernel。与RustyHermit和rCore等用Rust实现的操作系统不同，
+我们将完全使用Rust的稳定特性编写代码。
 
 众所周知，在互联网技术和云计算不断发展的今天，我们身边的虚拟化设备不断增多，它们中的很多都使用了Unikernel。然而，虚拟化设备和Unikernel也暴露出了很多安全问题。对这些安全问题，C语言因其本身的缺陷难辞其咎。
 
@@ -167,7 +168,7 @@ let machine_kind = if cfg!(unix) {
 	"unknown"
 };
 
-println!("I'm running on a {} machine!", machine_kind);	
+println!("I'm running on a {} machine!", machine_kind);
 \end{lstlisting}
 \cite{e}
 \subsection{Unsafe Rust}
@@ -195,25 +196,23 @@ println!("I'm running on a {} machine!", machine_kind);
 \subsection{Rust保证线程安全的方式}
 Rust 通过一整套设计非常精良的基础设施来保证这一点，这些基础设施配合类型检查和借用模型“强迫”程序员写出正确的代码，把别的语言在运行时的崩溃或泄露暴露在编译期，从而保证线程安全。
 
-\textbf{基础设施}
+\noindent 基础设施：
 
-1. 进行语义限制的\texttt{Send} / \texttt{Sync} 、\texttt{Trait}。
+\begin{enumerate}
+\item 进行语义限制的\texttt{Send} / \texttt{Sync} 、\texttt{Trait}。
+\item 共享不可变所有权的\texttt{Arc} (\texttt{Rc}的多线程版本)。
+\item 提供内部可变性的\texttt{Mutex} / \texttt{Rwlock}。
+\item 管道模型\texttt{channel}。
+\item 其他的一些线程相关的API。
+\end{enumerate}
 
-2. 共享不可变所有权的\texttt{Arc} (\texttt{Rc}的多线程版本)。
+\noindent 线程相关的常见API与设施：
 
-3. 提供内部可变性的\texttt{Mutex} / \texttt{Rwlock}。
-
-4. 管道模型\texttt{channel}。
-
-5. 其他的一些线程相关的API。
-
-\textbf{线程相关的常见API与设施}
-
-1. \texttt{std::thread::spawn}，\texttt{spawn}接收一个闭包并执行,返回一个\texttt{JoinHandle}类型的值，它拥有线程所有权；
-
-2. \texttt{join()}函数，该函数作用在线程句柄\texttt{JoinHandle}类型的值上，使得父线程能够等待子线程执行完毕；
-
-3. \texttt{move}+闭包，\texttt{move}闭包常常与\texttt{thread}和\texttt{spawn}一起使用，它允许我们在一个线程中使用另外一个线程的数据，使用\texttt{move}关键字强制闭包获取其使用的环境值的所有权。
+\begin{enumerate}
+\item \texttt{std::thread::spawn}，\texttt{spawn}接收一个闭包并执行,返回一个\texttt{JoinHandle}类型的值，它拥有线程所有权；
+\item  \texttt{join()}函数，该函数作用在线程句柄\texttt{JoinHandle}类型的值上，使得父线程能够等待子线程执行完毕；
+\item \texttt{move}+闭包，\texttt{move}闭包常常与\texttt{thread}和\texttt{spawn}一起使用，它允许我们在一个线程中使用另外一个线程的数据，使用\texttt{move}关键字强制闭包获取其使用的环境值的所有权。
+\end{enumerate}
 
 Rust 所拥有的这些设施以及自身的特性可以让我们编写出正确的代码从而保证线程安全。\cite{9}
 
@@ -221,15 +220,14 @@ Rust 所拥有的这些设施以及自身的特性可以让我们编写出正确
 \subsection{RISC-V的特权}
 截至目前(2022.4)，RISC-V 共定义了四个特权级别，由高到低排列顺次为：
 
-\textbf{机器级别（M）}：RISC-V中硬件线程可以执行的最高权限模式。在M模式下运行的 hart 对内存、I/O 和一些对于启动和配置系统来说必要的底层功能有着完全的使用权。因此它是唯一所有标准 RISC-V 处理器都必须实现的权限模式。\cite{a}
+\begin{description}
+\item[机器级别（M）] RISC-V中硬件线程可以执行的最高权限模式。在M模式下运行的 hart 对内存、I/O 和一些对于启动和配置系统来说必要的底层功能有着完全的使用权。因此它是唯一所有标准 RISC-V 处理器都必须实现的权限模式。\cite{a}
+\item[超级监管者级别（H）] 为了支持虚拟机监视器。但目前该级别并没有被正式加入到文档中。
+\item[监管者级别（S）] 为了支持现代类 Unix 操作系统，如 Linux ， FreeBSD 和 Windows 。
+\item[用户级别（U）] 用于运行应用程序，适用于安全嵌入式系统。
+\end{description}
 
-\textbf{超级监管者级别（H）}：为了支持虚拟机监视器。但目前该级别并没有被正式加入到文档中。
-
-\textbf{监管者级别（S）}：为了支持现代类 Unix 操作系统，如 Linux ， FreeBSD 和 Windows 。
-
-\textbf{用户级别（U）}：用于运行应用程序，适用于安全嵌入式系统。
-
-标准的 RISC-V 为超过4000个 CSR 预留了12位的编码空间([11：0])。其中，[11：8] 位根据特权级别对 CSR 的读写权限进行编码。注意：任何试图访问不存在的 CSR 的行为均会引发指令异常，尝试写入只读寄存器也会引发指令异常。剩余的8位编码 [7 :  0] 将指定相应的寄存器地址位置。具体细节如下所示：\cite{b}\cite{c}
+标准的 RISC-V 为超过4000个 CSR 预留了12位的编码空间(\texttt{[11：0]})。其中，\texttt{[11：8]} 位根据特权级别对 CSR 的读写权限进行编码。注意：任何试图访问不存在的 CSR 的行为均会引发指令异常，尝试写入只读寄存器也会引发指令异常。剩余的8位编码 \texttt{[7:0]} 将指定相应的寄存器地址位置。具体细节如下所示：\cite{b}\cite{c}
 
 \begin{lstlisting}[numbers=left]
 CSR [11:10]：对读写模式进行约束
@@ -267,7 +265,7 @@ unsigned long arg3, unsigned long arg4,
 unsigned long arg5)
 {
 	struct sbiret ret;
-	
+
 	register uintptr_t a0 asm ("a0") = (uintptr_t)(arg0);
 	register uintptr_t a1 asm ("a1") = (uintptr_t)(arg1);
 	register uintptr_t a2 asm ("a2") = (uintptr_t)(arg2);
@@ -282,10 +280,10 @@ unsigned long arg5)
 	: "memory");
 	ret.error = a0;
 	ret.value = a1;
-	
+
 	return ret;
 }
-\end{lstlisting}​		
+\end{lstlisting}​
 例如实现一个putchar函数用于打印一个字符到系统控制台上，就如下通过ECALL来实现：
 \begin{lstlisting}[numbers=left]
 	void sbi_console_putchar(int ch)
@@ -294,81 +292,63 @@ unsigned long arg5)
 	}
 \end{lstlisting}
 \subsection{Unikraft的开机流程（KVM+AMD64）}
-\paragraph{1. bootloader（由虚拟机的固件实现）}
-\paragraph{2. \texttt{\_libkvmplat\_start32}（位于\texttt{plat/kvm/x86/entry64.S}）}
-~\par
-1. enable pae；
-
-2. enable long mode；
-
-3. load pml4 pointer；
-
-4. enable paging；
-
-5. \texttt{jmp \_libkvmplat\_start64}。
-
-\paragraph{3.\texttt{\_libkvmplat\_start64}}
-~\par
-1. 一系列复杂的初始化；
-
-2. \texttt{call \_libkvmplat\_entry}。
-\paragraph{4.\texttt{\_libkvmplat\_entry}（位于\texttt{plat/kvm/x86/setup.c}），它接受\texttt{struct multiboot\_info *}参数}
-~\par
-1. \texttt{\_init\_cpufeatures}；
-
-2. \texttt{\_libkvmplat\_init\_console}；
-
-3. \texttt{traps\_init}；
-
-4. \texttt{intctrl\_init}；
-
-5. \texttt{\_mb\_get\_cmdline}：把multiboot\_info中的命令行参数复制到数据段的\texttt{char cmdline[8192]}；
-
-6. \texttt{\_mb\_init\_mem}：处理与内存分段有关的操作；
-
-7. \texttt{\_mb\_init\_initrd`}；
-
-8. (\texttt{CONFIG\_HAVE\_SMP})\texttt{acpi\_init}；
-
-9. (\texttt{CONFIG\_HAVE\_SYSCALL})\texttt{\_init\_syscall}；
-
-10. (\texttt{CONFIG\_HAVE\_X86PKU})\texttt{\_check\_ospke}；
-
-11. 调用\texttt{\_libkvmplat\_newstack}从引导栈切换走。
-
-可以看出，AMD64的开机流程很复杂，在ARMv8中，系统的起点是用汇编语言编写的\texttt{\_libkvmplat\_entry}，它调用用C语言编写的\texttt{\_libkvmplat\_start}，之后的流程与AMD64相同。
-\paragraph{5.\texttt{\_libkvmplat\_entry2}：把cmdline传递给\texttt{ukplat\_entry\_argp}}
-\paragraph{6.\texttt{ukplat\_entry\_argp}：把命令行参数拆成argc+argv的形式，然后调用\texttt{ukplat\_entry}}
-\paragraph{7.\texttt{ukplat\_entry}}
-~\par
-1. 调用\texttt{ctorfn}注册的构造函数（\texttt{ctors.h}提供了注册构造函数的机制）；
-
-2. (\texttt{CONFIG\_LIBUKLIBPARAM})进一步分析命令行参数；
-
-3. (\texttt{!CONFIG\_LIBUKBOOT\_NOALLOC})依次尝试在每一块内存区域上初始化分配器（\texttt{uk\_<name>\_init}），成功创建分配器后，将剩余的内存区域加入分配器（\texttt{uk\_alloc\_addmem}）；
-
-4. (\texttt{CONFIG\_LIBUKALLOC})初始化中断（\texttt{ukplat\_irq\_init}）；
-
-5. (\texttt{CONFIG\_LIBUKSCHED})初始化调度器\texttt{uk\_sched\_default\_init}；
-
-6. (\texttt{CONFIG\_LIBUKSCHED}?)
-
-- (true) 创建主线程（执行\texttt{main\_thread\_func}）→启动调度器（\texttt{uk\_sched\_start}），
-
-- (false)启动中断（\texttt{ukplat\_lcpu\_enable\_irq}）→直接调用\texttt{main\_thread\_func}。
-
-\paragraph{8.\texttt{main\_thread\_func}}
-~\par
-1. 调用init table上注册的函数（由\texttt{init.h}提供，与\texttt{ctorfn}类似）；
-
-2. (\texttt{CONFIG\_LIBUKSP})\texttt{uk\_stack\_chk\_guard\_setup}；
-
-3. 调用用户程序的构造函数\texttt{\_\_preinit\_array}和\texttt{\_\_init\_array}；
-
-4. 调用用户程序的\texttt{main}。
-\paragraph{9.\texttt{main}}
-\paragraph{10.关机/崩溃}
-
+\begin{enumerate}
+\item bootloader（由虚拟机的固件实现）。
+\item \texttt{\_libkvmplat\_start32}（位于\texttt{plat/kvm/x86/entry64.S}）：
+    \begin{enumerate}
+    \item enable pae；
+    \item enable long mode；
+    \item load pml4 pointer；
+    \item enable paging；
+    \item \texttt{jmp \_libkvmplat\_start64}。
+    \end{enumerate}
+\item \texttt{\_libkvmplat\_start64}：
+    \begin{enumerate}
+    \item 一系列复杂的初始化；
+    \item \texttt{call \_libkvmplat\_entry}。
+    \end{enumerate}
+\item \texttt{\_libkvmplat\_entry}（位于\texttt{plat/kvm/x86/setup.c}），它接受\texttt{struct multiboot\_info*}参数：
+    \begin{enumerate}
+    \item \texttt{\_init\_cpufeatures}；
+    \item \texttt{\_libkvmplat\_init\_console}；
+    \item \texttt{traps\_init}；
+    \item \texttt{intctrl\_init}；
+    \item \texttt{\_mb\_get\_cmdline}：把multiboot\_info中的命令行参数复制到数据段的\texttt{char\linebreak cmdline[8192]}；
+    \item \texttt{\_mb\_init\_mem}：处理与内存分段有关的操作；
+    \item \texttt{\_mb\_init\_initrd`}；
+    \item (\texttt{CONFIG\_HAVE\_SMP})\footnote{表示在开启某个配置时执行。} \texttt{acpi\_init}；
+    \item (\texttt{CONFIG\_HAVE\_SYSCALL}) \texttt{\_init\_syscall}；
+    \item (\texttt{CONFIG\_HAVE\_X86PKU}) \texttt{\_check\_ospke}；
+    调用\texttt{\_libkvmplat\_newstack}从引导栈切换走。
+    \end{enumerate}
+    可以看出，AMD64的开机流程很复杂，在ARMv8中，系统的起点是用汇编语言编写
+    的\texttt{\_libkvmplat\_entry}，它调用用C语言编写的\texttt{\_libkvmplat\_start}，
+    之后的流程与AMD64相同。
+\item \texttt{\_libkvmplat\_entry2}：把cmdline传递给\texttt{ukplat\_entry\_argp}。
+\item \texttt{ukplat\_entry\_argp}：把命令行参数拆成argc+argv的形式，然后调用\texttt{ukplat\_entry}。
+\item \texttt{ukplat\_entry}：
+    \begin{enumerate}
+    \item 调用\texttt{ctorfn}注册的构造函数（\texttt{ctors.h}提供了注册构造函数的机制）；
+    \item (\texttt{CONFIG\_LIBUKLIBPARAM})进一步分析命令行参数；
+    \item (\texttt{!CONFIG\_LIBUKBOOT\_NOALLOC}) 依次尝试在每一块内存区域上初始化分配器\linebreak（\texttt{uk\_<name>\_init}），成功创建分配器后，将剩余的内存区域加入分配器\linebreak（\texttt{uk\_alloc\_addmem}）；
+    \item (\texttt{CONFIG\_LIBUKALLOC}) 初始化中断（\texttt{ukplat\_irq\_init}）；
+    \item (\texttt{CONFIG\_LIBUKSCHED}) 初始化调度器\texttt{uk\_sched\_default\_init}；
+    \item (\texttt{CONFIG\_LIBUKSCHED}?)
+        \begin{itemize}
+        \item (true)  创建主线程（执行\texttt{main\_thread\_func}）→启动调度器（\texttt{uk\_sched\_start}），
+        \item (false) 启动中断（\texttt{ukplat\_lcpu\_enable\_irq}）→直接调用\texttt{main\_thread\_func}。
+        \end{itemize}
+    \end{enumerate}
+\item \texttt{main\_thread\_func}：
+    \begin{enumerate}
+    \item 调用init table上注册的函数（由\texttt{init.h}提供，与\texttt{ctorfn}类似）；
+    \item (\texttt{CONFIG\_LIBUKSP})\texttt{uk\_stack\_chk\_guard\_setup}；
+    \item 调用用户程序的构造函数 \texttt{\_\_preinit\_array}和\texttt{\_\_init\_array}；
+    \item 调用用户程序的\texttt{main}。
+    \end{enumerate}
+\item \texttt{main}。
+\item 关机/崩溃。
+\end{enumerate}
 
 \section{技术依据}
 
@@ -438,7 +418,7 @@ impl<T> List<T> {
 pub fn push_front(&mut self, elem: T) {
 	let new_head = Node::new(elem);
 	// Takes the value out of the option, leaving a None in its place.
-	match self.head.take() {    
+	match self.head.take() {
 		Some(old_head) => {
 			// borrow_mut 作用于RefCell，获取里面的借用并且将其转型为mut
 			old_head.borrow_mut().prev = Some(new_head.clone());
@@ -474,7 +454,7 @@ pub fn pop_front(&mut self) -> Option<T> {
 然后就是实现peek\_front方法：
 \begin{lstlisting}[numbers=left]
 pub fn peek_front(&self) -> Option<Ref<T>> {
-	// Returns None if the pointer is null, 
+	// Returns None if the pointer is null,
 	// or else returns a reference to the value wrapped in Some.
 	self.head.as_ref().map(|node| {
 		Ref::map(node.borrow(), |node| &node.elem)
@@ -484,8 +464,8 @@ pub fn peek_front(&self) -> Option<Ref<T>> {
 内存的释放：
 \begin{lstlisting}[numbers=left]
 impl<T> Drop for List<T> {
-	// This will decrement the strong reference count. 
-	// If the strong reference count reaches zero 
+	// This will decrement the strong reference count.
+	// If the strong reference count reaches zero
 	// then the only other references (if any) are Weak, so we drop the inner value.
 	fn drop(&mut self) {
 		while self.pop_front().is_some() {}
@@ -540,16 +520,18 @@ When used as a machine emulator, QEMU can run OSes and programs made for one mac
 
 When used as a virtualizer, QEMU achieves near native performance by executing the guest code directly on the host CPU. QEMU supports virtualization when executing under the Xen hypervisor or using the KVM kernel module in Linux. When using KVM, QEMU can virtualize x86, server and embedded PowerPC, 64-bit POWER, S390, 32-bit and 64-bit ARM, and MIPS guests.\cite{1}
 
-\textbf{QEMU具有如下优点：}
+\noindent QEMU具有如下优点：
 
-\paragraph{Full-system emulation}Run operating systems for any machine, on any supported architecture.
-
-\paragraph{User-mode emulation}Run programs for another Linux/BSD target, on any supported architecture.
-
-\paragraph{Virtualization}Run KVM and Xen virtual machines with near native performance.\cite{1}
+\begin{description}
+\item[Full-system emulation] Run operating systems for any machine, on any supported architecture.
+\item[User-mode emulation] Run programs for another Linux/BSD target, on any supported architecture.
+\item[Virtualization] Run KVM and Xen virtual machines with near native performance.\cite{1}
+\end{description}
 
 \section{创新点}
-没有理论上的创新点。
+与先前用Rust改写FreeRTOS的小组类似，我们的项目偏重工程，没有理论上的创新点。
+由于我们了解的所有用Rust写的操作系统都或多或少的使用了unstable的特性，我们用stable特性
+编写unikernel也不失为一种技术上的创新。
 \section{概要设计}
 Runikraft的架构与Unikraft几乎相同。
 \begin{figure}[!hbt]
