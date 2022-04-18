@@ -1,5 +1,5 @@
 use core::panic;
-use super::platform::bootstrap;
+use super::plat::bootstrap;
 
 #[panic_handler]
 fn __panic_handler(_info: &panic::PanicInfo)->!

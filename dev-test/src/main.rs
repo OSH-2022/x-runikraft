@@ -18,12 +18,11 @@ debug:
 #![no_std]
 #![no_main]
 
-#[macro_use]
-extern crate runikraft;
+use runikraft as rk;
 
 use rkalloc::RKalloc;
 use rkalloc_empty::RKallocEmpty;
-use runikraft::platform::time;
+use rk::plat::time;
 
 static mut HEAP_SPACE: [u8;1000] = [0;1000];
 
@@ -33,16 +32,16 @@ fn main() {
     unsafe {
         alloc = RKallocEmpty::new(HEAP_SPACE.as_mut_ptr(),1000);
     }
-    println!("Hello, world!");
+    rk::println!("Hello, world!");
     let p1 = unsafe{alloc.malloc(10)};
-    println!("p1={:?}",p1);
+    rk::println!("p1={:?}",p1);
     let p2 = unsafe{alloc.malloc(5)};
-    println!("p2={:?}",p2);
-    println!("sleep for 10s");
+    rk::println!("p2={:?}",p2);
+    rk::println!("sleep for 10s");
     let start = time::get_ticks();
     loop {
         if (time::get_ticks() - start).as_secs()>=10 {break;}
     }
     let end = time::get_ticks();
-    println!("slept for {:?}",end - start);
+    rk::println!("slept for {:?}",end - start);
 }
