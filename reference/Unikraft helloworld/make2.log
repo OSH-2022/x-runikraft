@@ -1,0 +1,107 @@
+make[1]: 进入目录“/home/zzc/本科/035_操作系统原理与设计/unikraft”
+  LN      Makefile
+  MKDIR   lxdialog
+  MAKE    kconfig
+/usr/bin/gcc -ldl -I. -I/home/zzc/本科/035_操作系统原理与设计/app-helloworld/build/kconfig -DCONFIG_=\"\"   -c fixdep.c -o /home/zzc/本科/035_操作系统原理与设计/app-helloworld/build/kconfig/fixdep.o
+/usr/bin/gcc -ldl -I. -I/home/zzc/本科/035_操作系统原理与设计/app-helloworld/build/kconfig -DCONFIG_=\"\"   /home/zzc/本科/035_操作系统原理与设计/app-helloworld/build/kconfig/fixdep.o -o /home/zzc/本科/035_操作系统原理与设计/app-helloworld/build/kconfig/fixdep
+  CP      config
+  CC      libkvmplat: trace.common.o
+  CC      libkvmplat: traps.isr.o
+  CC      libkvmplat: cpu_features.common.o
+  CC      libkvmplat: cpu_native.common.o
+  AS      libkvmplat: entry64.o
+  CC      libkvmplat: traps.o
+  AS      libkvmplat: cpu_vectors_x86_64.o
+  CC      libkvmplat: setup.o
+  CC      libkvmplat: console.o
+  CC      libkvmplat: lcpu.o
+  CC      libkvmplat: intctrl.o
+  CC      libkvmplat: tscclock.o
+  CC      libkvmplat: time.o
+  CC      libkvmplat: memory.x86.o
+  CC      libkvmplat: vga_console.o
+  CC      libkvmplat: serial_console.o
+  CC      libkvmplat: shutdown.o
+  CC      libkvmplat: memory.o
+  CC      libkvmplat: irq.o
+  CC      libkvmplat: io.o
+  CC      libkvmplat: lcpu.common.o
+  CC      libkvmplat: memory.common.o
+  LDS     libkvmplat: link64.lds
+  LD      libkvmplat.ld.o
+  OBJCOPY libkvmplat.o
+  CC      libkvmpci: pci_bus.common.o
+  CC      libkvmpci: pci_bus_x86.x86.o
+  LD      libkvmpci.ld.o
+  OBJCOPY libkvmpci.o
+  CC      libkvmvirtio: virtio_bus.o
+  CC      libkvmvirtio: virtio_ring.o
+  LD      libkvmvirtio.ld.o
+  OBJCOPY libkvmvirtio.o
+  CC      apphelloworld: main.o
+  LD      apphelloworld.ld.o
+  OBJCOPY apphelloworld.o
+  CC      libnolibc: errno.o
+  CC      libnolibc: stdio.o
+  CC      libnolibc: ctype.o
+  CC      libnolibc: stdlib.o
+  CC      libnolibc: string.o
+  CC      libnolibc: strsignal.o
+  CC      libnolibc: psignal.o
+  CC      libnolibc: getopt.o
+  CC      libnolibc: sscanf.o
+  CC      libnolibc: asprintf.o
+  CC      libnolibc: qsort.o
+  LD      libnolibc.ld.o
+  OBJCOPY libnolibc.o
+  CC      libukalloc: alloc.o
+  LD      libukalloc.ld.o
+  OBJCOPY libukalloc.o
+  CC      libukallocbbuddy: bbuddy.o
+  LD      libukallocbbuddy.ld.o
+  OBJCOPY libukallocbbuddy.o
+  CC      libukargparse: argparse.o
+  LD      libukargparse.ld.o
+  OBJCOPY libukargparse.o
+  CC      libukboot: boot.o
+  CC      libukboot: version.o
+  CC      libukboot: banner.o
+  LD      libukboot.ld.o
+  OBJCOPY libukboot.o
+  CC      libukboot_main: weak_main.o
+  LD      libukboot_main.ld.o
+  OBJCOPY libukboot_main.o
+  CC      libukbus: bus.o
+  LD      libukbus.ld.o
+  OBJCOPY libukbus.o
+  CC      libukdebug: print.o
+  CC      libukdebug: outf.o
+  CC      libukdebug: hexdump.o
+  LD      libukdebug.ld.o
+  OBJCOPY libukdebug.o
+  CC      libuksglist: sglist.o
+  LD      libuksglist.ld.o
+  OBJCOPY libuksglist.o
+  CC      libuktime: __month_to_secs.o
+  CC      libuktime: __secs_to_tm.o
+  CC      libuktime: timegm.o
+  CC      libuktime: __tm_to_secs.o
+  CC      libuktime: __year_to_secs.o
+  CC      libuktime: time.o
+  CC      libuktime: timer.o
+  LD      libuktime.ld.o
+  OBJCOPY libuktime.o
+  CC      libuktimeconv: timeconv.o
+  LD      libuktimeconv.ld.o
+  OBJCOPY libuktimeconv.o
+  CC      libx86_64arch: tls.o
+  LD      libx86_64arch.ld.o
+  OBJCOPY libx86_64arch.o
+  LD      app-helloworld_kvm-x86_64.ld.o
+  OBJCOPY app-helloworld_kvm-x86_64.o
+  LD      app-helloworld_kvm-x86_64.dbg
+  SCSTRIP app-helloworld_kvm-x86_64
+  GZ      app-helloworld_kvm-x86_64.gz
+  LN      app-helloworld_kvm-x86_64.dbg.gdb.py
+  GEN     uk-gdb.py
+make[1]: 离开目录“/home/zzc/本科/035_操作系统原理与设计/unikraft”
