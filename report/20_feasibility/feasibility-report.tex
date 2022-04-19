@@ -576,12 +576,234 @@ static inline void *uk_malloc(struct uk_alloc *a, __sz size)
 Unikraft的论文中提到了它拥有抢占式调度器\texttt{ukpreempt}，但是我们并没有在它的源代码中找到相应的实现。
 
 \section{技术依据}
+\subsection{rustc交叉编译}
+先安装交叉编译riscv64gc的编译器组件，
+然后在编译时附加\texttt{--target riscv64gc-\linebreak unknown-none-elf}选项即可实现x86-64--riscv64交叉编译。
+
+还需要安装\texttt{rust-objcopy}以生成QEMU能加载的原始二进制文件。
+
+\noindent 命令（假定已安装通过rustup安装Rust构建工具链）：
+\begin{lstlisting}
+rustup target add riscv64gc-unknown-none-elf
+cargo install cargo-binutils
+\end{lstlisting}
+
+\subsection{启动操作系统}
+添加编译选项\texttt{-Clink-arg=-Tlinker.ld}以便链接器能读取自定义的链接脚本：
+\begin{multicols}{2}
+\begin{lstlisting}
+OUTPUT_ARCH(riscv)
+ENTRY(__runikraft_start)
+BASE_ADDRESS = 0x80200000;
+
+SECTIONS
+{
+    . = BASE_ADDRESS;
+    skernel = .;
+
+    stext = .;
+    .text : {
+        *(.text.entry)
+        *(.text .text.*)
+    }
+
+    . = ALIGN(4K);
+    etext = .;
+    srodata = .;
+    .rodata : {
+        *(.rodata .rodata.*)
+        *(.srodata .srodata.*)
+    }
+
+    . = ALIGN(4K);
+    erodata = .;
+    sdata = .;
+    .data : {
+        *(.data .data.*)
+        *(.sdata .sdata.*)
+    }
+
+    . = ALIGN(4K);
+    edata = .;
+    .bss : {
+        *(.bss.stack)
+        sbss = .;
+        *(.bss .bss.*)
+        *(.sbss .sbss.*)
+    }
+
+    . = ALIGN(4K);
+    ebss = .;
+    ekernel = .;
+
+    /DISCARD/ : {
+        *(.eh_frame)
+    }
+}
+\end{lstlisting}
+\end{multicols}
+
+初始化函数需要用汇编语言编写：
+\begin{lstlisting}[numbers=left]
+.extern sbss
+.extern ebss
+
+.section .text.entry
+.globl __runikraft_start
+
+__runikraft_start:
+    #清空bss段
+    la t0,sbss
+    la t1,ebss
+    clean_bss:
+        bge t0,t1,clean_bss_end
+        sd x0,(t0)
+        addi t0,t0,8
+        j clean_bss
+    clean_bss_end:
+    addi t0,zero,0
+    addi t1,zero,0
+    #加载栈指针
+    la sp,stack_top
+    call __runikraft_entry_point
+
+.section .bss.stack
+    .space 65536
+stack_top:
+\end{lstlisting}
+它加载栈指针，然后将控制权转交给用Rust写的更高层的初始化函数。目前后者还只有雏形，它只初始化\texttt{rk::plat}模块
+的定时器子模块，然后调用用户程序的入口\texttt{main}。
+\begin{lstlisting}[language=Rust,numbers=left]
+/// 系统的入口，由引导程序调用
+///
+#[no_mangle]
+pub fn __runikraft_entry_point()->!{
+    time::init();
+    unsafe{main();}
+    halt();
+}
+\end{lstlisting}
+
+\texttt{\_\_runikraft\_entry\_point}和\texttt{\_\_runikraft\_start}都是Runikraft核心组件的
+\texttt{plat::\linebreak bootstrap}的一部分，目前的核心组件还已经实现了\texttt{plat::console}和
+\texttt{plat::time}两个\texttt{plat}模块的子模块，以及\texttt{bitcount}模块（这个模块完全是
+对Unikraft的\texttt{bitcount.c}的翻译）。目前已经实现了\texttt{rkalloc} API（对应Unikraft的
+\texttt{ukalloc}，这个API有一个演示用的“空实现”\texttt{rkalloc\_empty}。
+
+目前的\texttt{main}函数能简单演示\texttt{plat::console}、\texttt{plat::time}和\texttt{rkalloc}：
+\begin{lstlisting}[language=Rust,numbers=left]
+#![no_std]
+#![no_main]
+
+use runikraft as rk;
+
+use rkalloc::RKalloc;
+use rkalloc_empty::RKallocEmpty;
+use rk::plat::time;
+
+static mut HEAP_SPACE: [u8;1000] = [0;1000];
+
+#[no_mangle]
+fn main() {
+    let mut alloc;
+    unsafe {
+        alloc = RKallocEmpty::new(HEAP_SPACE.as_mut_ptr(),1000);
+    }
+    rk::println!("Hello, world!");
+    let p1 = unsafe{alloc.malloc(10)};
+    rk::println!("p1={:?}",p1);
+    let p2 = unsafe{alloc.malloc(5)};
+    rk::println!("p2={:?}",p2);
+    rk::println!("sleep for 10s");
+    let start = time::get_ticks();
+    loop {
+        if (time::get_ticks() - start).as_secs()>=10 {break;}
+    }
+    let end = time::get_ticks();
+    rk::println!("slept for {:?}",end - start);
+}
+\end{lstlisting}
+
+\subsection{编译}
+依次运行
+\begin{lstlisting}
+cargo build --release
+rust-objcopy --strip-all build/riscv64gc-unknown-none-elf/release/dev-test -O binary build/riscv64gc-unknown-none-elf/release/dev-test.bin
+\end{lstlisting}
+即可完成编译。
+
+\subsection{运行和调试}
+这一步需要QEMU \texttt{riscv64}、\texttt{riscv64-unknown-elf}GDB和OpenSBI的
+\texttt{fw\_jump.bin}。QEMU可以用\texttt{sudo apt install qemu-system-misc}安装，
+当然也可以用\texttt{sudo apt install qemu-system}完整地安装QEMU。符合要求的GDB并没有
+被收录在Ubuntu的软件源中，幸好SiFive提供了一套预编译的调试工具链，其可在\
+\href{https://github.com/sifive/freedom-tools/releases}{sifive/freedom-tools}\
+下载。下载并解压后，可以将\texttt{riscv64-unknown-elf-toolchain-10.2.0-2020.12.8-x86\_64-linux-ubuntu14/bin}添加到\texttt{PATH}。QEMU的文档声称已经附带了\texttt{OpenSBI}\cite{qemu-virt}，
+但是Ubuntu 20.04的APT源中的QEMU并没有附带，所以仍然需要到\ \href{https://github.com/riscv-software-src/opensbi/releases/tag/v1.0}{OpenSBI Version 1.0}\
+手动下载。我们需要的是\linebreak\texttt{opensbi-1.0-rv-bin/share/opensbi/lp64/generic/firmware/fw\_jump.bin}。为了方便后续使用，可以在\texttt{~/.bashrc}中加上\texttt{export RISCV\_BIOS=\textit{<PATH\_TO\_fw\_jump.bin>}}。
+
+一切安装完毕后，可以用
+\begin{lstlisting}
+qemu-system-riscv64 -machine virt -nographic -bios $RISCV_BIOS -device loader,file=build/riscv64gc-unknown-none-elf/release/dev-test.bin,addr=0x80200000 -s -S
+\end{lstlisting}
+启动系统。用
+\begin{lstlisting}
+riscv64-unknown-elf-gdb -ex 'file build/riscv64gc-unknown-none-elf/release/dev-test' -ex 'set arch riscv:rv64' -ex 'target remote localhost:1234'
+\end{lstlisting}
+进行交互式调试。
+
+\begin{figure}[tbh!]
+\centering
+\includegraphics[width=0.9\linewidth]{assets/debug}
+\caption{调试}
+\label{fig:debug}
+\end{figure}
+
+\begin{figure}[tbh!]
+\centering
+\includegraphics[width=0.9\linewidth]{assets/run}
+\caption{运行结果}
+\label{fig:run}
+\end{figure}
+
+\subsection{QEMU性能测试}
+Unikernel以高性能著称，性能也是评价unikernel的重要指标。
+然而遗憾的是，由于我们无法得到RISC-V物理机，而QEMU仿真硬件架构本身
+会带来巨大的性能损失，所以我们很难准确评估我们写的Runikraft的性能。为了相对准确的估计Runikraft
+的性能，可以测试QEMU仿真本身带来的性能损失，然后可以用QEMU上的运行时间除以性能损失比\footnote{riscv64时间÷ x86-64时间}，估计真实RISC-V
+硬件上的运行时间。
+
+我们用组员张子辰同学的数据结构课程的大作业
+\href{https://github.com/WCIofQMandRA/huffman_compressor}{Huffman树压缩器}做了基准测试。
+测试结果见表\ \ref{table:test}。
+\begin{longtable}{|c||>{\ttfamily}r|>{\ttfamily}r|>{\ttfamily}r||>{\ttfamily}r|>{\ttfamily}r|>{\ttfamily}r|}
+\caption{QEMU基准测试}\label{table:test}\\
+\hline
+\multirow{2}{*}{文件}&\multicolumn{3}{c|}{压缩/s}&\multicolumn{3}{c|}{提取/s}\\\cline{2-7}
+&\multicolumn{1}{c|}{x86-64}&\multicolumn{1}{c|}{riscv64}&\multicolumn{1}{c||}{损失比}&\multicolumn{1}{c|}{x86-64}&\multicolumn{1}{c|}{riscv64}&\multicolumn{1}{c|}{损失比}\\\hline
+\endfirsthead
+test01&0.019& 0.079&4.16&0.009&0.058&6.44\\\hline
+test02&0.040& 0.134&3.35&0.011&0.083&7.55\\\hline
+test03&1.075& 3.054&2.84&0.316&1.624&5.14\\\hline
+test04&1.114& 3.285&2.95&0.272&1.701&6.23\\\hline
+test05&0.715& 2.085&2.92&0.201&1.116&5.55\\\hline
+test06&5.001&14.121&2.82&1.177&7.018&5.96\\\hline
+\end{longtable}
+
+测试脚本是\href{https://github.com/WCIofQMandRA/huffman_compressor/blob/8ab200b656a0e087e27480fcbcae4000a59f6b47/test/benchmark.sh}{test/bencmark.sh}。
+原始记录见我们的仓库的\href{https://github.com/OSH-2022/x-runikraft/tree/eca8a7575be96fb0a4dc311a8c60622c0e9b0aa5/reference/qemu-benchmark.log}{reference/qemu-benchmark.log}。
+
+从测试结果可以看出，不同类型的程序的损失比并不相同，但是我目前并没有弄清楚
+什么样的程序更容易造成性能损失。由于QEMU无法有效利用处理器的分值预测和高速缓存，
+我猜测流水线友好和缓存友好的程序会因此较大的性能损失。考虑到内核的大部分操作不涉及大范围的
+寻址，可以认为系统内核属于会引起较大性能损失的程序，所以我们把QEMU仿真带来的性能损失视为5。
 
 \section{创新点}
 与先前用Rust改写FreeRTOS的小组类似，我们的项目偏重工程，没有理论上的创新点。
 由于我们了解的所有用Rust写的操作系统都或多或少的使用了unstable的特性，我们用stable特性
 编写unikernel也不失为一种技术上的创新。
 \section{概要设计}
+\subsection{架构}
 Runikraft的架构与Unikraft几乎相同。
 \begin{figure}[!hbt]
 \centering
@@ -635,6 +857,9 @@ Runikraft还提供了一些工具模块，比如调试工具\texttt{rkdebug}、�
 的低效。
 我们只打算实现Rust标准库和C标准库的部分内容。
 
+\subsection{改写方法}
+
+\subsection{日程安排}
 
 \section*{许可协议}
 本文档以知识共享署名 4.0 国际 (CC BY 4.0)许可证发布。
