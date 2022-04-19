@@ -1,0 +1,230 @@
+0. build
+-- The C compiler identification is GNU 9.4.0
+-- The CXX compiler identification is GNU 9.4.0
+-- Check for working C compiler: /usr/bin/cc
+-- Check for working C compiler: /usr/bin/cc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Check for working CXX compiler: /usr/bin/c++
+-- Check for working CXX compiler: /usr/bin/c++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Check if the system is big endian
+-- Searching 16 bit integer
+-- Looking for sys/types.h
+-- Looking for sys/types.h - found
+-- Looking for stdint.h
+-- Looking for stdint.h - found
+-- Looking for stddef.h
+-- Looking for stddef.h - found
+-- Check size of unsigned short
+-- Check size of unsigned short - done
+-- Using unsigned short
+-- Check if the system is big endian - little endian
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/zzc/本科/023_数据结构/02_Huffman压缩器/test/build-x86-64
+Scanning dependencies of target nowide
+Scanning dependencies of target hmcmpsr
+[ 18%] Building CXX object lib/hmcmpsr/CMakeFiles/hmcmpsr.dir/sources/advancement.cpp.o
+[ 18%] Building CXX object ext/nowide/CMakeFiles/nowide.dir/source/iostream.cpp.o
+[ 18%] Building CXX object ext/nowide/CMakeFiles/nowide.dir/source/cstdio.cpp.o
+[ 37%] Building CXX object lib/hmcmpsr/CMakeFiles/hmcmpsr.dir/sources/genbitstream.cpp.o
+[ 37%] Building CXX object lib/hmcmpsr/CMakeFiles/hmcmpsr.dir/sources/custream.cpp.o
+[ 37%] Building CXX object ext/nowide/CMakeFiles/nowide.dir/source/cstdlib.cpp.o
+[ 62%] Building CXX object lib/hmcmpsr/CMakeFiles/hmcmpsr.dir/sources/huffman_tree.cpp.o
+[ 62%] Building CXX object lib/hmcmpsr/CMakeFiles/hmcmpsr.dir/sources/hmcompressor.cpp.o
+[ 62%] Building CXX object lib/hmcmpsr/CMakeFiles/hmcmpsr.dir/sources/char_frequency.cpp.o
+[ 62%] Building C object lib/hmcmpsr/CMakeFiles/hmcmpsr.dir/ext/mini-gmp/mini-gmp.c.o
+[ 68%] Linking CXX shared library ../../output/lib/libnowide.so
+[ 68%] Built target nowide
+[ 75%] Linking CXX shared library ../../output/lib/libhmcmpsr.so
+[ 75%] Built target hmcmpsr
+Scanning dependencies of target huffman_compressor
+[ 81%] Building CXX object src/CMakeFiles/huffman_compressor.dir/advancement_info.cpp.o
+[ 87%] Building CXX object src/CMakeFiles/huffman_compressor.dir/argument.cpp.o
+[ 93%] Building CXX object src/CMakeFiles/huffman_compressor.dir/main.cpp.o
+[100%] Linking CXX executable ../output/bin/huffman_compressor
+[100%] Built target huffman_compressor
+-- The C compiler identification is GNU 9.4.0
+-- The CXX compiler identification is GNU 9.4.0
+-- Check for working C compiler: /usr/bin/riscv64-linux-gnu-gcc
+-- Check for working C compiler: /usr/bin/riscv64-linux-gnu-gcc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Check for working CXX compiler: /usr/bin/riscv64-linux-gnu-g++
+-- Check for working CXX compiler: /usr/bin/riscv64-linux-gnu-g++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Check if the system is big endian
+-- Searching 16 bit integer
+-- Looking for sys/types.h
+-- Looking for sys/types.h - found
+-- Looking for stdint.h
+-- Looking for stdint.h - found
+-- Looking for stddef.h
+-- Looking for stddef.h - found
+-- Check size of unsigned short
+-- Check size of unsigned short - done
+-- Using unsigned short
+-- Check if the system is big endian - little endian
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/zzc/本科/023_数据结构/02_Huffman压缩器/test/build-riscv64
+Scanning dependencies of target nowide
+Scanning dependencies of target hmcmpsr
+[  6%] Building CXX object ext/nowide/CMakeFiles/nowide.dir/source/cstdio.cpp.o
+[ 12%] Building CXX object ext/nowide/CMakeFiles/nowide.dir/source/cstdlib.cpp.o
+[ 25%] Building CXX object lib/hmcmpsr/CMakeFiles/hmcmpsr.dir/sources/char_frequency.cpp.o
+[ 25%] Building CXX object lib/hmcmpsr/CMakeFiles/hmcmpsr.dir/sources/custream.cpp.o
+[ 31%] Building CXX object lib/hmcmpsr/CMakeFiles/hmcmpsr.dir/sources/advancement.cpp.o
+[ 43%] Building CXX object lib/hmcmpsr/CMakeFiles/hmcmpsr.dir/sources/hmcompressor.cpp.o
+[ 43%] Building CXX object lib/hmcmpsr/CMakeFiles/hmcmpsr.dir/sources/genbitstream.cpp.o
+[ 50%] Building CXX object ext/nowide/CMakeFiles/nowide.dir/source/iostream.cpp.o
+[ 56%] Building CXX object lib/hmcmpsr/CMakeFiles/hmcmpsr.dir/sources/huffman_tree.cpp.o
+[ 62%] Building C object lib/hmcmpsr/CMakeFiles/hmcmpsr.dir/ext/mini-gmp/mini-gmp.c.o
+[ 68%] Linking CXX shared library ../../output/lib/libnowide.so
+[ 68%] Built target nowide
+[ 75%] Linking CXX shared library ../../output/lib/libhmcmpsr.so
+[ 75%] Built target hmcmpsr
+Scanning dependencies of target huffman_compressor
+[ 87%] Building CXX object src/CMakeFiles/huffman_compressor.dir/main.cpp.o
+[ 87%] Building CXX object src/CMakeFiles/huffman_compressor.dir/argument.cpp.o
+[ 93%] Building CXX object src/CMakeFiles/huffman_compressor.dir/advancement_info.cpp.o
+[100%] Linking CXX executable ../output/bin/huffman_compressor
+[100%] Built target huffman_compressor
+1. x86-64
+压缩
+huffman_compressor -c data/test01
+
+real	0m0.019s
+user	0m0.019s
+sys	0m0.000s
+huffman_compressor -c data/test02
+
+real	0m0.044s
+user	0m0.040s
+sys	0m0.004s
+huffman_compressor -c data/test03
+
+real	0m1.088s
+user	0m1.075s
+sys	0m0.008s
+huffman_compressor -c data/test04
+
+real	0m1.135s
+user	0m1.114s
+sys	0m0.016s
+huffman_compressor -c data/test05
+
+real	0m0.726s
+user	0m0.715s
+sys	0m0.008s
+huffman_compressor -c data/test06
+
+real	0m5.062s
+user	0m5.001s
+sys	0m0.048s
+解压
+huffman_compressor -x data/test01.hmz -o data/test01.new
+
+real	0m0.009s
+user	0m0.009s
+sys	0m0.000s
+huffman_compressor -x data/test02.hmz -o data/test02.new
+
+real	0m0.015s
+user	0m0.011s
+sys	0m0.004s
+huffman_compressor -x data/test03.hmz -o data/test03.new
+
+real	0m0.321s
+user	0m0.316s
+sys	0m0.004s
+huffman_compressor -x data/test04.hmz -o data/test04.new
+
+real	0m0.284s
+user	0m0.272s
+sys	0m0.012s
+huffman_compressor -x data/test05.hmz -o data/test05.new
+
+real	0m0.205s
+user	0m0.201s
+sys	0m0.004s
+huffman_compressor -x data/test06.hmz -o data/test06.new
+
+real	0m1.195s
+user	0m1.177s
+sys	0m0.016s
+----------------------------------------------------
+2. riscv64
+压缩
+huffman_compressor -c data/test01
+
+real	0m0.083s
+user	0m0.079s
+sys	0m0.004s
+huffman_compressor -c data/test02
+
+real	0m0.146s
+user	0m0.134s
+sys	0m0.012s
+huffman_compressor -c data/test03
+
+real	0m3.067s
+user	0m3.054s
+sys	0m0.008s
+huffman_compressor -c data/test04
+
+real	0m3.338s
+user	0m3.285s
+sys	0m0.020s
+huffman_compressor -c data/test05
+
+real	0m2.136s
+user	0m2.085s
+sys	0m0.008s
+huffman_compressor -c data/test06
+
+real	0m14.275s
+user	0m14.121s
+sys	0m0.036s
+解压
+huffman_compressor -x data/test01.hmz -o data/test01.new
+
+real	0m0.062s
+user	0m0.058s
+sys	0m0.004s
+huffman_compressor -x data/test02.hmz -o data/test02.new
+
+real	0m0.083s
+user	0m0.083s
+sys	0m0.000s
+huffman_compressor -x data/test03.hmz -o data/test03.new
+
+real	0m1.653s
+user	0m1.624s
+sys	0m0.024s
+huffman_compressor -x data/test04.hmz -o data/test04.new
+
+real	0m1.722s
+user	0m1.701s
+sys	0m0.016s
+huffman_compressor -x data/test05.hmz -o data/test05.new
+
+real	0m1.135s
+user	0m1.116s
+sys	0m0.016s
+huffman_compressor -x data/test06.hmz -o data/test06.new
+
+real	0m7.071s
+user	0m7.018s
+sys	0m0.040s
