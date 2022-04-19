@@ -128,14 +128,94 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 我们选择的课题是使用Rust语言改写Unikraft Unikernel。与RustyHermit和rCore等用Rust实现的操作系统不同，
 我们将完全使用Rust的稳定特性编写代码。
 
-众所周知，在互联网技术和云计算不断发展的今天，我们身边的虚拟化设备不断增多，它们中的很多都使用了Unikernel。然而，虚拟化设备和Unikernel也暴露出了很多安全问题。对这些安全问题，C语言因其本身的缺陷难辞其咎。
+众所周知，在互联网技术和云计算不断发展的今天，我们身边的虚拟化设备不断增多，
+它们中的很多都使用了Unikernel。然而，虚拟化设备和Unikernel也暴露出了很多安全问题。
+对这些安全问题，C语言因其本身的缺陷难辞其咎。
 
-Rust is a language empowering everyone to build reliable and efficient software.\cite{7}利用Rust编写Unikernel，可以充分发挥它相对C语言的高层抽象和内存安全保证。用Rust改写项目已经成为一种解决问题的有效手段，如zalando公司从Scala转向Rust的成功故事。\cite{3}
+Rust 是一门让人人都能写出可靠、高效的软件的语言。\cite{7}利用Rust编写Unikernel，
+可以充分发挥它相对C语言的高层抽象和内存安全保证。用Rust改写项目已经成为一种解决问题的
+有效手段，如zalando公司从Scala转向Rust的成功故事。\cite{3}
 
-RISC-V is a free and open ISA enabling a new era of processor innovation through open standard collaboration.\cite{0}目前基于RISC-V架构的开源处理器有很多，既有标量处理器Rocket，也有超标量处理器BOOM，还有面向嵌入式领域的Z-scale、PicoRV32等。\cite{2}
+RISC-V是一款自由、开源的ISA，它开启了全新的基于开放标准协作的处理器创新时代。\cite{0}
+目前基于RISC-V架构的开源处理器有很多，既有标量处理器Rocket，
+也有超标量处理器BOOM，还有面向嵌入式领域的Z-scale、PicoRV32等。\cite{2}
 
-因此，我们计划使用Rust语言改写目前最流行的\texttt{Unikernel}——Unikraft。在这份报告中，我们将首先介绍项目的理论依据——Rust语言适用于系统编程的特性及对Unikraft源码的分析和改写思路；随后，我们将介绍使用QEMU进行硬件仿真和测试的方法；最后，我们将给出项目的总体设计和创新点。
+因此，我们计划使用Rust语言改写架构和性能方面占优的unikernel——Unikraft。
+在这份报告中，我们将首先介绍项目的理论依据——Rust语言适用于系统编程的特性
+及对Unikraft源码的分析和改写思路；随后，我们将介绍使用QEMU进行硬件仿真和
+测试的方法；最后，我们将给出项目的总体设计和创新点。
 \section{理论依据}
+\subsection{Rust语言}
+\subsubsection{保证内存安全的方式}
+在高级语言中，某个内存位置要在程序中能被访问，必然就会与一个或多个变量建立关联关系。这会引出内存的不正确访问引发的内存安全问题。这些问题在C/C++中都是需要开发者非常小心地自己处理。而 Rust 的语言特性则为上面的问题提供了解决方案。\cite{8}
+\begin{table}[H]
+\centering
+\caption{Rust对内存安全问题的解决方案}
+\begin{tabular}{|c|c|}
+\hline
+\textbf{问题} & \textbf{Rust 的解决方案}\\\hline
+使用未初始化内存&编译器禁止变量读取未赋值变量\\\hline
+对空指针解引用&使用\texttt{Option}枚举替代空指针\\\hline
+悬垂指针&生命周期标识与编译器检查\\\hline
+缓冲区溢出&编译器检查，拒绝超越缓冲区边界的数据访问\\\hline
+非法释放内存&语言级的 RAII 机制，唯一的所有者才有权释放内存\\\hline
+\end{tabular}
+\end{table}
+\subsubsection{保证线程安全的方式}
+Rust 通过一整套设计非常精良的基础设施来保证这一点，这些基础设施配合类型检查和借用模型“强迫”程序员写出正确的代码，把别的语言在运行时的崩溃或泄露暴露在编译期，从而保证线程安全。
+
+\noindent 基础设施：
+
+\begin{enumerate}
+\item 进行语义限制的\texttt{Send} / \texttt{Sync} 、\texttt{Trait}。
+\item 共享不可变所有权的\texttt{Arc} (\texttt{Rc}的多线程版本)。
+\item 提供内部可变性的\texttt{Mutex} / \texttt{Rwlock}。
+\item 管道模型\texttt{channel}。
+\item 其他的一些线程相关的API。
+\end{enumerate}
+
+\noindent 线程相关的常见API与设施：
+
+\begin{enumerate}
+\item \texttt{std::thread::spawn}，\texttt{spawn}接收一个闭包并执行,返回一个\texttt{JoinHandle}类型的值，它拥有线程所有权；
+\item  \texttt{join()}函数，该函数作用在线程句柄\texttt{JoinHandle}类型的值上，使得父线程能够等待子线程执行完毕；
+\item \texttt{move}+闭包，\texttt{move}闭包常常与\texttt{thread}和\texttt{spawn}一起使用，它允许我们在一个线程中使用另外一个线程的数据，使用\texttt{move}关键字强制闭包获取其使用的环境值的所有权。
+\end{enumerate}
+
+Rust 所拥有的这些设施以及自身的特性可以让我们编写出正确的代码从而保证线程安全。\cite{9}
+
+\subsubsection{Unsafe Rust}
+在进行底层系统编程时，我们必须要使用Rust 的unsafe关键字，使用该关键字可以使我们实现以下功能：
+
+解引用原生指针，这对于和C语言和汇编语言程序交互很有用。
+调用一个不安全的函数或方法（例如C语言函数）。
+访问和修改静态变量，后者是Rust中的"全局变量"。
+使用Unsafe Rust会在一定程度上减少Rust编译器的安全检查，但牺牲的稍许安全性却可以换来灵活性的巨大提高。在与硬件抽象（定义于\texttt{portmacros.h}中）进行交互时，我们可能需要使用这个特性。
+
+\subsection{Rust与C交互}
+Rust 中提供了\texttt{extern}关键字来简化创建和使用外部接口（Foreign Function Interface, FFI）的过程。FFI 是编程语言定义函数的一种方式，它允许其他（外部的）编程语言来调用这些函数。
+下面是一个集成了C标准库中的\texttt{abs}函数的示例代码：
+\begin{lstlisting}[numbers=left]
+	extern "C" {
+		fn abs(input: i32) -> i32;
+	}
+	fn main(){
+		unsafe {
+			println!("Absolue value of -3 according to C: {}", abs(-3));
+		}
+	}
+\end{lstlisting}
+这段代码在\texttt{extern "C"}块中列出了它想要调用的外部函数和签名，其中的\texttt{"C"}指明了外部函数使用的应用二进制接口（Application Binary Interface, ABI）：它被用来定义函数在汇编层面的调用方式。
+
+要在其他语言中调用 Rust 函数，同样可以使用\texttt{extern}来创建一个允许其他语言调用 Rust 函数的接口。创建时需要将\texttt{extern}关键字及对应的 ABI 添加到函数签名的\texttt{fn}关键字前，并为该函数添加\texttt{\#[no\_mangle]}注解来避免 Rust 在编译时改变它的名称。下面是一个可以在编译并链接后被 C 语言代码访问的函数定义：
+\begin{lstlisting}[numbers=left]
+	#[no_mangle]
+	pub extern "C" fn call_from_c() {
+		println!("Just called a Rust function from C!");
+	}
+\end{lstlisting}
+这一类型的\texttt{extern}功能不需要使用\texttt{unsafe}。
+
 \subsection{Rust的条件编译}
 Rust通过cfg属性，对条件编译提供了支持。这些配置在Cargo.toml中提供，例如：
 
@@ -171,63 +251,27 @@ let machine_kind = if cfg!(unix) {
 println!("I'm running on a {} machine!", machine_kind);
 \end{lstlisting}
 \cite{e}
-\subsection{Unsafe Rust}
-在进行底层系统编程时，我们必须要使用Rust 的unsafe关键字，使用该关键字可以使我们实现以下功能：
 
-解引用原生指针，这对于和C语言和汇编语言程序交互很有用。
-调用一个不安全的函数或方法（例如C语言函数）。
-访问和修改静态变量，后者是Rust中的"全局变量"。
-使用Unsafe Rust会在一定程度上减少Rust编译器的安全检查，但牺牲的稍许安全性却可以换来灵活性的巨大提高。在与硬件抽象（定义于\texttt{portmacros.h}中）进行交互时，我们可能需要使用这个特性。
-\subsection{Rust保证内存安全的方式}
-在高级语言中，某个内存位置要在程序中能被访问，必然就会与一个或多个变量建立关联关系。这会引出内存的不正确访问引发的内存安全问题。这些问题在C/C++中都是需要开发者非常小心地自己处理。而 Rust 的语言特性则为上面的问题提供了解决方案。\cite{8}
-\begin{table}[H]
-\centering
-\caption{Rust对内存安全问题的解决方案}
-\begin{tabular}{|c|c|}
-\hline
-\textbf{问题} & \textbf{Rust 的解决方案}\\\hline
-使用未初始化内存&编译器禁止变量读取未赋值变量\\\hline
-对空指针解引用&使用\texttt{Option}枚举替代空指针\\\hline
-悬垂指针&生命周期标识与编译器检查\\\hline
-缓冲区溢出&编译器检查，拒绝超越缓冲区边界的数据访问\\\hline
-非法释放内存&语言级的 RAII 机制，唯一的所有者才有权释放内存\\\hline
-\end{tabular}
-\end{table}
-\subsection{Rust保证线程安全的方式}
-Rust 通过一整套设计非常精良的基础设施来保证这一点，这些基础设施配合类型检查和借用模型“强迫”程序员写出正确的代码，把别的语言在运行时的崩溃或泄露暴露在编译期，从而保证线程安全。
+\subsection{RISC-V ISA}
+\subsubsection{特权特权模型}
+在编写unikernel时，我们需要使用特权指令处理外设中断、控制机器状态，
+因此需要了解RISC-V的特权模型。
 
-\noindent 基础设施：
-
-\begin{enumerate}
-\item 进行语义限制的\texttt{Send} / \texttt{Sync} 、\texttt{Trait}。
-\item 共享不可变所有权的\texttt{Arc} (\texttt{Rc}的多线程版本)。
-\item 提供内部可变性的\texttt{Mutex} / \texttt{Rwlock}。
-\item 管道模型\texttt{channel}。
-\item 其他的一些线程相关的API。
-\end{enumerate}
-
-\noindent 线程相关的常见API与设施：
-
-\begin{enumerate}
-\item \texttt{std::thread::spawn}，\texttt{spawn}接收一个闭包并执行,返回一个\texttt{JoinHandle}类型的值，它拥有线程所有权；
-\item  \texttt{join()}函数，该函数作用在线程句柄\texttt{JoinHandle}类型的值上，使得父线程能够等待子线程执行完毕；
-\item \texttt{move}+闭包，\texttt{move}闭包常常与\texttt{thread}和\texttt{spawn}一起使用，它允许我们在一个线程中使用另外一个线程的数据，使用\texttt{move}关键字强制闭包获取其使用的环境值的所有权。
-\end{enumerate}
-
-Rust 所拥有的这些设施以及自身的特性可以让我们编写出正确的代码从而保证线程安全。\cite{9}
-
-
-\subsection{RISC-V的特权}
 截至目前(2022.4)，RISC-V 共定义了四个特权级别，由高到低排列顺次为：
 
 \begin{description}
-\item[机器级别（M）] RISC-V中硬件线程可以执行的最高权限模式。在M模式下运行的 hart 对内存、I/O 和一些对于启动和配置系统来说必要的底层功能有着完全的使用权。因此它是唯一所有标准 RISC-V 处理器都必须实现的权限模式。\cite{a}
+\item[机器级别（M）] RISC-V中硬件线程可以执行的最高权限模式。
+在M模式下运行的 hart 对内存、I/O 和一些对于启动和配置系统来说必要的底层
+功能有着完全的使用权。因此它是唯一所有标准 RISC-V 处理器都必须实现的权限模式。\cite{a}
 \item[超级监管者级别（H）] 为了支持虚拟机监视器。但目前该级别并没有被正式加入到文档中。
-\item[监管者级别（S）] 为了支持现代类 Unix 操作系统，如 Linux ， FreeBSD 和 Windows 。
+\item[监管者级别（S）] 为了支持现代类 Unix 操作系统，如 Linux，FreeBSD 和 Windows 。
 \item[用户级别（U）] 用于运行应用程序，适用于安全嵌入式系统。
 \end{description}
 
-标准的 RISC-V 为超过4000个 CSR 预留了12位的编码空间(\texttt{[11：0]})。其中，\texttt{[11：8]} 位根据特权级别对 CSR 的读写权限进行编码。注意：任何试图访问不存在的 CSR 的行为均会引发指令异常，尝试写入只读寄存器也会引发指令异常。剩余的8位编码 \texttt{[7:0]} 将指定相应的寄存器地址位置。具体细节如下所示：\cite{b}\cite{c}
+标准的 RISC-V 为超过4000个 CSR 预留了12位的编码空间(\texttt{[11：0]})。
+其中，\texttt{[11：8]} 位根据特权级别对 CSR 的读写权限进行编码。
+注意：任何试图访问不存在的 CSR 的行为均会引发指令异常，尝试写入只读寄存器也会引发指令异常。
+剩余的8位编码 \texttt{[7:0]} 将指定相应的寄存器地址位置。具体细节如下所示：\cite{b}\cite{c}
 
 \begin{lstlisting}[numbers=left]
 CSR [11:10]：对读写模式进行约束
@@ -244,21 +288,40 @@ CSR [9:8]：对访问最低权限进行约束
 
 
 目前 RISC-V 支持的特权指令格式为：
-\begin{figure}[!hbt]
+\begin{figure}[H]
 	\centering
 	\includegraphics[width=0.7\linewidth]{assets/W2}
 	\caption{目前 RISC-V 支持的特权指令格式}
 	\label{fig:w2}
 \end{figure}
 以 CSR 访存指令为例。其标准格式为：
-\begin{figure}[!hbt]
+\begin{figure}[H]
 	\centering
 	\includegraphics[width=0.7\linewidth]{assets/W3}
 	\caption{ CSR 访存指令为例的标准格式}
 	\label{fig:w3}
 \end{figure}
-除目前 RISC-V 支持的特权指令格式外，\texttt{ECALL}指令在Linux中用于系统调用。如下为\texttt{arch/riscv/kernel/sbi.c}中的部分代码，使用\texttt{ECALL}指令时，将异常类型写在a7 寄存器， 参数写在 a0-a5 寄存器，后面会根据异常类型的不同调用不同的异常处理函数。
-\begin{lstlisting}[numbers=left]
+除目前 RISC-V 支持的特权指令格式外，\texttt{ecall}指令在Linux中用于系统调用。
+
+\subsubsection{监管者二进制接口}
+为了降低S模式的程序在不同RISC-V的设备之间的移植难度，
+RISC-V引入了监管者二进制接口（\textbf{S}upervisor \textbf{B}inary \textbf{I}nterface）。
+它在M模式运行，为运行在S模式下的操作系统内核提供硬件抽象。
+
+与U模式的程序使用系统调用陷入S模式类似，S模式的系统内核也可以用SBI调用陷入M模式，
+以使用SBI提供的服务。
+
+\begin{figure}[tbh!]
+\centering
+\includegraphics[width=0.7\linewidth]{assets/RISCV-SBI}
+\caption{不含H拓展的RISC-V系统}
+\label{fig:riscv-sbi}
+\end{figure}
+
+如下为\texttt{arch/riscv/kernel/sbi.c}中的部分代码，使用\texttt{ecall}指令时，
+将EID写在\texttt{a7} 寄存器，FID写在\texttt{a6}寄存器，参数写在 \texttt{a0}-\texttt{a5} 寄存器，
+后面会根据EID和FID的不同调用不同的处理函数。
+\begin{lstlisting}[language=C,numbers=left]
 struct sbiret sbi_ecall(int ext, int fid, unsigned long arg0,
 unsigned long arg1, unsigned long arg2,
 unsigned long arg3, unsigned long arg4,
@@ -284,14 +347,126 @@ unsigned long arg5)
 	return ret;
 }
 \end{lstlisting}​
-例如实现一个putchar函数用于打印一个字符到系统控制台上，就如下通过ECALL来实现：
-\begin{lstlisting}[numbers=left]
-	void sbi_console_putchar(int ch)
-	{
-		sbi_ecall(SBI_EXT_0_1_CONSOLE_PUTCHAR, 0, ch, 0, 0, 0, 0, 0);
-	}
+
+例如可以用如下程序实现一个打印一个字符到系统控制台上的putchar函数：
+\begin{lstlisting}[language=C]
+    void sbi_console_putchar(int ch)
+    {
+    	sbi_ecall(SBI_EXT_0_1_CONSOLE_PUTCHAR, 0, ch, 0, 0, 0, 0, 0);
+    }
 \end{lstlisting}
-\subsection{Unikraft的开机流程（KVM+AMD64）}
+
+用SBI可以降低开发系统的难度，但是会引入\texttt{ecall}指令，而unikernel的高效正是
+依靠避免\texttt{ecall}实现的，所以我们只会在前期使用SBI提供的服务，后期会用自己编写
+的virtio驱动程序代替SBI。
+
+
+\subsubsection{KVM对RISC-V架构的支持}
+KVM (Kernel-based Virtual Machine，基于内核的虚拟机)  ，是一种内建于 Linux 中的开源虚拟化技术。具体而言，KVM 可以将 Linux 转变为虚拟监控程序，从而使主机计算机能够运行多个隔离的虚拟环境，即虚拟客户机或虚拟机（VM）。
+\begin{figure}[!hbt]
+	\centering
+	\includegraphics[width=0.7\linewidth]{assets/W4}
+	\caption{虚拟化下的特权等级}
+	\label{fig:w4}
+\end{figure}
+
+如图\ref{fig:w4}，为了支持虚拟化，RISC-V 规范定义了 RISC-V H-extension ，在原来的3级特权架构的基础上对原有的 Supervisor 模式进行了扩展，引入了 Hypervisor-Extended Supervisor mode(HS)。此时，在 Machine Mode 下运行最高优先级的、对全部资源具备操作能力的 Firmware ，虚拟机软件 Hypervisor 运行在 HS 模式，虚拟机 VM 运行在虚拟化的 Supervisor 模式，应用程序继续运行在虚拟操作系统之上，运行在 Virtualized User mode。
+
+为了实现 Supervisor 与 Hypervisor-extended supervisor 模式的切换，RSIC-V 将原来 Supervisor 模式下的 CSR 复制一份到Hypervisor，从而让每个硬件线程拥有两份 supervisor 寄存器，加快两个模式之间的切换过程。
+
+由于 RISC-V 没有为不同虚拟化软件设计专门的特权模式，而是设计了统一的特权模式，这说明它对 1类（如Xvisor）、 2类（如KVM）虚拟化软件都有很好的支持。 RISC-V 可以通过 CSR 寄存器注入中断，因此不需要为虚拟化而特殊设计中断控制器外设。此外，RISC-V 可直接借助特殊的寄存器位支持嵌套虚拟化，而 Aarch64 要等到 v8.3 版本之后才支持这个功能。RISC-V 的时钟和核间中断可通过 SBI 软件辅助完成，而 Aarch64 需要特殊设计的计时器外设来支持虚拟化功能。\cite{d}
+
+\subsubsection{使用QEMU进行仿真测试}
+
+QEMU is a generic and open source machine emulator and virtualizer.
+
+When used as a machine emulator, QEMU can run OSes and programs made for one machine (e.g. an ARM board) on a different machine (e.g. your own PC). By using dynamic translation, it achieves very good performance.
+
+When used as a virtualizer, QEMU achieves near native performance by executing the guest code directly on the host CPU. QEMU supports virtualization when executing under the Xen hypervisor or using the KVM kernel module in Linux. When using KVM, QEMU can virtualize x86, server and embedded PowerPC, 64-bit POWER, S390, 32-bit and 64-bit ARM, and MIPS guests.\cite{1}
+
+\noindent QEMU具有如下优点：
+
+\begin{description}
+\item[Full-system emulation] Run operating systems for any machine, on any supported architecture.
+\item[User-mode emulation] Run programs for another Linux/BSD target, on any supported architecture.
+\item[Virtualization] Run KVM and Xen virtual machines with near native performance.\cite{1}
+\end{description}
+
+\subsection{Unikraft架构分析}
+\subsubsection{代码风格}
+Unikraft的代码组织方式充分体现了模块化设计，核心代码被放在了\texttt{arch/}、\texttt{include/}和
+\texttt{plat/}三个目录下，而系统的几乎所有功能都由为了\texttt{lib/}目录下的micro-libraries提供。
+一个micro-library被放在一个目录下：
+\begin{itemize}
+\item \texttt{include/}：micro-libray的API；
+\item \texttt{Config.uk}：menu-config配置；
+\item \texttt{exportsyms.uk}：导出的符号；
+\item \texttt{Makefile.uk}：自动构建系统的配置；
+\item \texttt{*.c}：micro-library的实现。
+\item \texttt{extra.ld}：（可选）链接器配置。
+\end{itemize}
+
+比如，\texttt{rksched}的目录结构：
+{\linespread{1}
+\begin{verbatim}
+    uksched
+    ├── Config.uk
+    ├── exportsyms.uk
+    ├── extra.ld
+    ├── include
+    │   └── uk
+    │       ├── sched.h
+    │       ├── thread_attr.h
+    │       ├── thread.h
+    │       ├── wait.h
+    │       └── wait_types.h
+    ├── Makefile.uk
+    ├── sched.c
+    ├── thread_attr.c
+    └── thread.c
+\end{verbatim}}
+
+Unikraft用UNIX命名风格，函数名和结构体
+以\texttt{uk\_\hspace{0cm}\textit{<micro-library\hspace{0cm}名\hspace{0cm}>}\hspace{0cm}\_}
+开头，结构体名后\textit{通常}附加\texttt{\_t}，
+比如\texttt{uk\_malloc}、\texttt{uk\_alloc\_malloc\_func\_t}。
+Unikraft使用面向对象设计，每个micro-libray中通常有与库同名的结构体，如\texttt{uk\_sched}，
+库中的函数的第一个参数通常是执行这个结构体的指针，如\texttt{\textbf{struct} uk\_sched *uk\_sched\_create(\textbf{struct} uk\_alloc *a, \textbf{size\_t} prv\_size)}。
+
+\subsubsection{编译运行流程}
+以编译\href{https://github.com/unikraft/app-helloworld}{hello world程序}为例，介绍编译并运行基于Unikraft的unikernel的流程。
+
+首先要修改\texttt{Makefile}，把\texttt{UK\_ROOT}改为unikraft源代码的目录，比如
+\texttt{UK\_ROOT ?= \linebreak\$(PWD)/../unikraft}，当然也可以不修改\texttt{Makefile}而修改
+命令行参数。
+
+用\texttt{make menuconfig}配置，然后用\texttt{make}编译。
+\begin{figure}[!hbt]
+\centering
+\includegraphics[width=0.9\linewidth]{assets/unikraft-menuconfig}
+\caption{配置Unikraft}
+\label{fig:unikraft-menuconfig}
+\end{figure}
+Hello world程序与Unikraft的各个被使用的micro-libraies先被分别编译成了\texttt{.o}文件，
+再链接成一个unikernel镜像。一共生成了\texttt{libkvmplat}、\texttt{libkvmpci}、\texttt{libkvmvirtio}、
+\texttt{apphelloworld}、\texttt{libnolibc}、\texttt{libukalloc}、\texttt{libukallocbbuddy}、
+\texttt{libukargparse}、\texttt{libukboot}、\texttt{libukbus}、\texttt{libukdebug}、
+\texttt{libuksglist}、\texttt{libuktime}、\texttt{libuktimeconv}、\texttt{libx86\_64arch}等中间文件。
+最后的输出是18.0KiB大的\texttt{app-\linebreak helloworld\_kvm-x86\_64.gz}。
+
+详细的编译日志位于我们的仓库的\href{https://github.com/OSH-2022/x-runikraft/tree/d22ccf0c1b248667148fd8953b71b6e0258de6a3/reference/Unikraft%20helloworld}{reference/Unikraft helloworld/}目录。
+
+用\texttt{qemu-system-x86\_64 -kernel build/app-helloworld\_kvm-x86\_64 -nographic}\linebreak 运行hello world程序。
+
+\begin{figure}[tbh!]
+\centering
+\includegraphics[width=0.9\linewidth]{assets/unikraft-run}
+\caption{运行hello world}
+\label{fig:unikraft-run}
+\end{figure}
+
+
+\subsubsection[开机流程]{开机流程（KVM+AMD64）}
 \begin{enumerate}
 \item bootloader（由虚拟机的固件实现）。
 \item \texttt{\_libkvmplat\_start32}（位于\texttt{plat/kvm/x86/entry64.S}）：
@@ -350,183 +525,57 @@ unsigned long arg5)
 \item 关机/崩溃。
 \end{enumerate}
 
+\subsubsection{分配器}
+分配器的API位于\texttt{ukalloc}，可选的实现有\texttt{ukallocbbuddy}、\texttt{ukallocpool}、
+\texttt{ukallocregion}。\texttt{ukalloc}用函数指针实现了类似C++的虚函数的运行时绑定，其他的
+Unikraft 接口micro-libraries也采用了类似的技术。\texttt{\textbf{struct} uk\_alloc}保存
+\texttt{malloc}、\texttt{free}等指向实现的函数指针，\texttt{uk\_malloc}等接口函数
+接受\texttt{uk\_alloc}型指针\texttt{a}，将参数转发给\texttt{a}的函数指针。比如，\texttt{malloc}的
+实现：
+\begin{lstlisting}[language=C]
+static inline void *uk_do_malloc(struct uk_alloc *a, __sz size)
+{
+	UK_ASSERT(a);
+	return a->malloc(a, size);
+}
+
+static inline void *uk_malloc(struct uk_alloc *a, __sz size)
+{
+	if (unlikely(!a)) {
+		errno = ENOMEM;
+		return __NULL;
+	}
+	return uk_do_malloc(a, size);
+}
+\end{lstlisting}
+
+具体的实现负责初始化\texttt{uk\_alloc}变量，比如\texttt{ukbbuddy}实现了伙伴分配器，它提供的
+\texttt{struct uk\_alloc *uk\_allocbbuddy\_init(void *base, size\_t len)}函数会把
+自己的实现绑定到\texttt{uk\_alloc}中的函数指针。
+
+\subsubsection{调度器}
+调度器和线程的APIs都位于\texttt{uksched}。
+
+\texttt{ukthread}既是接口又是实现，它提供针对单个线程的操作，
+其中的\texttt{\textbf{struct} uk\_thread}保存线程控制块，
+\texttt{uk\_thread\_set\_timeslice}函数设置线程时间片，\texttt{uk\_thread\_wake}
+函数唤醒线程，根据线程的时间片设置定时器，然后把控制权转交给这个线程，这些操作需要调用\texttt{ukplat}
+的API。
+
+\texttt{uksched}是只是接口，它
+负责管理所有线程，它调用\texttt{ukthread}的API操作单个线程。
+\texttt{ukschedcoop}是\texttt{uksched}的实现之一，它实现了最基本非抢占式的时间片轮转线程调度器。
+它使用双链尾队列（tail queue）维护所有线程（\texttt{thread\_list}）和
+睡眠状态（就绪或等待）的线程（\texttt{sleeping\_threads}）。
+每一轮调度，\texttt{ukschedcoop}从睡眠线程队列
+中找出一个处在就绪态的线程，并唤醒（\texttt{uk\_thread\_wake}）这个线程，
+如果没有任何能执行的线程，就挂起CPU（\texttt{ukplat\_lcpu\_halt\_to}），
+直到某个线程能执行。\texttt{ukschedcoop}并不需要为每一个事件维护等待队列，
+因为即使线程等待的事件发生了，由于当前线程的执行不能被抢占，等待的线程也不能被立即唤醒。
+
+Unikraft的论文中提到了它拥有抢占式调度器\texttt{ukpreempt}，但是我们并没有在它的源代码中找到相应的实现。
+
 \section{技术依据}
-
-\subsection{Rust对一些C语法的处理方法}
-\textbf{指针}
-
-这可能将是困扰我们最多的问题，在可行的情况下，我们将尽可能使用Rust内存安全的\textbf{引用}来处理指针。在万不得已的情况下，例如和C语言交互或是我们需要的功能和Rust语法特性矛盾时，我们将使用\texttt{Raw Pointe}r，后者是Rust的\texttt{unsafe}功能。
-
-\textbf{宏定义}
-
-FreeRTOS中的宏定义可以分为三类：
-
-1、用于配置的宏定义；
-
-2、一些函数的封装；
-
-3、封装一些常见的代码块；
-
-对于第一种宏定义，我们可以使用\texttt{cfg}来进行配置并进行条件编译；对于第二种宏定义，我们将直接定义另一个函数来代替它；对于第三种宏定义，我们将尽可能使用函数将其替换。\cite{e}
-
-\textbf{模块化设计}
-
-我们将主要参考使用更适合Rust风格的类型声明和函数定义方式。我们不忌惮对Unikraft的结构进行修改，但在必要的时候，我们将采用unsafe关键字来调用某些C语言函数。例如，我们将用Rust封装作为Rust和硬件接口的portmacro.h和负责内存分配的heap.h。
-\subsection{Rust实现数据结构举例}
-我们设置的链表带有一个头结点，然后是相应的子节点，它的结构可以声明如下：
-\begin{lstlisting}[numbers=left]
-use std::rc::Rc;
-use std::cell::RefCell;
-
-pub struct List<T> {
-	head: Link<T>,
-	tail: Link<T>,
-}
-
-type Link<T> = Option<Rc<RefCell<Node<T>>>>;
-
-struct Node<T> {
-	elem: T,
-	next: Link<T>,
-	prev: Link<T>,
-}
-\end{lstlisting}
-在这里，使用了\texttt{RefCell}类型，是因为下面会使用到它提供的\texttt{borrow}和\texttt{borrow\_mut}方法。而Rc的使用是为了共享变量的\texttt{ownership}。
-
-\textbf{List 方法实现}
-
-首先，最先实现的就是new方法了。该方法主要起一个初始化的工作。它的的实现如下：
-\begin{lstlisting}[numbers=left]
-impl<T> Node<T> {
-	fn new(elem: T) -> Rc<RefCell<Self>> {
-		Rc::new(RefCell::new(Node {
-			elem: elem,
-			prev: None,
-			next: None,
-		}))
-	}
-}
-
-impl<T> List<T> {
-	pub fn new() -> Self {
-		List { head: None, tail: None }
-	}
-}
-\end{lstlisting}
-接下来实现push\_front方法。实现细节如下：
-\begin{lstlisting}[numbers=left]
-pub fn push_front(&mut self, elem: T) {
-	let new_head = Node::new(elem);
-	// Takes the value out of the option, leaving a None in its place.
-	match self.head.take() {
-		Some(old_head) => {
-			// borrow_mut 作用于RefCell，获取里面的借用并且将其转型为mut
-			old_head.borrow_mut().prev = Some(new_head.clone());
-			new_head.borrow_mut().next = Some(old_head);
-			self.head = Some(new_head);
-		}
-		None => {
-			self.tail = Some(new_head.clone());
-			self.head = Some(new_head);
-		}
-	}
-}
-\end{lstlisting}
-接着就是实现pop\_front方法。具体如下：
-\begin{lstlisting}[numbers=left]
-pub fn pop_front(&mut self) -> Option<T> {
-	self.head.take().map(|old_head| {
-		match old_head.borrow_mut().next.take() {
-			Some(new_head) => {
-				new_head.borrow_mut().prev.take();
-				self.head = Some(new_head);
-			}
-			None => {
-				self.tail.take();
-			}
-		}
-		// all we want to do is to get the elem
-		// Option<Rc<RefCell<Node<T>>>>  ----->   Node.elem
-		Rc::try_unwrap(old_head).ok().unwrap().into_inner().elem
-	})
-}
-\end{lstlisting}
-然后就是实现peek\_front方法：
-\begin{lstlisting}[numbers=left]
-pub fn peek_front(&self) -> Option<Ref<T>> {
-	// Returns None if the pointer is null,
-	// or else returns a reference to the value wrapped in Some.
-	self.head.as_ref().map(|node| {
-		Ref::map(node.borrow(), |node| &node.elem)
-	})
-}
-\end{lstlisting}
-内存的释放：
-\begin{lstlisting}[numbers=left]
-impl<T> Drop for List<T> {
-	// This will decrement the strong reference count.
-	// If the strong reference count reaches zero
-	// then the only other references (if any) are Weak, so we drop the inner value.
-	fn drop(&mut self) {
-		while self.pop_front().is_some() {}
-	}
-}
-\end{lstlisting}
-\cite{e}
-其他的相关方法类似设计。
-\subsection{Rust与C交互}
-Rust 中提供了\texttt{extern}关键字来简化创建和使用外部接口（Foreign Function Interface, FFI）的过程。FFI 是编程语言定义函数的一种方式，它允许其他（外部的）编程语言来调用这些函数。
-下面是一个集成了C标准库中的\texttt{abs}函数的示例代码：
-\begin{lstlisting}[numbers=left]
-	extern "C" {
-		fn abs(input: i32) -> i32;
-	}
-	fn main(){
-		unsafe {
-			println!("Absolue value of -3 according to C: {}", abs(-3));
-		}
-	}
-\end{lstlisting}
-这段代码在\texttt{extern "C"}块中列出了它想要调用的外部函数和签名，其中的\texttt{"C"}指明了外部函数使用的应用二进制接口（Application Binary Interface, ABI）：它被用来定义函数在汇编层面的调用方式。
-
-要在其他语言中调用 Rust 函数，同样可以使用\texttt{extern}来创建一个允许其他语言调用 Rust 函数的接口。创建时需要将\texttt{extern}关键字及对应的 ABI 添加到函数签名的\texttt{fn}关键字前，并为该函数添加\texttt{\#[no\_mangle]}注解来避免 Rust 在编译时改变它的名称。下面是一个可以在编译并链接后被 C 语言代码访问的函数定义：
-\begin{lstlisting}[numbers=left]
-	#[no_mangle]
-	pub extern "C" fn call_from_c() {
-		println!("Just called a Rust function from C!");
-	}
-\end{lstlisting}
-这一类型的\texttt{extern}功能不需要使用\texttt{unsafe}。
-\subsection{KVM对RISC-V架构的支持}
-KVM (Kernel-based Virtual Machine，基于内核的虚拟机)  ，是一种内建于 Linux 中的开源虚拟化技术。具体而言，KVM 可以将 Linux 转变为虚拟监控程序，从而使主机计算机能够运行多个隔离的虚拟环境，即虚拟客户机或虚拟机（VM）。
-\begin{figure}[!hbt]
-	\centering
-	\includegraphics[width=0.7\linewidth]{assets/W4}
-	\caption{虚拟化下的特权等级}
-	\label{fig:w4}
-\end{figure}
-
-如图\ref{fig:w4}，为了支持虚拟化，RISC-V 规范定义了 RISC-V H-extension ，在原来的3级特权架构的基础上对原有的 Supervisor 模式进行了扩展，引入了 Hypervisor-Extended Supervisor mode(HS)。此时，在 Machine Mode 下运行最高优先级的、对全部资源具备操作能力的 Firmware ，虚拟机软件 Hypervisor 运行在 HS 模式，虚拟机 VM 运行在虚拟化的 Supervisor 模式，应用程序继续运行在虚拟操作系统之上，运行在 Virtualized User mode。
-
-为了实现 Supervisor 与 Hypervisor-extended supervisor 模式的切换，RSIC-V 将原来 Supervisor 模式下的 CSR 复制一份到Hypervisor，从而让每个硬件线程拥有两份 supervisor 寄存器，加快两个模式之间的切换过程。
-
-由于 RISC-V 没有为不同虚拟化软件设计专门的特权模式，而是设计了统一的特权模式，这说明它对 1类（如Xvisor）、 2类（如KVM）虚拟化软件都有很好的支持。 RISC-V 可以通过 CSR 寄存器注入中断，因此不需要为虚拟化而特殊设计中断控制器外设。此外，RISC-V 可直接借助特殊的寄存器位支持嵌套虚拟化，而 Aarch64 要等到 v8.3 版本之后才支持这个功能。RISC-V 的时钟和核间中断可通过 SBI 软件辅助完成，而 Aarch64 需要特殊设计的计时器外设来支持虚拟化功能。\cite{d}
-
-\subsection{使用QEMU进行仿真测试}
-
-QEMU is a generic and open source machine emulator and virtualizer.
-
-When used as a machine emulator, QEMU can run OSes and programs made for one machine (e.g. an ARM board) on a different machine (e.g. your own PC). By using dynamic translation, it achieves very good performance.
-
-When used as a virtualizer, QEMU achieves near native performance by executing the guest code directly on the host CPU. QEMU supports virtualization when executing under the Xen hypervisor or using the KVM kernel module in Linux. When using KVM, QEMU can virtualize x86, server and embedded PowerPC, 64-bit POWER, S390, 32-bit and 64-bit ARM, and MIPS guests.\cite{1}
-
-\noindent QEMU具有如下优点：
-
-\begin{description}
-\item[Full-system emulation] Run operating systems for any machine, on any supported architecture.
-\item[User-mode emulation] Run programs for another Linux/BSD target, on any supported architecture.
-\item[Virtualization] Run KVM and Xen virtual machines with near native performance.\cite{1}
-\end{description}
 
 \section{创新点}
 与先前用Rust改写FreeRTOS的小组类似，我们的项目偏重工程，没有理论上的创新点。
