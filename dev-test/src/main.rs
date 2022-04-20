@@ -7,7 +7,7 @@ run:
     qemu-system-riscv64 -machine virt -nographic -bios $RISCV_BIOS -device loader,file=build/riscv64gc-unknown-none-elf/release/dev-test.bin,addr=0x80200000 -s -S
 
 debug:
-    riscv64-unknown-elf-gdb -ex 'file build/riscv64gc-unknown-none-elf/release/dev-test.bin' -ex 'set arch riscv:rv64' -ex 'target remote localhost:1234'
+    riscv64-unknown-elf-gdb -ex 'file build/riscv64gc-unknown-none-elf/release/dev-test' -ex 'set arch riscv:rv64' -ex 'target remote localhost:1234'
     x/10i $pc: 反汇编PC后的10条指令
     b *0x80200000: 设置断点
     si: 执行一条指令
