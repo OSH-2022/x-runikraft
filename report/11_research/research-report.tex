@@ -169,7 +169,7 @@ Runikraft 是用Rust语言编写的能在RISC-V架构 + QEMU平台上运行unike
 而OpenJDK JRE可以视为硬件模拟器，只不过它模拟的是不存在的硬件。这三个示例
 都侧重协助运行程序，而几乎没有隔离措施。狭义的虚拟机是一个模拟完整的计算机系统
 的程序，在虚拟机上运行的系统看来，虚拟机和物理机没有明显区别，而且，虚拟机上
-运行的系统不能随意访问宿主机的资源，Virtual Box、WMWare就是这类虚拟机。
+运行的系统不能随意访问宿主机的资源，Virtual Box、VMWare就是这类虚拟机。
 由于云计算平台上运行的用户程序对计算资源的提供商并不可信，所以，提供商希望将用户
 程序与系统的其他部分隔离。这需要狭义的虚拟机。
 
@@ -597,7 +597,7 @@ Intel CET、ARM SB等安全特性。\cite{bib:unikraft-secuirty}
 \endhead
 实现语言&C++&OCaml&C++&Rust&C&C&C\\\hline
 支持架构&x86-32、x86-64&x86-64、ARM-64&x86-32、x86-64、ARM-64&x86-64、ARM-64&x86-64、ARM-64、RISCV-64gc&x86-32、x86-64、ARM-64&x86-64、ARM-32、ARM-64\\\hline
-支持平台&Xen&KVM、Xen&KVM、Virtual Box、VMWare、x86物理机&QEMU、Uhyve&众多，包括但不限于Xen、KVM、WMWare、Virtual Box等&Xen、嵌入式设备&KVM、Xen、Solo5、Linux用户态\\\hline
+支持平台&Xen&KVM、Xen&KVM、Virtual Box、VMWare、x86物理机&QEMU、Uhyve&众多，包括但不限于Xen、KVM、VMWare、Virtual Box等&Xen、嵌入式设备&KVM、Xen、Solo5、Linux用户态\\\hline
 支持语言&C、C++&OCaml&C、C++&Rust、C、C++、Go、Fortran&众多，包括但不限于C、Go、PHP、Node、Ruby、Lua、Perl等，理论上支持任何ELF文件&众多，包括但不限于C、C++、Erlang、Go、Java、Javascript (node.js)、Python、Ruby 、Rust等&众多，包括但不限于C、C++、Go、Python、Ruby、Web Assembly、Lua等\\\hline
 构建系统&Click configuration language&Opam&Conan、CMake&cargo、CMake&系统与用户程序分别构建，系统使用Makefile构建&buildrump&Kraft、Kconfig\\\hline
 安全性&不详&用安全语言实现，支持random device&较差，甚至关闭了一些C++编译器支持的安全特性&
