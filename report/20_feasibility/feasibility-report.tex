@@ -147,7 +147,9 @@ RISC-V是一款自由、开源的ISA，它开启了全新的基于开放标准�
 \section{理论依据}
 \subsection{Rust语言}
 \subsubsection{保证内存安全的方式}
-在高级语言中，某个内存位置要在程序中能被访问，必然就会与一个或多个变量建立关联关系。这会引出内存的不正确访问引发的内存安全问题。这些问题在C/C++中都是需要开发者非常小心地自己处理。而 Rust 的语言特性则为上面的问题提供了解决方案。\cite{8}
+在高级语言中，某个内存位置要在程序中能被访问，必然就会与一个或多个变量建立关联关系。
+这会引出内存的不正确访问引发的内存安全问题。这些问题在C/C++中都是需要开发者非常小心地
+自己处理。而 Rust 的语言特性则为上面的问题提供了解决方案。\cite{8}
 \begin{table}[H]
 \centering
 \caption{Rust对内存安全问题的解决方案}
@@ -162,7 +164,9 @@ RISC-V是一款自由、开源的ISA，它开启了全新的基于开放标准�
 \end{tabular}
 \end{table}
 \subsubsection{保证线程安全的方式}
-Rust 通过一整套设计非常精良的基础设施来保证这一点，这些基础设施配合类型检查和借用模型“强迫”程序员写出正确的代码，把别的语言在运行时的崩溃或泄露暴露在编译期，从而保证线程安全。
+Rust 通过一整套设计非常精良的基础设施来保证这一点，这些基础设施配合类型检查和
+借用模型“强迫”程序员写出正确的代码，把别的语言在运行时的崩溃或泄露暴露在编译期，
+从而保证线程安全。
 
 \noindent 基础设施：
 
@@ -177,9 +181,13 @@ Rust 通过一整套设计非常精良的基础设施来保证这一点，这些
 \noindent 线程相关的常见API与设施：
 
 \begin{enumerate}
-\item \texttt{std::thread::spawn}，\texttt{spawn}接收一个闭包并执行,返回一个\texttt{JoinHandle}类型的值，它拥有线程所有权；
-\item  \texttt{join()}函数，该函数作用在线程句柄\texttt{JoinHandle}类型的值上，使得父线程能够等待子线程执行完毕；
-\item \texttt{move}+闭包，\texttt{move}闭包常常与\texttt{thread}和\texttt{spawn}一起使用，它允许我们在一个线程中使用另外一个线程的数据，使用\texttt{move}关键字强制闭包获取其使用的环境值的所有权。
+\item \texttt{std::thread::spawn}，\texttt{spawn}接收一个闭包并执行,返回一个
+\texttt{JoinHandle}类型的值，它拥有线程所有权；
+\item  \texttt{join()}函数，该函数作用在线程句柄\texttt{JoinHandle}类型的值上，
+使得父线程能够等待子线程执行完毕；
+\item \texttt{move}+闭包，\texttt{move}闭包常常与\texttt{thread}和\texttt{spawn}
+一起使用，它允许我们在一个线程中使用另外一个线程的数据，使用\texttt{move}关键字强制闭包获取
+其使用的环境值的所有权。
 \end{enumerate}
 
 Rust 所拥有的这些设施以及自身的特性可以让我们编写出正确的代码从而保证线程安全。\cite{9}
@@ -190,10 +198,14 @@ Rust 所拥有的这些设施以及自身的特性可以让我们编写出正确
 解引用原生指针，这对于和C语言和汇编语言程序交互很有用。
 调用一个不安全的函数或方法（例如C语言函数）。
 访问和修改静态变量，后者是Rust中的"全局变量"。
-使用Unsafe Rust会在一定程度上减少Rust编译器的安全检查，但牺牲的稍许安全性却可以换来灵活性的巨大提高。在与硬件抽象（定义于\texttt{portmacros.h}中）进行交互时，我们可能需要使用这个特性。
+使用Unsafe Rust会在一定程度上减少Rust编译器的安全检查，但牺牲的稍许安全性却可以换来
+灵活性的巨大提高。在与硬件抽象（定义于\texttt{portmacros.h}中）进行交互时，我们可能
+需要使用这个特性。
 
 \subsection{Rust与C交互}
-Rust 中提供了\texttt{extern}关键字来简化创建和使用外部接口（Foreign Function Interface, FFI）的过程。FFI 是编程语言定义函数的一种方式，它允许其他（外部的）编程语言来调用这些函数。
+Rust 中提供了\texttt{extern}关键字来简化创建和使用外部接口（Foreign Function
+Interface, FFI）的过程。FFI 是编程语言定义函数的一种方式，它允许其他（外部的）编程语言
+来调用这些函数。
 下面是一个集成了C标准库中的\texttt{abs}函数的示例代码：
 \begin{lstlisting}[numbers=left]
 	extern "C" {
@@ -205,10 +217,15 @@ Rust 中提供了\texttt{extern}关键字来简化创建和使用外部接口（
 		}
 	}
 \end{lstlisting}
-这段代码在\texttt{extern "C"}块中列出了它想要调用的外部函数和签名，其中的\texttt{"C"}指明了外部函数使用的应用二进制接口（Application Binary Interface, ABI）：它被用来定义函数在汇编层面的调用方式。
+这段代码在\texttt{extern "C"}块中列出了它想要调用的外部函数和签名，其中的\texttt{"C"}指明
+了外部函数使用的应用二进制接口（Application Binary Interface, ABI）：它被用来定义函数在
+汇编层面的调用方式。
 
-要在其他语言中调用 Rust 函数，同样可以使用\texttt{extern}来创建一个允许其他语言调用 Rust 函数的接口。创建时需要将\texttt{extern}关键字及对应的 ABI 添加到函数签名的\texttt{fn}关键字前，并为该函数添加\texttt{\#[no\_mangle]}注解来避免 Rust 在编译时改变它的名称。下面是一个可以在编译并链接后被 C 语言代码访问的函数定义：
-\begin{lstlisting}[numbers=left]
+要在其他语言中调用 Rust 函数，同样可以使用\texttt{extern}来创建一个允许其他语言调用 Rust
+函数的接口。创建时需要将\texttt{extern}关键字及对应的 ABI 添加到函数签名的\texttt{fn}关键字
+前，并为该函数添加\texttt{\#[no\_mangle]}注解来避免 Rust 在编译时改变它的名称。
+下面是一个可以在编译并链接后被 C 语言代码访问的函数定义：
+\begin{lstlisting}[numbers=left,language=Rust]
 	#[no_mangle]
 	pub extern "C" fn call_from_c() {
 		println!("Just called a Rust function from C!");
@@ -216,10 +233,10 @@ Rust 中提供了\texttt{extern}关键字来简化创建和使用外部接口（
 \end{lstlisting}
 这一类型的\texttt{extern}功能不需要使用\texttt{unsafe}。
 
-\subsection{Rust的条件编译}
+\subsection{Rust的条件编译}\label{subsec:cond-compile}
 Rust通过cfg属性，对条件编译提供了支持。这些配置在Cargo.toml中提供，例如：
 
-\begin{lstlisting}[numbers=left]
+\begin{lstlisting}[numbers=left,language=Rust]
 [features]
 # no features by default
 default = []
@@ -227,19 +244,20 @@ default = []
 # The “secure-password” feature depends on the bcrypt package.
 secure-password = ["bcrypt"]
 
-# A feature with no dependencies is used mainly for conditional 	 compilation, like `#[cfg(feature = "go-faster")]`.
+# A feature with no dependencies is used mainly for conditional compilation, like `#[cfg(feature = "go-faster")]`.
 go-faster = []
 \end{lstlisting}
 
 在代码中，可以采用cfg属性修饰函数：
-\begin{lstlisting}[numbers=left]
+\begin{lstlisting}[numbers=left,language=Rust]
 // This function is only included when compiling for a unixish OS with a 32-bit architecture
 #[cfg(all(unix, target_pointer_width = "32"))]
 fn on_32bit_unix() {
 	// ...
 }
-也可以使用以下类似#ifdef的方式进行条件编译：
-
+\end{lstlisting}
+也可以使用以下类似\texttt{\#\textbf{ifdef}}的方式进行条件编译：
+\begin{lstlisting}[numbers=left,language=Rust]
 let machine_kind = if cfg!(unix) {
 	"unix"
 } else if cfg!(windows) {
@@ -362,7 +380,9 @@ unsigned long arg5)
 
 
 \subsubsection{KVM对RISC-V架构的支持}
-KVM (Kernel-based Virtual Machine，基于内核的虚拟机)  ，是一种内建于 Linux 中的开源虚拟化技术。具体而言，KVM 可以将 Linux 转变为虚拟监控程序，从而使主机计算机能够运行多个隔离的虚拟环境，即虚拟客户机或虚拟机（VM）。
+KVM (Kernel-based Virtual Machine，基于内核的虚拟机)  ，是一种内建于 Linux 中的
+开源虚拟化技术。具体而言，KVM 可以将 Linux 转变为虚拟监控程序，从而使主机计算机能够运行
+多个隔离的虚拟环境，即虚拟客户机或虚拟机（VM）。
 \begin{figure}[!hbt]
 	\centering
 	\includegraphics[width=0.7\linewidth]{assets/W4}
@@ -370,19 +390,35 @@ KVM (Kernel-based Virtual Machine，基于内核的虚拟机)  ，是一种内�
 	\label{fig:w4}
 \end{figure}
 
-如图\ref{fig:w4}，为了支持虚拟化，RISC-V 规范定义了 RISC-V H-extension ，在原来的3级特权架构的基础上对原有的 Supervisor 模式进行了扩展，引入了 Hypervisor-Extended Supervisor mode(HS)。此时，在 Machine Mode 下运行最高优先级的、对全部资源具备操作能力的 Firmware ，虚拟机软件 Hypervisor 运行在 HS 模式，虚拟机 VM 运行在虚拟化的 Supervisor 模式，应用程序继续运行在虚拟操作系统之上，运行在 Virtualized User mode。
+如图\ref{fig:w4}，为了支持虚拟化，RISC-V 规范定义了 RISC-V H-extension ，在原来的3级
+特权架构的基础上对原有的 Supervisor 模式进行了扩展，引入了 Hypervisor-Extended Supervisor mode(HS)。
+此时，在 Machine Mode 下运行最高优先级的、对全部资源具备操作能力的 Firmware ，虚拟机软件
+Hypervisor 运行在 HS 模式，虚拟机 VM 运行在虚拟化的 Supervisor 模式，应用程序继续运行在
+虚拟操作系统之上，运行在 Virtualized User mode。
 
-为了实现 Supervisor 与 Hypervisor-extended supervisor 模式的切换，RSIC-V 将原来 Supervisor 模式下的 CSR 复制一份到Hypervisor，从而让每个硬件线程拥有两份 supervisor 寄存器，加快两个模式之间的切换过程。
+为了实现 Supervisor 与 Hypervisor-extended supervisor 模式的切换，RSIC-V 将原来
+Supervisor 模式下的 CSR 复制一份到Hypervisor，从而让每个硬件线程拥有两份 supervisor
+寄存器，加快两个模式之间的切换过程。
 
-由于 RISC-V 没有为不同虚拟化软件设计专门的特权模式，而是设计了统一的特权模式，这说明它对 1类（如Xvisor）、 2类（如KVM）虚拟化软件都有很好的支持。 RISC-V 可以通过 CSR 寄存器注入中断，因此不需要为虚拟化而特殊设计中断控制器外设。此外，RISC-V 可直接借助特殊的寄存器位支持嵌套虚拟化，而 Aarch64 要等到 v8.3 版本之后才支持这个功能。RISC-V 的时钟和核间中断可通过 SBI 软件辅助完成，而 Aarch64 需要特殊设计的计时器外设来支持虚拟化功能。\cite{d}
+由于 RISC-V 没有为不同虚拟化软件设计专门的特权模式，而是设计了统一的特权模式，这说明它对
+1类（如Xvisor）、 2类（如KVM）虚拟化软件都有很好的支持。 RISC-V 可以通过 CSR 寄存器注入
+中断，因此不需要为虚拟化而特殊设计中断控制器外设。此外，RISC-V 可直接借助特殊的寄存器位支持
+嵌套虚拟化，而 Aarch64 要等到 v8.3 版本之后才支持这个功能。RISC-V 的时钟和核间中断可通过
+SBI 软件辅助完成，而 Aarch64 需要特殊设计的计时器外设来支持虚拟化功能。\cite{d}
 
 \subsubsection{使用QEMU进行仿真测试}
 
 QEMU is a generic and open source machine emulator and virtualizer.
 
-When used as a machine emulator, QEMU can run OSes and programs made for one machine (e.g. an ARM board) on a different machine (e.g. your own PC). By using dynamic translation, it achieves very good performance.
+When used as a machine emulator, QEMU can run OSes and programs made for
+one machine (e.g. an ARM board) on a different machine (e.g. your own PC).
+By using dynamic translation, it achieves very good performance.
 
-When used as a virtualizer, QEMU achieves near native performance by executing the guest code directly on the host CPU. QEMU supports virtualization when executing under the Xen hypervisor or using the KVM kernel module in Linux. When using KVM, QEMU can virtualize x86, server and embedded PowerPC, 64-bit POWER, S390, 32-bit and 64-bit ARM, and MIPS guests.\cite{1}
+When used as a virtualizer, QEMU achieves near native performance by executing
+the guest code directly on the host CPU. QEMU supports virtualization when executing
+under the Xen hypervisor or using the KVM kernel module in Linux. When using KVM,
+QEMU can virtualize x86, server and embedded PowerPC, 64-bit POWER, S390, 32-bit
+and 64-bit ARM, and MIPS guests.\cite{1}
 
 \noindent QEMU具有如下优点：
 
@@ -393,7 +429,7 @@ When used as a virtualizer, QEMU achieves near native performance by executing t
 \end{description}
 
 \subsection{Unikraft架构分析}
-\subsubsection{代码风格}
+\subsubsection{代码风格}\label{ssubsec:code-style}
 Unikraft的代码组织方式充分体现了模块化设计，核心代码被放在了\texttt{arch/}、\texttt{include/}和
 \texttt{plat/}三个目录下，而系统的几乎所有功能都由为了\texttt{lib/}目录下的micro-libraries提供。
 一个micro-library被放在一个目录下：
@@ -431,10 +467,12 @@ Unikraft用UNIX命名风格，函数名和结构体
 开头，结构体名后\textit{通常}附加\texttt{\_t}，
 比如\texttt{uk\_malloc}、\texttt{uk\_alloc\_malloc\_func\_t}。
 Unikraft使用面向对象设计，每个micro-libray中通常有与库同名的结构体，如\texttt{uk\_sched}，
-库中的函数的第一个参数通常是执行这个结构体的指针，如\texttt{\textbf{struct} uk\_sched *uk\_sched\_create(\textbf{struct} uk\_alloc *a, \textbf{size\_t} prv\_size)}。
+库中的函数的第一个参数通常是执行这个结构体的指针，如
+\texttt{\textbf{struct} uk\_sched *uk\_sched\_create(\textbf{struct} uk\_alloc *a, \textbf{size\_t} prv\_size)}。
 
 \subsubsection{编译运行流程}
-以编译\href{https://github.com/unikraft/app-helloworld}{hello world程序}为例，介绍编译并运行基于Unikraft的unikernel的流程。
+以编译\href{https://github.com/unikraft/app-helloworld}{hello world程序}为例，介绍编译并
+运行基于Unikraft的unikernel的流程。
 
 首先要修改\texttt{Makefile}，把\texttt{UK\_ROOT}改为unikraft源代码的目录，比如
 \texttt{UK\_ROOT ?= \linebreak\$(PWD)/../unikraft}，当然也可以不修改\texttt{Makefile}而修改
@@ -482,13 +520,15 @@ Hello world程序与Unikraft的各个被使用的micro-libraies先被分别编�
     \item 一系列复杂的初始化；
     \item \texttt{call \_libkvmplat\_entry}。
     \end{enumerate}
-\item \texttt{\_libkvmplat\_entry}（位于\texttt{plat/kvm/x86/setup.c}），它接受\texttt{struct multiboot\_info*}参数：
+\item \texttt{\_libkvmplat\_entry}（位于\texttt{plat/kvm/x86/setup.c}），
+它接受\texttt{struct multiboot\_info*}参数：
     \begin{enumerate}
     \item \texttt{\_init\_cpufeatures}；
     \item \texttt{\_libkvmplat\_init\_console}；
     \item \texttt{traps\_init}；
     \item \texttt{intctrl\_init}；
-    \item \texttt{\_mb\_get\_cmdline}：把multiboot\_info中的命令行参数复制到数据段的\texttt{char\linebreak cmdline[8192]}；
+    \item \texttt{\_mb\_get\_cmdline}：把multiboot\_info中的命令行参数复制到数据段
+    的\texttt{char\linebreak cmdline[8192]}；
     \item \texttt{\_mb\_init\_mem}：处理与内存分段有关的操作；
     \item \texttt{\_mb\_init\_initrd`}；
     \item (\texttt{CONFIG\_HAVE\_SMP})\footnote{表示在开启某个配置时执行。} \texttt{acpi\_init}；
@@ -505,7 +545,9 @@ Hello world程序与Unikraft的各个被使用的micro-libraies先被分别编�
     \begin{enumerate}
     \item 调用\texttt{ctorfn}注册的构造函数（\texttt{ctors.h}提供了注册构造函数的机制）；
     \item (\texttt{CONFIG\_LIBUKLIBPARAM})进一步分析命令行参数；
-    \item (\texttt{!CONFIG\_LIBUKBOOT\_NOALLOC}) 依次尝试在每一块内存区域上初始化分配器\linebreak（\texttt{uk\_<name>\_init}），成功创建分配器后，将剩余的内存区域加入分配器\linebreak（\texttt{uk\_alloc\_addmem}）；
+    \item (\texttt{!CONFIG\_LIBUKBOOT\_NOALLOC}) 依次尝试在每一块内存区域上初始化
+    分配器\linebreak（\texttt{uk\_<name>\_init}），
+    成功创建分配器后，将剩余的内存区域加入分配器\linebreak（\texttt{uk\_alloc\_addmem}）；
     \item (\texttt{CONFIG\_LIBUKALLOC}) 初始化中断（\texttt{ukplat\_irq\_init}）；
     \item (\texttt{CONFIG\_LIBUKSCHED}) 初始化调度器\texttt{uk\_sched\_default\_init}；
     \item (\texttt{CONFIG\_LIBUKSCHED}?)
@@ -554,16 +596,16 @@ static inline void *uk_malloc(struct uk_alloc *a, __sz size)
 自己的实现绑定到\texttt{uk\_alloc}中的函数指针。
 
 \subsubsection{调度器}
-调度器和线程的APIs都位于\texttt{uksched}。
+调度器API位于\texttt{uksched}，它主要包括\texttt{sched}和\texttt{thread}两个子模块。
 
-\texttt{ukthread}既是接口又是实现，它提供针对单个线程的操作，
+\texttt{thread}既是接口又是实现，它提供针对单个线程的操作，
 其中的\texttt{\textbf{struct} uk\_thread}保存线程控制块，
 \texttt{uk\_thread\_set\_timeslice}函数设置线程时间片，\texttt{uk\_thread\_wake}
 函数唤醒线程，根据线程的时间片设置定时器，然后把控制权转交给这个线程，这些操作需要调用\texttt{ukplat}
 的API。
 
-\texttt{uksched}是只是接口，它
-负责管理所有线程，它调用\texttt{ukthread}的API操作单个线程。
+\texttt{sched}是只是接口，它
+负责管理所有线程，它调用\texttt{thread}的API操作单个线程。
 \texttt{ukschedcoop}是\texttt{uksched}的实现之一，它实现了最基本非抢占式的时间片轮转线程调度器。
 它使用双链尾队列（tail queue）维护所有线程（\texttt{thread\_list}）和
 睡眠状态（就绪或等待）的线程（\texttt{sleeping\_threads}）。
@@ -738,9 +780,12 @@ rust-objcopy --strip-all build/riscv64gc-unknown-none-elf/release/dev-test -O bi
 当然也可以用\texttt{sudo apt install qemu-system}完整地安装QEMU。符合要求的GDB并没有
 被收录在Ubuntu的软件源中，幸好SiFive提供了一套预编译的调试工具链，其可在\
 \href{https://github.com/sifive/freedom-tools/releases}{sifive/freedom-tools}\
-下载。下载并解压后，可以将\texttt{riscv64-unknown-elf-toolchain-10.2.0-2020.12.8-x86\_64-linux-ubuntu14/bin}添加到\texttt{PATH}。QEMU的文档声称已经附带了\texttt{OpenSBI}\cite{qemu-virt}，
-但是Ubuntu 20.04的APT源中的QEMU并没有附带，所以仍然需要到\ \href{https://github.com/riscv-software-src/opensbi/releases/tag/v1.0}{OpenSBI Version 1.0}\
-手动下载。我们需要的是\linebreak\texttt{opensbi-1.0-rv-bin/share/opensbi/lp64/generic/firmware/fw\_jump.bin}。为了方便后续使用，可以在\texttt{~/.bashrc}中加上\texttt{export RISCV\_BIOS=\textit{<PATH\_TO\_fw\_jump.bin>}}。
+下载。下载并解压后，可以将\texttt{riscv64-unknown-elf-toolchain-10.2.0-2020.12.8-x86\_64-linux-ubuntu14/bin}添加到\texttt{PATH}。
+QEMU的文档声称已经附带了\texttt{OpenSBI}\cite{qemu-virt}，
+但是Ubuntu 20.04的APT源中的QEMU并没有附带，所以仍然需要到
+\ \href{https://github.com/riscv-software-src/opensbi/releases/tag/v1.0}{OpenSBI Version 1.0}\
+手动下载。我们需要的是\linebreak\texttt{opensbi-1.0-rv-bin/share/opensbi/lp64/generic/firmware/fw\_jump.bin}。
+为了方便后续使用，可以在\texttt{~/.bashrc}中加上\texttt{export RISCV\_BIOS=\textit{<PATH\_TO\_fw\_jump.bin>}}。
 
 一切安装完毕后，可以用
 \begin{lstlisting}
@@ -769,8 +814,10 @@ riscv64-unknown-elf-gdb -ex 'file build/riscv64gc-unknown-none-elf/release/dev-t
 \subsection{QEMU性能测试}
 Unikernel以高性能著称，性能也是评价unikernel的重要指标。
 然而遗憾的是，由于我们无法得到RISC-V物理机，而QEMU仿真硬件架构本身
-会带来巨大的性能损失，所以我们很难准确评估我们写的Runikraft的性能。为了相对准确的估计Runikraft
-的性能，可以测试QEMU仿真本身带来的性能损失，然后可以用QEMU上的运行时间除以性能损失比\footnote{riscv64时间÷ x86-64时间}，估计真实RISC-V
+会带来巨大的性能损失，所以我们很难准确评估我们写的Runikraft的性能。
+为了相对准确的估计Runikraft
+的性能，可以测试QEMU仿真本身带来的性能损失，
+然后可以用QEMU上的运行时间除以性能损失比\footnote{riscv64时间÷ x86-64时间}，估计真实RISC-V
 硬件上的运行时间。
 
 我们用组员张子辰同学的数据结构课程的大作业
@@ -780,7 +827,8 @@ Unikernel以高性能著称，性能也是评价unikernel的重要指标。
 \caption{QEMU基准测试}\label{table:test}\\
 \hline
 \multirow{2}{*}{文件}&\multicolumn{3}{c|}{压缩/s}&\multicolumn{3}{c|}{提取/s}\\\cline{2-7}
-&\multicolumn{1}{c|}{x86-64}&\multicolumn{1}{c|}{riscv64}&\multicolumn{1}{c||}{损失比}&\multicolumn{1}{c|}{x86-64}&\multicolumn{1}{c|}{riscv64}&\multicolumn{1}{c|}{损失比}\\\hline
+&\multicolumn{1}{c|}{x86-64}&\multicolumn{1}{c|}{riscv64}&\multicolumn{1}{c||}{损失比}&
+\multicolumn{1}{c|}{x86-64}&\multicolumn{1}{c|}{riscv64}&\multicolumn{1}{c|}{损失比}\\\hline
 \endfirsthead
 test01&0.019& 0.079&4.16&0.009&0.058&6.44\\\hline
 test02&0.040& 0.134&3.35&0.011&0.083&7.55\\\hline
@@ -859,7 +907,88 @@ Runikraft还提供了一些工具模块，比如调试工具\texttt{rkdebug}、�
 
 \subsection{改写方法}
 
+\subsubsection{类型转换}
+下面是通常情况下Unikraft使用的C类型对应的Rust类型。
+越先出现的规则优先级越高，即如果一个C类型与多条规则匹配，则按最先出现的规则转换
+成Rust类型，但是如果转换后的类型会引起所有权问题，则放弃这条转换规则，按下一条匹配的
+规则转换。
+\begin{longtable}{|l|l|}
+\caption{}\\
+\hline
+C类型&Rust类型\\\hline
+\endfirsthead
+\hline
+C类型&Rust类型\\\hline
+\endhead
+\texttt{long}&\texttt{isize}\\\hline
+\texttt{unsigned long}&\texttt{usize}\\\hline
+\texttt{\_\_sz}&\texttt{usize}\\\hline
+\texttt{\_\_nsec}&\texttt{core::time::Duration}\\\hline
+代表错误信息的\texttt{int}&\texttt{Result<(),i32>}\\\hline
+取1或0的\texttt{int}&\texttt{bool}\\\hline
+\texttt{T[N]}&\texttt{[T;N]}\\\hline
+\texttt{void \_\_noreturn}&\texttt{!}\\\hline
+\texttt{void*}&（泛型函数）\texttt{*mut T}\\\hline
+\texttt{void*}&（泛型函数）\texttt{*const T}\\\hline
+\texttt{void*}&\texttt{*const u8}\\\hline
+\texttt{void*}&\texttt{*mut u8}\\\hline
+\texttt{const char*}&\texttt{\&str}\\\hline
+传递结果的\texttt{T*}，返回\texttt{int}&\texttt{Result<T,int>}或\texttt{Optional<T>}\\\hline
+传递结果的\texttt{T*}，返回\texttt{void}&\texttt{T}\\\hline
+\texttt{T*}+\hspace{0cm}长度&\texttt{\&mut [T]}\\\hline
+\texttt{const T*}+\hspace{0cm}长度&\texttt{\&[T]}\\\hline
+\texttt{T*}&\texttt{\&mut T}\\\hline
+\texttt{T*}&\texttt{*mut T}\\\hline
+\texttt{const T*}&\texttt{\&T}\\\hline
+\texttt{const T*}&\texttt{*const T}\\\hline
+整型&长度和符号相同的整型\\\hline
+浮点类型&长度相同的浮点类型\\\hline
+\end{longtable}
+
+Unikraft用到了少量双重指针。一般地，C的双重指针\texttt{T**}在C++的含义是\texttt{T \&*}，
+所以它对应Rust的\texttt{\&mut *mut T}。但是这种写法比较丑陋，所以我们会尽量通过改写
+函数传参的方式，避免使用指针的引用。
+
+\subsubsection{面向对象式函数}
+所谓“面向对象式函数”就是\ \ref{ssubsec:code-style}\ 提到的第一个参数是
+与库同名的结构体的指针的函数。在Rust中，可以把这些函数放在\texttt{\textbf{impl}}块
+中，第一个参数是\texttt{\textbf{self}}。
+
+如\texttt{ukring}的入队操作
+\begin{lstlisting}[language=C]
+static __inline int
+uk_ring_enqueue(struct uk_ring *br, void *buf)
+{
+    /* 实现略 */
+}
+\end{lstlisting}
+改写为
+\begin{lstlisting}[language=Rust]
+impl Ring {
+    fn enqueue<T>(&mut self, buf: *const T)->Result<(),i32> {
+        // 实现略
+    }
+}
+\end{lstlisting}
+
+\subsubsection{宏}
+
+用\ \ref{subsec:cond-compile}\ 的方法处理条件编译宏。
+把宏常量转换为静态变量。把仿函数宏转换成内联函数，在必要时使用泛型。
+把用宏实现的模板类型转换成基于泛型的结构体，它们主要是链表这样的容器。
+
+\subsubsection{编译提示}
+Rust的中的\texttt{cold}属性可以充当GCC中的\texttt{\_\_builtin\_expect(\textit{<expr>},0)}，
+也就是\texttt{unlikely(\textit{<expr>})}，但是Rust中没有含义是\texttt{likely}的属性。
+
+GCC的\texttt{\_\_inline}等价于Rust的\texttt{\#[inline]}，
+GCC的\texttt{\_\_attribute\_\_((always\_inline))}等价于Rust的\texttt{\#[inline(always)]}，
+GCC的\texttt{\_\_attribute\_\_((no\_inline))}等价于Rust的\texttt{\#[inline(never)]}。
+
+一些依赖布局的结构体，如\texttt{\_\_regs}改写成Rust后需要附加\texttt{\#[repr(C)]}属性，
+以确保能直接通过偏移量访问结构体成员。
 \subsection{日程安排}
+
 
 \section*{许可协议}
 本文档以知识共享署名 4.0 国际 (CC BY 4.0)许可证发布。
