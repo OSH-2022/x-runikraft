@@ -1,4 +1,5 @@
 /// 所有的通用寄存器
+#[repr(C)]
 pub struct RegGen {
     pub s0: usize,
     pub s1: usize,
@@ -39,6 +40,7 @@ pub struct RegGen {
 }
 
 /// 浮点数寄存器
+#[repr(C)]
 pub struct RegFloat {
     pub fs0: f64,
     pub fs1: f64,
