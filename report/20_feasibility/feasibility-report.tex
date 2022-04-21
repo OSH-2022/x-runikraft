@@ -381,7 +381,9 @@ Unikraft使用面向对象设计，每个micro-libray中通常有与库同名的
 用\texttt{make menuconfig}配置，然后用\texttt{make}编译。
 \begin{figure}[!hbt]
 \centering
+\vspace*{-3ex}
 \includegraphics[width=0.9\linewidth]{assets/unikraft-menuconfig}
+\vspace*{-3ex}
 \caption{配置Unikraft}
 \label{fig:unikraft-menuconfig}
 \end{figure}
@@ -398,7 +400,9 @@ Hello world程序与Unikraft的各个被使用的micro-libraies先被分别编�
 
 \begin{figure}[tbh!]
 \centering
+\vspace*{-3ex}
 \includegraphics[width=0.9\linewidth]{assets/unikraft-run}
+\vspace*{-3ex}
 \caption{运行hello world}
 \label{fig:unikraft-run}
 \end{figure}
@@ -675,7 +679,7 @@ rust-objcopy --strip-all build/riscv64gc-unknown-none-elf/release/dev-test -O bi
 即可完成编译。
 
 \subsection{运行和调试}
-这一步需要QEMU \texttt{riscv64}、\texttt{riscv64-unknown-elf}GDB和OpenSBI的
+这一步需要QEMU \texttt{riscv64}、\texttt{riscv64-unknown-elf} GDB和OpenSBI的
 \texttt{fw\_jump.bin}。QEMU可以用\texttt{sudo apt install qemu-system-misc}安装，
 当然也可以用\texttt{sudo apt install qemu-system}完整地安装QEMU。符合要求的GDB并没有
 被收录在Ubuntu的软件源中，幸好SiFive提供了一套预编译的调试工具链，其可在\
@@ -699,14 +703,18 @@ riscv64-unknown-elf-gdb -ex 'file build/riscv64gc-unknown-none-elf/release/dev-t
 
 \begin{figure}[tbh!]
 \centering
-\includegraphics[width=0.9\linewidth]{assets/debug}
+\vspace*{-3ex}
+\includegraphics[width=0.9\linewidth]{assets/debug.png}
+\vspace*{-3ex}
 \caption{调试}
 \label{fig:debug}
 \end{figure}
 
 \begin{figure}[tbh!]
 \centering
-\includegraphics[width=0.9\linewidth]{assets/run}
+\vspace*{-3ex}
+\includegraphics[width=0.9\linewidth]{assets/run.png}
+\vspace*{-3ex}
 \caption{运行结果}
 \label{fig:run}
 \end{figure}

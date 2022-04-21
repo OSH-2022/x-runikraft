@@ -37,6 +37,8 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 \titlecontents{subsubsection}[7.2em]{}{\contentslabel{3.3em}}{}{%
 \titlerule*[5pt]{$\cdot$}\contentspage}
 
+\usepackage{caption}
+
 \usepackage{fancyhdr}
 \usepackage{extramarks}
 \fancyhead{}
