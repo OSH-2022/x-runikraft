@@ -24,14 +24,14 @@
      inkscape:document-units="px"
      showgrid="false"
      inkscape:zoom="1.2423545"
-     inkscape:cx="677.74535"
+     inkscape:cx="677.74536"
      inkscape:cy="341.28745"
      inkscape:window-width="1920"
      inkscape:window-height="1003"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" />
+     inkscape:current-layer="g143468-7" />
   <defs
      id="defs2">
     <marker
@@ -318,23 +318,23 @@
        id="g143468-7"
        transform="translate(301.62851,-198.44631)">
       <rect
-         style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:1.02458;stroke-miterlimit:4;stroke-dasharray:6.1475, 6.1475;stroke-dashoffset:0;stroke-opacity:1"
+         style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:1.05584;stroke-miterlimit:4;stroke-dasharray:6.33505, 6.33505;stroke-dashoffset:0;stroke-opacity:1"
          id="rect143249-0-7"
-         width="97.517349"
+         width="103.55833"
          height="40.835762"
-         x="221.54964"
+         x="218.93175"
          y="495.58585" />
       <text
          xml:space="preserve"
          style="font-style:normal;font-weight:normal;font-size:26.6667px;line-height:1.25;font-family:sans-serif;fill:#ffffff;fill-opacity:1;stroke:none"
-         x="227.20958"
-         y="526.00665"
+         x="221.72914"
+         y="525.96503"
          id="text136107-6"><tspan
            sodipodi:role="line"
            id="tspan136105-6"
-           x="227.20958"
-           y="526.00665"
-           style="font-size:26.6667px;fill:#ffffff">rkshed</tspan></text>
+           x="221.72914"
+           y="525.96503"
+           style="font-size:26.6667px;fill:#ffffff">rksched</tspan></text>
     </g>
     <g
        id="g143468-5"
@@ -1135,17 +1135,17 @@
        transform="rotate(-90,-37.20644,84.571014)"><tspan
          x="-96.636757"
          y="182.91043"
-         id="tspan616317"><tspan
+         id="tspan5635"><tspan
            style="text-align:center;text-anchor:middle"
-           id="tspan616313">语言</tspan><tspan
+           id="tspan5631">语言</tspan><tspan
            style="text-align:center;text-anchor:middle"
-           id="tspan616315">
+           id="tspan5633">
 </tspan></tspan><tspan
          x="-96.636757"
          y="232.91043"
-         id="tspan616321"><tspan
+         id="tspan5639"><tspan
            style="text-align:center;text-anchor:middle"
-           id="tspan616319">标准库</tspan></tspan></text>
+           id="tspan5637">标准库</tspan></tspan></text>
     <g
        id="g229362-1-6-8-6-7"
        transform="translate(-318.76228,-341.08535)">

@@ -114,7 +114,7 @@ ItalicFont=*bto,BoldFont=*tb,BoldItalicFont=*tx]
 \vspace*{-5ex}
 \noindent\textrm{\hfill\textit{by #1}}
 \vspace*{2ex}\par}
-%\renewcommand{\today}{2022年4月5日}
+\renewcommand{\today}{2022年4月21日}
 
 \begin{document}
 \sffamily %为方便屏幕阅读，文档主要使用无衬线字体
@@ -879,10 +879,10 @@ Runikraft的架构与Unikraft几乎相同。
 \texttt{rktime}提供获取和修改系统时间的API，\texttt{rkswrand}提供密码学安全的随机数，
 \texttt{rkboot}负责完成系统的初始化并将控制权转交给用户的代码。
 
-\texttt{rkshed}和\texttt{rklock}是两个与调度器有关的APIs，前者负责创建、调度、撤销线程，后者负责线程间
+\texttt{rksched}和\texttt{rklock}是两个与调度器有关的APIs，前者负责创建、调度、撤销线程，后者负责线程间
 的同步和互斥。Runikraft支持多种调取器，比如，图\ \ref{fig:runikraft-arch}\ 中的RR的时间片轮转调度器、
 Mul-qu是多重队列调取器、EDF是截止日期有限调度器。我们计划先实现RR调度器。当然，为了系统镜像的轻量性，
-用户可以不使用任何调取器，这时，\texttt{rkshed}和\texttt{rklock}会被编译成空API，创建线程的行为
+用户可以不使用任何调取器，这时，\texttt{rksched}和\texttt{rklock}会被编译成空API，创建线程的行为
 将和函数调用相同。这保证了大部分使用仅仅并行加速的程序仍然能正确运行。
 
 Runikraft选择性地提供线程通信模块，如UNIX风格的信号（\texttt{rksignal}），信箱（\texttt{rkmbox}），
@@ -987,8 +987,23 @@ GCC的\texttt{\_\_attribute\_\_((no\_inline))}等价于Rust的\texttt{\#[inline(
 
 一些依赖布局的结构体，如\texttt{\_\_regs}改写成Rust后需要附加\texttt{\#[repr(C)]}属性，
 以确保能直接通过偏移量访问结构体成员。
-\subsection{日程安排}
-
+\subsection{时间安排}
+以星期日为一周的起点。大体上，第10\tildechar14周实现OS元件层，第15、16周实现兼容层，具体安排见
+表\ \ref{table:schedule}。
+\begin{table}[!hbt]
+\centering
+\caption{时间安排}\ \label{table:schedule}
+\begin{tabular}{|r|l|l|l|l|l|}
+\hline
+第10周&\multirow{2}{*}{\texttt{rkplat}}&\texttt{rkalloc}&\multirow{2}{*}{\texttt{rkring}}&\multirow{3}{*}{\texttt{rkblkdev}}&\texttt{rksched}\\\cline{1-1}\cline{3-3}
+第11周&&\multirow{3}{*}{\texttt{rknetdev}}&&&无抢占\\\cline{1-2}\cline{4-4}\cline{6-6}
+第12周&\texttt{rktime}&&\multirow{2}{*}{\texttt{rkmbox}}&&\texttt{rklock}\\\cline{1-2}\cline{5-6}
+第13周&\texttt{rkswrand}&&&\multirow{2}{*}{9pfs}&\texttt{rksched}\\\cline{1-4}
+第14周&\texttt{rkplat}&\texttt{rkparam}&\texttt{rksignal}&&可抢占\\\cline{1-1}\cline{3-6}
+第15周&不依赖&\multirow{2}{*}{RustStd}&\multirow{2}{*}{LibC}&\multirow{2}{*}{\texttt{vfscore}}&\multirow{2}{*}{\texttt{pthread}}\\\cline{1-1}
+第16周&SBI&&&&\\\hline
+\end{tabular}
+\end{table}
 
 \section*{许可协议}
 本文档以知识共享署名 4.0 国际 (CC BY 4.0)许可证发布。
