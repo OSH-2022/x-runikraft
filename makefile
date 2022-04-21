@@ -22,6 +22,7 @@ all:
 .PHONY: everything
 everything: all report
 
+.PHONY: report
 report: $(MAKE_ROOT_DIR)/report/makefile
 	cd $(MAKE_ROOT_DIR)/report && $(MAKE)
 
