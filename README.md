@@ -51,11 +51,12 @@ make doc
 
 ## Contributing to Runikraft
 
+This is only a course project, which will no longer be developed or maintained after this semester. Therefore, directly contributing to this repository may not be accepted. However, if you are interested in Runikraft and want to develop a derived work of it, please do not directly fork this repository as it contains many unrelated files like reports and references. Instead, just create a new repository and upload necessary files in this repository. 
+
 ## License
 
-Most of Runikraft is distributed under the BSD-3-Clause license; see `LICENSE` for details. Each source file should identify its license. Source files that do not identify a specific license are covered by the BSD-3-Clause license.
+Most of Runikraft is distributed under the BSD-3-Clause license; see `LICENSE` for details. Each source file should identify its license. Source code files (including but not limited to `text/x-csrc`, `text/x-chdr`, `text/x-c++src`, `test/x-c++hdr`, `text/rust`, `text/x-makefile`, etc.) that do not identify a specific license are covered by the BSD-3-Clause license. 
 
-The documentations and reports of Runikraft are distributed under the CC-BY-4.0 license; see `report/LICENSE` for details. 
+The documentations and reports of Runikraft are distributed under the CC-BY-4.0 license; see `report/LICENSE` for details. Document files (including but not limited to `text/markdown`, `text/x-tex`, `text/x-log`, etc.) files that do not identify a specific license are implicitly licensed under the CC-BY-4.0. 
 
-## Contact Us
-
+The copyright condition of image files (including but not limited to `image/jpeg`, `image/png`, etc.) are complex, because most of them are not our own works but are extracted from bibliographies. Most of images in our reports are *NOT* free components, so commercial publication of documents in the `report` directory should be performed carefully.  The licenses for images are listed in  `report/COPYING.images.md`. 

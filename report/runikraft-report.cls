@@ -1,3 +1,14 @@
+% SPDX-License-Identifier: CC-BY-4.0
+% runikraft-report.cls
+
+% Authors: 张子辰 <zichen350@gmail.com>
+
+% Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿
+% All rights reserved.
+
+% 🅭 🅯
+% This document is licensed under a Creative Commons Attribution
+% 4.0 International license <https://creativecommons.org/licenses/by/4.0/>.
 \ProvidesClass{runikraft-report}
 \LoadClass[UTF8,fontset=none,linespread=1.15]{ctexart}
 \ctexset
