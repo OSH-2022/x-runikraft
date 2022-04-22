@@ -1,0 +1,8 @@
+[workspace]
+
+members = [
+    "core",
+    "dev-test",
+    "lib/rkalloc",
+    "lib/rkalloc_empty"
+]
