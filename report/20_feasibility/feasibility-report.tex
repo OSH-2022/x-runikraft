@@ -211,20 +211,370 @@ CSR [9:8]：对访问最低权限进行约束
 
 
 目前 RISC-V 支持的特权指令格式为：
-\begin{figure}[H]
-	\centering
-	\includegraphics[width=0.7\linewidth]{assets/W2}
-	\caption{目前 RISC-V 支持的特权指令格式}
-	\label{fig:w2}
-\end{figure}
+%\begin{table}[H]
+    %\caption{RISC-V 特权指令}
+{
+    \small
+    \newcommand{\instbit}[1]{\mbox{\scriptsize #1}}
+    \newcommand{\instbitrange}[2]{~\instbit{#1} \hfill \instbit{#2}~}
+    %\centering
+    
+    \begin{longtable}{p{0in}p{0.4in}p{0.05in}p{0.05in}p{0.05in}p{0.05in}p{0.4in}p{0.6in}p{0.4in}p{0.6in}p{0.7in}l}
+    \caption{RISC-V 特权指令}\\
+    &
+    \multicolumn{1}{l}{\instbit{31}} &
+    \multicolumn{1}{r}{\instbit{27}} &
+    \instbit{26} &
+    \instbit{25} &
+    \multicolumn{1}{l}{\instbit{24}} &
+    \multicolumn{1}{r}{\instbit{20}} &
+    \instbitrange{19}{15} &
+    \instbitrange{14}{12} &
+    \instbitrange{11}{7} &
+    \instbitrange{6}{0} \\
+    \cline{2-11}
+    \endfirsthead
+    &
+    \multicolumn{1}{l}{\instbit{31}} &
+    \multicolumn{1}{r}{\instbit{27}} &
+    \instbit{26} &
+    \instbit{25} &
+    \multicolumn{1}{l}{\instbit{24}} &
+    \multicolumn{1}{r}{\instbit{20}} &
+    \instbitrange{19}{15} &
+    \instbitrange{14}{12} &
+    \instbitrange{11}{7} &
+    \instbitrange{6}{0} \\
+    \cline{2-11}
+    \endhead
+    
+    &
+    \multicolumn{4}{|c|}{funct7} &
+    \multicolumn{2}{c|}{rs2} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{funct3} &
+    \multicolumn{1}{c|}{rd} &
+    \multicolumn{1}{c|}{opcode} & R-type \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{6}{|c|}{imm[11:0]} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{funct3} &
+    \multicolumn{1}{c|}{rd} &
+    \multicolumn{1}{c|}{opcode} & I-type \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{10}{c}{} & \\
+    &
+    \multicolumn{10}{c}{\bf Trap-Return Instructions} & \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0001000} &
+    \multicolumn{2}{c|}{00010} &
+    \multicolumn{1}{c|}{00000} &
+    \multicolumn{1}{c|}{000} &
+    \multicolumn{1}{c|}{00000} &
+    \multicolumn{1}{c|}{1110011} & SRET \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0011000} &
+    \multicolumn{2}{c|}{00010} &
+    \multicolumn{1}{c|}{00000} &
+    \multicolumn{1}{c|}{000} &
+    \multicolumn{1}{c|}{00000} &
+    \multicolumn{1}{c|}{1110011} & MRET \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{10}{c}{} & \\
+    &
+    \multicolumn{10}{c}{\bf Interrupt-Management Instructions} & \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0001000} &
+    \multicolumn{2}{c|}{00101} &
+    \multicolumn{1}{c|}{00000} &
+    \multicolumn{1}{c|}{000} &
+    \multicolumn{1}{c|}{00000} &
+    \multicolumn{1}{c|}{1110011} & WFI \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{10}{c}{} & \\
+    &
+    \multicolumn{10}{c}{\bf Supervisor Memory-Management Instructions} & \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0001001} &
+    \multicolumn{2}{c|}{rs2} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{000} &
+    \multicolumn{1}{c|}{00000} &
+    \multicolumn{1}{c|}{1110011} & SFENCE.VMA \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{10}{c}{} & \\
+    &
+    \multicolumn{10}{c}{\bf Hypervisor Memory-Management Instructions} & \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0010001} &
+    \multicolumn{2}{c|}{rs2} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{000} &
+    \multicolumn{1}{c|}{00000} &
+    \multicolumn{1}{c|}{1110011} & HFENCE.VVMA \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0110001} &
+    \multicolumn{2}{c|}{rs2} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{000} &
+    \multicolumn{1}{c|}{00000} &
+    \multicolumn{1}{c|}{1110011} & HFENCE.GVMA \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{10}{c}{} & \\
+    &
+    \multicolumn{10}{c}{\bf Hypervisor Virtual-Machine Load and Store Instructions} & \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0110000} &
+    \multicolumn{2}{c|}{00000} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{100} &
+    \multicolumn{1}{c|}{rd} &
+    \multicolumn{1}{c|}{1110011} & HLV.B \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0110000} &
+    \multicolumn{2}{c|}{00001} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{100} &
+    \multicolumn{1}{c|}{rd} &
+    \multicolumn{1}{c|}{1110011} & HLV.BU \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0110010} &
+    \multicolumn{2}{c|}{00000} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{100} &
+    \multicolumn{1}{c|}{rd} &
+    \multicolumn{1}{c|}{1110011} & HLV.H \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0110010} &
+    \multicolumn{2}{c|}{00001} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{100} &
+    \multicolumn{1}{c|}{rd} &
+    \multicolumn{1}{c|}{1110011} & HLV.HU \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0110100} &
+    \multicolumn{2}{c|}{00000} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{100} &
+    \multicolumn{1}{c|}{rd} &
+    \multicolumn{1}{c|}{1110011} & HLV.W \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0110010} &
+    \multicolumn{2}{c|}{00011} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{100} &
+    \multicolumn{1}{c|}{rd} &
+    \multicolumn{1}{c|}{1110011} & HLVX.HU \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0110100} &
+    \multicolumn{2}{c|}{00011} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{100} &
+    \multicolumn{1}{c|}{rd} &
+    \multicolumn{1}{c|}{1110011} & HLVX.WU \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0110001} &
+    \multicolumn{2}{c|}{rs2} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{100} &
+    \multicolumn{1}{c|}{00000} &
+    \multicolumn{1}{c|}{1110011} & HSV.B \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0110011} &
+    \multicolumn{2}{c|}{rs2} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{100} &
+    \multicolumn{1}{c|}{00000} &
+    \multicolumn{1}{c|}{1110011} & HSV.H \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0110101} &
+    \multicolumn{2}{c|}{rs2} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{100} &
+    \multicolumn{1}{c|}{00000} &
+    \multicolumn{1}{c|}{1110011} & HSV.W \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{10}{c}{} & \\
+    &
+    \multicolumn{10}{c}{\bf Hypervisor Virtual-Machine Load and Store Instructions, RV64 only} & \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0110100} &
+    \multicolumn{2}{c|}{00001} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{100} &
+    \multicolumn{1}{c|}{rd} &
+    \multicolumn{1}{c|}{1110011} & HLV.WU \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0110110} &
+    \multicolumn{2}{c|}{00000} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{100} &
+    \multicolumn{1}{c|}{rd} &
+    \multicolumn{1}{c|}{1110011} & HLV.D \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0110111} &
+    \multicolumn{2}{c|}{rs2} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{100} &
+    \multicolumn{1}{c|}{00000} &
+    \multicolumn{1}{c|}{1110011} & HSV.D \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{10}{c}{} & \\
+    &
+    \multicolumn{10}{c}{\bf \emph{Svinval} Memory-Management Extension} & \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0001011} &
+    \multicolumn{2}{c|}{rs2} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{000} &
+    \multicolumn{1}{c|}{00000} &
+    \multicolumn{1}{c|}{1110011} & SINVAL.VMA \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0001100} &
+    \multicolumn{2}{c|}{00000} &
+    \multicolumn{1}{c|}{00000} &
+    \multicolumn{1}{c|}{000} &
+    \multicolumn{1}{c|}{00000} &
+    \multicolumn{1}{c|}{1110011} & SFENCE.W.INVAL \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0001100} &
+    \multicolumn{2}{c|}{00001} &
+    \multicolumn{1}{c|}{00000} &
+    \multicolumn{1}{c|}{000} &
+    \multicolumn{1}{c|}{00000} &
+    \multicolumn{1}{c|}{1110011} & SFENCE.INVAL.IR \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0010011} &
+    \multicolumn{2}{c|}{rs2} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{000} &
+    \multicolumn{1}{c|}{00000} &
+    \multicolumn{1}{c|}{1110011} & HINVAL.VVMA \\
+    \cline{2-11}
+    
+    
+    &
+    \multicolumn{4}{|c|}{0110011} &
+    \multicolumn{2}{c|}{rs2} &
+    \multicolumn{1}{c|}{rs1} &
+    \multicolumn{1}{c|}{000} &
+    \multicolumn{1}{c|}{00000} &
+    \multicolumn{1}{c|}{1110011} & HINVAL.GVMA \\
+    \cline{2-11}
+    
+    
+    \end{longtable}
+}
+
 以 CSR 访存指令为例。其标准格式为：
-\begin{figure}[H]
-	\centering
-	\includegraphics[width=0.7\linewidth]{assets/W3}
-	\caption{ CSR 访存指令为例的标准格式}
-	\label{fig:w3}
-\end{figure}
-除目前 RISC-V 支持的特权指令格式外，\texttt{ecall}指令在Linux中用于系统调用。
+\begin{table}[H]
+    \centering
+    \caption{状态控制寄存器（CSR）}
+    \begin{tabular}{|r|c|>{\ttfamily}l>{\ttfamily}l|}
+        \hline
+        读/写&I&CSRRW&rd,csr,rs1\\
+        读\&设置位&I&CSRRS&rd,csr,rs1\\
+        读\&清除位&I&CSRRC&rd,csr,rs1\\
+        读/写\ 立即数&I&CSRRWI&rd,csr,imm\\
+        读\&设置位\ 立即数&I&CSRRSI&rd,csr,imm\\
+        读\&清除位\ 立即数&I&CSRRCI&rd,csr,imm\\\hline
+    \end{tabular}
+\end{table}
+
+除目前 RISC-V 支持的特权指令格式外，\texttt{ecall}指令用于系统调用。
 
 \subsubsection{监管者二进制接口}
 为了降低S模式的程序在不同RISC-V的设备之间的移植难度，
@@ -236,7 +586,7 @@ RISC-V引入了监管者二进制接口（\textbf{S}upervisor \textbf{B}inary \t
 
 \begin{figure}[tbh!]
 \centering
-\includegraphics[width=0.7\linewidth]{assets/RISCV-SBI}
+\includegraphics[width=0.7\linewidth]{assets/riscv-sbi-intro1.png}
 \caption{不含H拓展的RISC-V系统}
 \label{fig:riscv-sbi}
 \end{figure}
@@ -290,7 +640,7 @@ KVM (Kernel-based Virtual Machine，基于内核的虚拟机)  ，是一种内�
 多个隔离的虚拟环境，即虚拟客户机或虚拟机（VM）。
 \begin{figure}[!hbt]
 	\centering
-	\includegraphics[width=0.7\linewidth]{assets/W4}
+	\includegraphics[width=0.9\linewidth]{assets/riscv-sbi-intro2.png}
 	\caption{虚拟化下的特权等级}
 	\label{fig:w4}
 \end{figure}

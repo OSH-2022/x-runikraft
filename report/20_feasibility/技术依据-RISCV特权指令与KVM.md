@@ -145,7 +145,7 @@ void sbi_console_putchar(int ch)
 
 
 
-<img src="assets\W4.png" alt="image-20220406095212809" style="zoom:67%;" />
+<img src="assets\riscv-sbi-intro2.png" alt="image-20220406095212809" style="zoom:67%;" />
 
 ​		如上图所示。为了支持虚拟化，RISC-V 规范定义了 RISC-V H-extension ，在原来的3级特权架构的基础上对原有的 Supervisor 模式进行了扩展，引入了 **Hypervisor-Extended Supervisor mode** (HS)。此时，在 Machine Mode 下运行最高优先级的、对全部资源具备操作能力的 Firmware ，虚拟机软件 Hypervisor 运行在 HS 模式，虚拟机 VM 运行在虚拟化的 Supervisor 模式，应用程序继续运行在虚拟操作系统之上，运行在 Virtualized User mode。
 
