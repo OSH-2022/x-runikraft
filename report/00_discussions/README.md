@@ -1,5 +1,29 @@
 # 小组讨论摘要
 
+## 2022-04-20
+
+- 讨论目标：确定开发分工及预期进度。
+
+- 讨论过程：
+
+  - 根据概要设计分配任务；
+
+- 讨论结果：
+
+  - 任务分配如下：
+
+  - |      |  吴骏东   |  张子辰  |  蓝俊玮  |  郭耸霄  |    陈建绿     |
+    | :--: | :-------: | :------: | :------: | :------: | :-----------: |
+    |  10  |           | rkalloc  |          |          |               |
+    |  11  |  rkplat   |          |  rkring  |          | rksched非抢占 |
+    |  12  |  rktime   |          |          | rkblkdev |    rkclock    |
+    |  13  | rkswrand  | rknetdev |  rkmbox  |          |               |
+    |  14  |  rkplat   | rkparam  | rksignal |   9pfs   |  rksched抢占  |
+    |  15  |           |          |          |          |               |
+    |  16  | 不依赖SBI | Rust std |   LibC   | vfscore  |    pthread    |
+
+    
+
 ## 2022-04-13
 
 - 讨论目标：交流可行性报告撰写情况，筹划开始项目编写。
