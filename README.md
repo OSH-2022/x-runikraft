@@ -19,6 +19,8 @@ Runikraft is a unikernel written in Rust language that runs on RISC-V architectu
 
 - `report`: project reports for submission purpose
 - `reference`: references and bibliographies
+- `core`: core component of Runikraft
+- `lib`: micro-libraries
 
  ## Getting Started
 
@@ -28,13 +30,23 @@ As different parts of this project were written in different languages, we use `
 
 To build everything without reports and documentations, install all the dependencies:
 
-- Rust compiler (`rustc >= 1.57`+`cargo`): `apt install rust-all` or use `rustup`.
-- make: `apt install make`.
+- Rust compiler (`rustc >= 1.57`+`cargo`): `apt install rust-all` or follow the official guidance using `rustup`.
+- objcopy supporting RISC-V elf (either riscv64-linux-gnu-objcopy or rust-objcopy):
+    - riscv64-linux-gnu-objcopy: `sudo apt install binutils-riscv64-linux-gnu`;
+    - rust-objcopy: `cargo install cargo-binutils`.
+
+- make: it should have been installed.
 
 Then run:
 
 ```
 make
+```
+
+We use `rust-objcopy` by default; please specific `OBJCOPY_PREFIX` if you installed a different objcopy, for example:
+
+```
+make OBJCOPY_PREFIX=riscv64-linux-gnu-
 ```
 
 Building the reports and documentations requires XeLaTeX (recommend TeX Live 2021+) and some CJK fonts:

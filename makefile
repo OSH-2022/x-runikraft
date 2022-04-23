@@ -37,10 +37,14 @@
 PWD := $(shell pwd)
 export MAKE_ROOT_DIR := $(PWD)/build
 export REPORT_ROOT_DIR := $(PWD)/report
+MAKE_BUILD_TYPE ?= release
+OBJCOPY_PREFIX ?= rust-
+RUST_OUTPUT_DIR := $(MAKE_ROOT_DIR)/dev-test/$(MAKE_BUILD_TYPE)
+RUST_BUILD_DIR := $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(MAKE_BUILD_TYPE)
 
 #currently nothing for all
 .PHONY: all
-all:
+all: dev-test
 
 .PHONY: everything
 everything: all report
@@ -48,6 +52,20 @@ everything: all report
 .PHONY: report
 report: $(MAKE_ROOT_DIR)/report/makefile
 	cd $(MAKE_ROOT_DIR)/report && $(MAKE)
+
+.PHONY: dev-test
+dev-test: $(RUST_OUTPUT_DIR)/dev-test.bin
+
+$(RUST_OUTPUT_DIR)/dev-test.bin: $(RUST_OUTPUT_DIR)/dev-test
+	$(OBJCOPY_PREFIX)objcopy --strip-all $(RUST_OUTPUT_DIR)/dev-test -O binary $(RUST_OUTPUT_DIR)/dev-test.bin
+
+$(RUST_OUTPUT_DIR)/dev-test: $(RUST_BUILD_DIR)/dev-test
+	-mkdir --parents $(RUST_OUTPUT_DIR)
+	cp $(RUST_BUILD_DIR)/dev-test $(RUST_OUTPUT_DIR)/dev-test
+
+.PHONY: $(RUST_BUILD_DIR)/dev-test
+$(RUST_BUILD_DIR)/dev-test:
+	cargo build --$(MAKE_BUILD_TYPE)
 
 $(MAKE_ROOT_DIR)/report/makefile: makefiles/report.mk
 	-mkdir --parents $(MAKE_ROOT_DIR)/report
