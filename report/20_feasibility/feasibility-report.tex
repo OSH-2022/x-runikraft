@@ -20,7 +20,7 @@
   pdftitle={2022春 操作系统原理与设计(H) x-runikraft小组 可行性报告},
   pdfauthor={吴骏东; 张子辰; 蓝俊玮; 郭耸霄; 陈建绿}
 }
-\renewcommand{\today}{2022年4月21日}
+\renewcommand{\today}{2022年4月23日}
 
 \begin{document}
 \title{\bfseries Runikraft小组\quad 可行性报告}
@@ -29,7 +29,7 @@
 \maketitle
 
 \tableofcontents
-\section{项目介绍}
+\section{项目介绍}\sectionauthor{郭耸霄}
 我们选择的课题是使用Rust语言改写Unikraft Unikernel。与RustyHermit和rCore等用Rust实现的操作系统不同，
 我们将完全使用Rust的稳定特性编写代码。
 
@@ -48,9 +48,9 @@ RISC-V是一款自由、开源的ISA，它开启了全新的基于开放标准�
 因此，我们计划使用Rust语言改写架构和性能方面占优的unikernel——Unikraft。
 在这份报告中，我们将首先介绍项目的理论依据——Rust语言适用于系统编程的特性
 及对Unikraft源码的分析和改写思路；随后，我们将介绍使用QEMU进行硬件仿真和
-测试的方法；最后，我们将给出项目的总体设计和创新点。
+测试的方法；最后，我们将给出项目的创新点和总体设计。
 \section{理论依据}
-\subsection{Rust语言}
+\subsection{Rust语言}\sectionauthor{陈建绿}\vspace*{-4ex}
 \subsubsection{保证内存安全的方式}
 在高级语言中，某个内存位置要在程序中能被访问，必然就会与一个或多个变量建立关联关系。
 这会引出内存的不正确访问引发的内存安全问题。这些问题在C/C++中都是需要开发者非常小心地
@@ -61,7 +61,7 @@ RISC-V是一款自由、开源的ISA，它开启了全新的基于开放标准�
 \begin{tabular}{|c|c|}
 \hline
 \textbf{问题} & \textbf{Rust 的解决方案}\\\hline
-使用未初始化内存&编译器禁止变量读取未赋值变量\\\hline
+使用未初始化内存&编译器禁止读取未赋值变量\\\hline
 对空指针解引用&使用\texttt{Option}枚举替代空指针\\\hline
 悬垂指针&生命周期标识与编译器检查\\\hline
 缓冲区溢出&编译器检查，拒绝超越缓冲区边界的数据访问\\\hline
@@ -104,7 +104,7 @@ Rust 所拥有的这些设施以及自身的特性可以让我们编写出正确
 调用一个不安全的函数或方法（例如C语言函数）。
 访问和修改静态变量，后者是Rust中的"全局变量"。
 使用Unsafe Rust会在一定程度上减少Rust编译器的安全检查，但牺牲的稍许安全性却可以换来
-灵活性的巨大提高。在与硬件抽象（定义于\texttt{portmacros.h}中）进行交互时，我们可能
+灵活性的巨大提高。在与硬件抽象进行交互时，我们可能
 需要使用这个特性。
 
 \subsection{Rust与C交互}
@@ -175,7 +175,7 @@ println!("I'm running on a {} machine!", machine_kind);
 \end{lstlisting}
 \cite{e}
 
-\subsection{RISC-V ISA}
+\subsection{RISC-V ISA}\sectionauthor{吴骏东}\vspace*{-4ex}
 \subsubsection{特权特权模型}
 在编写unikernel时，我们需要使用特权指令处理外设中断、控制机器状态，
 因此需要了解RISC-V的特权模型。
@@ -187,7 +187,7 @@ println!("I'm running on a {} machine!", machine_kind);
 在M模式下运行的 hart 对内存、I/O 和一些对于启动和配置系统来说必要的底层
 功能有着完全的使用权。因此它是唯一所有标准 RISC-V 处理器都必须实现的权限模式。\cite{a}
 \item[超级监管者级别（H）] 为了支持虚拟机监视器。但目前该级别并没有被正式加入到文档中。
-\item[监管者级别（S）] 为了支持现代类 Unix 操作系统，如 Linux，FreeBSD 和 Windows 。
+\item[监管者级别（S）] 为了支持现代操作系统，如 Linux，FreeBSD 和 Windows 。
 \item[用户级别（U）] 用于运行应用程序，适用于安全嵌入式系统。
 \end{description}
 
@@ -218,7 +218,7 @@ CSR [9:8]：对访问最低权限进行约束
     \newcommand{\instbit}[1]{\mbox{\scriptsize #1}}
     \newcommand{\instbitrange}[2]{~\instbit{#1} \hfill \instbit{#2}~}
     %\centering
-    
+
     \begin{longtable}{p{0in}p{0.4in}p{0.05in}p{0.05in}p{0.05in}p{0.05in}p{0.4in}p{0.6in}p{0.4in}p{0.6in}p{0.7in}l}
     \caption{RISC-V 特权指令}\\
     &
@@ -247,7 +247,7 @@ CSR [9:8]：对访问最低权限进行约束
     \instbitrange{6}{0} \\
     \cline{2-11}
     \endhead
-    
+
     &
     \multicolumn{4}{|c|}{funct7} &
     \multicolumn{2}{c|}{rs2} &
@@ -256,8 +256,8 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{rd} &
     \multicolumn{1}{c|}{opcode} & R-type \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{6}{|c|}{imm[11:0]} &
     \multicolumn{1}{c|}{rs1} &
@@ -265,15 +265,15 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{rd} &
     \multicolumn{1}{c|}{opcode} & I-type \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{10}{c}{} & \\
     &
     \multicolumn{10}{c}{\bf Trap-Return Instructions} & \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0001000} &
     \multicolumn{2}{c|}{00010} &
@@ -282,8 +282,8 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{00000} &
     \multicolumn{1}{c|}{1110011} & SRET \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0011000} &
     \multicolumn{2}{c|}{00010} &
@@ -292,15 +292,15 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{00000} &
     \multicolumn{1}{c|}{1110011} & MRET \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{10}{c}{} & \\
     &
     \multicolumn{10}{c}{\bf Interrupt-Management Instructions} & \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0001000} &
     \multicolumn{2}{c|}{00101} &
@@ -309,15 +309,15 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{00000} &
     \multicolumn{1}{c|}{1110011} & WFI \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{10}{c}{} & \\
     &
     \multicolumn{10}{c}{\bf Supervisor Memory-Management Instructions} & \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0001001} &
     \multicolumn{2}{c|}{rs2} &
@@ -326,15 +326,15 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{00000} &
     \multicolumn{1}{c|}{1110011} & SFENCE.VMA \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{10}{c}{} & \\
     &
     \multicolumn{10}{c}{\bf Hypervisor Memory-Management Instructions} & \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0010001} &
     \multicolumn{2}{c|}{rs2} &
@@ -343,8 +343,8 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{00000} &
     \multicolumn{1}{c|}{1110011} & HFENCE.VVMA \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0110001} &
     \multicolumn{2}{c|}{rs2} &
@@ -353,15 +353,15 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{00000} &
     \multicolumn{1}{c|}{1110011} & HFENCE.GVMA \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{10}{c}{} & \\
     &
     \multicolumn{10}{c}{\bf Hypervisor Virtual-Machine Load and Store Instructions} & \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0110000} &
     \multicolumn{2}{c|}{00000} &
@@ -370,8 +370,8 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{rd} &
     \multicolumn{1}{c|}{1110011} & HLV.B \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0110000} &
     \multicolumn{2}{c|}{00001} &
@@ -380,8 +380,8 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{rd} &
     \multicolumn{1}{c|}{1110011} & HLV.BU \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0110010} &
     \multicolumn{2}{c|}{00000} &
@@ -390,8 +390,8 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{rd} &
     \multicolumn{1}{c|}{1110011} & HLV.H \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0110010} &
     \multicolumn{2}{c|}{00001} &
@@ -400,8 +400,8 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{rd} &
     \multicolumn{1}{c|}{1110011} & HLV.HU \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0110100} &
     \multicolumn{2}{c|}{00000} &
@@ -410,8 +410,8 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{rd} &
     \multicolumn{1}{c|}{1110011} & HLV.W \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0110010} &
     \multicolumn{2}{c|}{00011} &
@@ -420,8 +420,8 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{rd} &
     \multicolumn{1}{c|}{1110011} & HLVX.HU \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0110100} &
     \multicolumn{2}{c|}{00011} &
@@ -430,8 +430,8 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{rd} &
     \multicolumn{1}{c|}{1110011} & HLVX.WU \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0110001} &
     \multicolumn{2}{c|}{rs2} &
@@ -440,8 +440,8 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{00000} &
     \multicolumn{1}{c|}{1110011} & HSV.B \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0110011} &
     \multicolumn{2}{c|}{rs2} &
@@ -450,8 +450,8 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{00000} &
     \multicolumn{1}{c|}{1110011} & HSV.H \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0110101} &
     \multicolumn{2}{c|}{rs2} &
@@ -460,15 +460,15 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{00000} &
     \multicolumn{1}{c|}{1110011} & HSV.W \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{10}{c}{} & \\
     &
     \multicolumn{10}{c}{\bf Hypervisor Virtual-Machine Load and Store Instructions, RV64 only} & \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0110100} &
     \multicolumn{2}{c|}{00001} &
@@ -477,8 +477,8 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{rd} &
     \multicolumn{1}{c|}{1110011} & HLV.WU \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0110110} &
     \multicolumn{2}{c|}{00000} &
@@ -487,8 +487,8 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{rd} &
     \multicolumn{1}{c|}{1110011} & HLV.D \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0110111} &
     \multicolumn{2}{c|}{rs2} &
@@ -497,15 +497,15 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{00000} &
     \multicolumn{1}{c|}{1110011} & HSV.D \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{10}{c}{} & \\
     &
     \multicolumn{10}{c}{\bf \emph{Svinval} Memory-Management Extension} & \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0001011} &
     \multicolumn{2}{c|}{rs2} &
@@ -514,8 +514,8 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{00000} &
     \multicolumn{1}{c|}{1110011} & SINVAL.VMA \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0001100} &
     \multicolumn{2}{c|}{00000} &
@@ -524,8 +524,8 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{00000} &
     \multicolumn{1}{c|}{1110011} & SFENCE.W.INVAL \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0001100} &
     \multicolumn{2}{c|}{00001} &
@@ -534,8 +534,8 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{00000} &
     \multicolumn{1}{c|}{1110011} & SFENCE.INVAL.IR \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0010011} &
     \multicolumn{2}{c|}{rs2} &
@@ -544,8 +544,8 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{00000} &
     \multicolumn{1}{c|}{1110011} & HINVAL.VVMA \\
     \cline{2-11}
-    
-    
+
+
     &
     \multicolumn{4}{|c|}{0110011} &
     \multicolumn{2}{c|}{rs2} &
@@ -554,8 +554,8 @@ CSR [9:8]：对访问最低权限进行约束
     \multicolumn{1}{c|}{00000} &
     \multicolumn{1}{c|}{1110011} & HINVAL.GVMA \\
     \cline{2-11}
-    
-    
+
+
     \end{longtable}
 }
 
@@ -621,7 +621,7 @@ unsigned long arg5)
 }
 \end{lstlisting}​
 
-例如可以用如下程序实现一个打印一个字符到系统控制台上的putchar函数：
+例如可以用如下程序实现一个打印一个字符到系统控制台上的\texttt{putchar}函数：
 \begin{lstlisting}[language=C]
     void sbi_console_putchar(int ch)
     {
@@ -661,35 +661,32 @@ Supervisor 模式下的 CSR 复制一份到Hypervisor，从而让每个硬件线
 嵌套虚拟化，而 Aarch64 要等到 v8.3 版本之后才支持这个功能。RISC-V 的时钟和核间中断可通过
 SBI 软件辅助完成，而 Aarch64 需要特殊设计的计时器外设来支持虚拟化功能。\cite{d}
 
-\subsubsection{使用QEMU进行仿真测试}
+\subsection{QEMU}\sectionauthor{吴骏东}
 
-QEMU is a generic and open source machine emulator and virtualizer.
+QEMU是一款通用、开源的机器模拟器和虚拟化器。
 
-When used as a machine emulator, QEMU can run OSes and programs made for
-one machine (e.g. an ARM board) on a different machine (e.g. your own PC).
-By using dynamic translation, it achieves very good performance.
+当用作机器模拟器时，QEMU可以把一个机器（如ARM board）的系统或程序运行在不同的机器上（如你的PC）。
+借助动态翻译，它达到了非常好的性能。
 
-When used as a virtualizer, QEMU achieves near native performance by executing
-the guest code directly on the host CPU. QEMU supports virtualization when executing
-under the Xen hypervisor or using the KVM kernel module in Linux. When using KVM,
-QEMU can virtualize x86, server and embedded PowerPC, 64-bit POWER, S390, 32-bit
-and 64-bit ARM, and MIPS guests.\cite{1}
+当用作虚拟化器时，QEMU通过直接在宿主机CPU上运行客户机代码，达到了接近原生的性能。QEMU支持两种模式
+的虚拟化：在Xen hypervisor下执行，或者使用Linux内核模块KVM。当使用KVM时，QEMU可以虚拟化x86、
+服务器和嵌入PowerPC、64位 POWER、S390、32位和64位ARM、RISC-V\cite{qemu7}以及MIPS客户机。\cite{1}
 
 \noindent QEMU具有如下优点：
 
 \begin{description}
-\item[Full-system emulation] Run operating systems for any machine, on any supported architecture.
-\item[User-mode emulation] Run programs for another Linux/BSD target, on any supported architecture.
-\item[Virtualization] Run KVM and Xen virtual machines with near native performance.\cite{1}
+\item[完整系统的模拟] Run operating systems for any machine, on any supported architecture.
+\item[用户态的模拟] Run programs for another Linux/BSD target, on any supported architecture.
+\item[虚拟化] Run KVM and Xen virtual machines with near native performance.\cite{1}
 \end{description}
 
-\subsection{Unikraft架构分析}
+\subsection{Unikraft架构分析}\sectionauthor{张子辰}\vspace*{-4ex}
 \subsubsection{代码风格}\label{ssubsec:code-style}
 Unikraft的代码组织方式充分体现了模块化设计，核心代码被放在了\texttt{arch/}、\texttt{include/}和
 \texttt{plat/}三个目录下，而系统的几乎所有功能都由为了\texttt{lib/}目录下的micro-libraries提供。
 一个micro-library被放在一个目录下：
 \begin{itemize}
-\item \texttt{include/}：micro-libray的API；
+\item \texttt{include/}：micro-library的API；
 \item \texttt{Config.uk}：menu-config配置；
 \item \texttt{exportsyms.uk}：导出的符号；
 \item \texttt{Makefile.uk}：自动构建系统的配置；
@@ -697,7 +694,7 @@ Unikraft的代码组织方式充分体现了模块化设计，核心代码被放
 \item \texttt{extra.ld}：（可选）链接器配置。
 \end{itemize}
 
-比如，\texttt{rksched}的目录结构：
+比如，\texttt{uksched}的目录结构：
 {\linespread{1}
 \begin{verbatim}
     uksched
@@ -721,7 +718,7 @@ Unikraft用UNIX命名风格，函数名和结构体
 以\texttt{uk\_\hspace{0cm}\textit{<micro-library\hspace{0cm}名\hspace{0cm}>}\hspace{0cm}\_}
 开头，结构体名后\textit{通常}附加\texttt{\_t}，
 比如\texttt{uk\_malloc}、\texttt{uk\_alloc\_malloc\_func\_t}。
-Unikraft使用面向对象设计，每个micro-libray中通常有与库同名的结构体，如\texttt{uk\_sched}，
+Unikraft使用面向对象设计，每个micro-library中通常有与库同名的结构体，如\texttt{uk\_sched}，
 库中的函数的第一个参数通常是执行这个结构体的指针，如
 \texttt{\textbf{struct} uk\_sched *uk\_sched\_create(\textbf{struct} uk\_alloc *a, \textbf{size\_t} prv\_size)}。
 
@@ -742,11 +739,11 @@ Unikraft使用面向对象设计，每个micro-libray中通常有与库同名的
 \caption{配置Unikraft}
 \label{fig:unikraft-menuconfig}
 \end{figure}
-Hello world程序与Unikraft的各个被使用的micro-libraies先被分别编译成了\texttt{.o}文件，
+Hello world程序与Unikraft的各个被使用的micro-libraries先被分别编译成了\texttt{.o}文件，
 再链接成一个unikernel镜像。一共生成了\texttt{libkvmplat}、\texttt{libkvmpci}、\texttt{libkvmvirtio}、
 \texttt{apphelloworld}、\texttt{libnolibc}、\texttt{libukalloc}、\texttt{libukallocbbuddy}、
 \texttt{libukargparse}、\texttt{libukboot}、\texttt{libukbus}、\texttt{libukdebug}、
-\texttt{libuksglist}、\texttt{libuktime}、\texttt{libuktimeconv}、\texttt{libx86\_64arch}等中间文件。
+\texttt{libuksglist}、\texttt{libuktime}、\texttt{libuktimeconv}和\texttt{libx86\_64arch}等中间文件。
 最后的输出是18.0KiB大的\texttt{app-\linebreak helloworld\_kvm-x86\_64.gz}。
 
 详细的编译日志位于我们的仓库的\href{https://github.com/OSH-2022/x-runikraft/tree/d22ccf0c1b248667148fd8953b71b6e0258de6a3/reference/Unikraft%20helloworld}{reference/Unikraft helloworld/}目录。
@@ -869,14 +866,14 @@ static inline void *uk_malloc(struct uk_alloc *a, __sz size)
 它使用双链尾队列（tail queue）维护所有线程（\texttt{thread\_list}）和
 睡眠状态（就绪或等待）的线程（\texttt{sleeping\_threads}）。
 每一轮调度，\texttt{ukschedcoop}从睡眠线程队列
-中找出一个处在就绪态的线程，并唤醒（\texttt{uk\_thread\_wake}）这个线程，
+中找出一个处在就绪态的线程，并唤醒（\texttt{uk\_thread\_wake}）这个线程。
 如果没有任何能执行的线程，就挂起CPU（\texttt{ukplat\_lcpu\_halt\_to}），
 直到某个线程能执行。\texttt{ukschedcoop}并不需要为每一个事件维护等待队列，
 因为即使线程等待的事件发生了，由于当前线程的执行不能被抢占，等待的线程也不能被立即唤醒。
 
 Unikraft的论文中提到了它拥有抢占式调度器\texttt{ukpreempt}，但是我们并没有在它的源代码中找到相应的实现。
 
-\section{技术依据}
+\section{技术依据}\sectionauthor{张子辰}\vspace*{-4ex}
 \subsection{rustc交叉编译}
 先安装交叉编译riscv64gc的编译器组件，
 然后在编译时附加\texttt{--target riscv64gc-\linebreak unknown-none-elf}选项即可实现x86-64--riscv64交叉编译。
@@ -892,7 +889,7 @@ cargo install cargo-binutils
 \subsection{启动操作系统}
 添加编译选项\texttt{-Clink-arg=-Tlinker.ld}以便链接器能读取自定义的链接脚本：
 \begin{multicols}{2}
-\begin{lstlisting}
+\begin{lstlisting}[numbers=left]
 OUTPUT_ARCH(riscv)
 ENTRY(__runikraft_start)
 BASE_ADDRESS = 0x80200000;
@@ -986,7 +983,7 @@ pub fn __runikraft_entry_point()->!{
 \end{lstlisting}
 
 \texttt{\_\_runikraft\_entry\_point}和\texttt{\_\_runikraft\_start}都是Runikraft核心组件的
-\texttt{plat::\linebreak bootstrap}的一部分，目前的核心组件还已经实现了\texttt{plat::console}和
+\texttt{plat::\linebreak bootstrap}的一部分，目前的核心组件还实现了\texttt{plat::console}和
 \texttt{plat::time}两个\texttt{plat}模块的子模块，以及\texttt{bitcount}模块（这个模块完全是
 对Unikraft的\texttt{bitcount.c}的翻译）。目前已经实现了\texttt{rkalloc} API（对应Unikraft的
 \texttt{ukalloc}，这个API有一个演示用的“空实现”\texttt{rkalloc\_empty}。
@@ -1105,15 +1102,16 @@ test06&5.001&14.121&2.82&1.177&7.018&5.96\\\hline
 原始记录见我们的仓库的\href{https://github.com/OSH-2022/x-runikraft/tree/eca8a7575be96fb0a4dc311a8c60622c0e9b0aa5/reference/qemu-benchmark.log}{reference/qemu-benchmark.log}。
 
 从测试结果可以看出，不同类型的程序的损失比并不相同，但是我目前并没有弄清楚
-什么样的程序更容易造成性能损失。由于QEMU无法有效利用处理器的分值预测和高速缓存，
-我猜测流水线友好和缓存友好的程序会因此较大的性能损失。考虑到内核的大部分操作不涉及大范围的
+什么样的程序更容易造成性能损失。由于QEMU无法有效利用处理器的分支预测和高速缓存，
+我猜测流水线友好和缓存友好的程序会引起较大的性能损失。考虑到内核的大部分操作不涉及大范围的
 寻址，可以认为系统内核属于会引起较大性能损失的程序，所以我们把QEMU仿真带来的性能损失视为5。
 
 \section{创新点}
 与先前用Rust改写FreeRTOS的小组类似，我们的项目偏重工程，没有理论上的创新点。
 由于我们了解的所有用Rust写的操作系统都或多或少的使用了unstable的特性，我们用stable特性
 编写unikernel也不失为一种技术上的创新。
-\section{概要设计}
+
+\section{概要设计}\sectionauthor{张子辰}\vspace*{-4ex}
 \subsection{架构}
 Runikraft的架构与Unikraft几乎相同。
 \begin{figure}[!hbt]
@@ -1140,10 +1138,10 @@ Runikraft的架构与Unikraft几乎相同。
 它们分别提供网络设备和块设备的支持。
 %与Unikraft的实现类似，这两个APIs的构造函数的参数接受指向\texttt{trait RKplat}的指针。
 \texttt{rktime}提供获取和修改系统时间的API，\texttt{rkswrand}提供密码学安全的随机数，
-\texttt{rkboot}负责完成系统的初始化并将控制权转交给用户的代码。
+\texttt{rkboot}负责完成OS元件的初始化并将控制权转交给用户的代码。
 
 \texttt{rksched}和\texttt{rklock}是两个与调度器有关的APIs，前者负责创建、调度、撤销线程，后者负责线程间
-的同步和互斥。Runikraft支持多种调取器，比如，图\ \ref{fig:runikraft-arch}\ 中的RR的时间片轮转调度器、
+的同步和互斥。Runikraft支持多种调取器，比如，图\ \ref{fig:runikraft-arch}\ 中的RR是时间片轮转调度器、
 Mul-qu是多重队列调取器、EDF是截止日期有限调度器。我们计划先实现RR调度器。当然，为了系统镜像的轻量性，
 用户可以不使用任何调取器，这时，\texttt{rksched}和\texttt{rklock}会被编译成空API，创建线程的行为
 将和函数调用相同。这保证了大部分使用仅仅并行加速的程序仍然能正确运行。
@@ -1300,5 +1298,5 @@ GCC的\texttt{\_\_attribute\_\_((no\_inline))}等价于Rust的\texttt{\#[inline(
 本许可证的全文位于：\\
 \centerline{\url{https://creativecommons.org/licenses/by/4.0/legalcode.zh-Hans}}
 \bibliographystyle{IEEEtran}
-\bibliography{feasibility-report}
+\bibliography{feasibility-report.bib}
 \end{document}
