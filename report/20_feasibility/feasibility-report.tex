@@ -1041,7 +1041,7 @@ QEMU的文档声称已经附带了\texttt{OpenSBI}\cite{qemu-virt}，
 但是Ubuntu 20.04的APT源中的QEMU并没有附带，所以仍然需要到
 \ \href{https://github.com/riscv-software-src/opensbi/releases/tag/v1.0}{OpenSBI Version 1.0}\
 手动下载。我们需要的是\linebreak\texttt{opensbi-1.0-rv-bin/share/opensbi/lp64/generic/firmware/fw\_jump.bin}。
-为了方便后续使用，可以在\texttt{~/.bashrc}中加上\texttt{export RISCV\_BIOS=\textit{<PATH\_TO\_fw\_jump.bin>}}。
+为了方便后续使用，可以在\texttt{\tildechar/.bashrc}中加上\texttt{export RISCV\_BIOS=\textit{<PATH\_TO\_fw\_jump.bin>}}。
 
 一切安装完毕后，可以用
 \begin{lstlisting}
