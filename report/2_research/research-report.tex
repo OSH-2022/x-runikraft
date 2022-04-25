@@ -31,7 +31,7 @@
 \tableofcontents
 
 \section{项目简介}
-Runikraft 是用Rust语言编写的能在RISC-V架构 + QEMU平台上运行unikernel。
+Runikraft 是用Rust语言编写的能在RISC-V架构 + QEMU平台上运行的unikernel。
 它基于用C语言实现的Unikraft，在继承Unikraft的高效性和可定制性的同时，
 进一步简化了构建系统镜像的流程，加入了RISC-V支持，并且
 用Rust语言提供了更强的内核安全保证。
@@ -43,7 +43,7 @@ Runikraft 是用Rust语言编写的能在RISC-V架构 + QEMU平台上运行unike
 
 随着操作系统的
 发展，分层系统出现了，这种系统被分割成若干层，最低层为硬件层，最高层为用户
-层，每一层都在较低层基础上实现，并为较高层提供一组能调用的程序集。分层系统
+层，每一层都在较低层的基础上实现，并为较高层提供一组能调用的程序集。分层系统
 简化了构建和调试系统的难度，并且有助于局部优化系统。
 然而合理地定义各层并不容易，有时低层组件可能需要
 高层组件提供的服务；而且分层会导致用户层执行的操作需要多次转发才能映射到硬件
@@ -76,7 +76,7 @@ Runikraft 是用Rust语言编写的能在RISC-V架构 + QEMU平台上运行unike
 在1960s，大型机的运算速度已经远超过了人类的操作速度。为了
 充分利用大型机的算力，一台大型机配置了多个终端，多个用户可以同时通过终端与大型机交互，
 多个用户的程序轮转使用CPU时间。由于轮转速度很快，用户无法感受到自己的程序没有连续运行，
-所以在每个用户看来，他都拥有一台计算机。这种运行在大型机上的分时系统是最初的虚拟化。
+所以在每个用户看来，他似乎拥有一台独立的计算机。这种运行在大型机上的分时系统是最初的虚拟化。
 然而，随着个人计算机的发展，这种基于分时系统的虚拟化逐渐没落。虚拟化的再次兴起
 得益于互联网技术的发展和云计算的兴起，在云计算中，用户通过网络操作远程的虚拟机，
 这些远程虚拟机可以向外界提供网络服务。
@@ -104,7 +104,7 @@ Runikraft 是用Rust语言编写的能在RISC-V架构 + QEMU平台上运行unike
 以Docker为代表的传统容器是为了便捷地打包程序及其依赖诞生的，而并不强调隔离性。
 传统容器使用 Namespace/Cgroup 实现，这套容器技术实际上是从进程调度的角度入手，
 对内核进行的功能扩展。优势上来说，操作界面很 Linux、很方便，开销也很低，
-可以被用来无负担地套在已有应用外面来构建隔离的环境。并且它是纯软件方案，
+可以被用来无负担地套在已有应用外面，来构建隔离的环境。并且它是纯软件方案，
 不和其他层面的物理机、虚拟机相冲突。然而，
 随着容器技术的不断发展，传统容器隔离性不足的缺陷逐渐暴露了出来。
 Namespace/Cgroup 是内核的一个部分，其中运行的容器仍然使用主机的 Linux 内核，
@@ -169,7 +169,7 @@ unikernel应该考虑兼容性问题，它们应该以最小的代价提供目�
 移植目前常用的库。此外，unikernels镜像的构建不应该过于繁琐。
 
 \subsection{知名的Unikernels}\label{subsec:famous-unikernel-projects}
-下面简要介绍我们详细调研了的七个近两年仍然在维护unikernels。
+下面简要介绍我们详细调研了的七个近两年仍然在维护的unikernels。
 
 \subsubsection{ClickOS}\sectionauthor{蓝俊玮}
 
@@ -195,7 +195,7 @@ ClickOS 实现了广泛的中间盒，包括防火墙、运营商级 NAT 和
 \subsubsection{MirageOS}\sectionauthor{蓝俊玮}
 
 MirageOS 是一个用 OCaml 语言编写的，
-用于在各种云计算和移动平台构建安全、高性能网络应用程序的库操作系统。
+用于在各种云计算和移动平台构建安全、高性能的网络应用程序的库操作系统。
 它可以将大型服务器划分为很多更小的虚拟机，使得服务器具有更强的拓展性和安全性。
 其代码可以在 Linux 、Mac OS 等系统中开发，然后编译成一个完全独立的、专门的内核，
 可以在 Xen、KVM hypervisors 或轻量级 hypervisors 下运行。MirageOS
@@ -216,8 +216,8 @@ MirageOS 是一个用 OCaml 语言编写的，
 
 MirageOS的亮点是输入应用程序的所有源代码依赖项都被显式跟踪，包括实现内
 核功能所需的所有库。MirageOS 包括一个构建系统，该系统内部使用
-一个 SAT 解算器(使用 OPAM 包管理器，使用 Mancoosi 项目的解算器)
-从一个已发布的在线包集中搜索兼容的模块实现。由于 OCaml 的静态类型
+一个 SAT 解算器（使用 OPAM 包管理器，使用 Mancoosi 项目的解算器）
+从一个已发布的在线包集中搜索兼容的模块实现。得益于 OCaml 的静态类型
 检查，在编译时将捕获接口中的任何不匹配。
 
 在 MirageOS 中，OCaml 编译器接收整个内核代码的源代码，
@@ -231,8 +231,8 @@ IncludeOS 是一个为开发基于 unikernel 的应用程序而创建 C++ API �
 
 当 IncludeOS 映像引导时，它通过设置内存、运行全局构造函数、注册驱动程序和中断处理
 程序来初始化操作系统。IncludeOS 不支持虚拟内存，应用程序和
- unikernel 库使用单个地址空间。因此，没有系统调用或用户空间的概念; 所有操作系统服务
- 都通过对库的简单函数调用来调用，并且都以特权模式运行。\cite{bib:10-includeos2}
+unikernel 库使用单个地址空间。因此，没有系统调用或用户空间的概念; 所有操作系统服务
+都通过对库函数的简单调用使用，并且都以特权模式运行。\cite{bib:10-includeos2}
 
 \noindent IncludeOS 有如下优点：\cite{bib:9-includeos}
 \begin{itemize}
@@ -240,12 +240,12 @@ IncludeOS 是一个为开发基于 unikernel 的应用程序而创建 C++ API �
 只要机器本身是可预测的，延迟也将是完全可预测的。因此，在裸机硬件上，
 IncludeOS可被视为低延迟，可预测的操作系统。
 \item 对网络的支持很好，与 Linux 相比表现出色。
-\item IncludeOS 系统作为一个整体进行编译和优化。在编译器和连接器阶段，
+\item IncludeOS 系统作为一个整体进行编译和优化。在编译和连接阶段，
 优化器可以更多地了解整个系统正在做什么，并且有可能进一步优化。
 \item IncludeOS 中的所有 IRQ 处理程序简单地（原子地）更新计数器，
 并在有时间时将进一步的处理推迟到主事件循环。这消除了对上下文切换的需要，
 同时也消除了与并发相关的问题，如竞争条件。
-通过使所有 I/O 都是异步的，CPU 保持忙碌，这样就不会发生阻塞。
+IncludeOS的所有 I/O 都是异步的，CPU 保持忙碌，不会发生阻塞。
 \end{itemize}
 
 \noindent IncludeOS 有如下缺点：\cite{bib:9-includeos}
@@ -258,19 +258,20 @@ IncludeOS可被视为低延迟，可预测的操作系统。
 
 \subsubsection{RustyHermit}\sectionauthor{陈建绿}
 
-RustyHermit（\href{https://github.com/hermitcore/rusty-hermit}{Github}） 是
+\href{https://github.com/hermitcore/rusty-hermit}{RustyHermit}\ 是
 一个基于 Rust 的、轻量级的 Unikernel，也是一个用来评估操作系统新的设计的研究项目。
 它用 Rust 语言完全改写了 RWTH Aachen University
- 开发的研究项目 \href{http://hermitcore.org/}{HermitCore}\footnote{HermitCore 最初是用 C 语言编写的，是一种针对高性能和云计算的可伸缩和可预测的运行时的 Unikernel。}。\cite{bib:14-rusty-hermit}
+开发的研究项目 \href{http://hermitcore.org/}{HermitCore}\footnote{HermitCore 最初是用 C 语言编写的，
+是一种针对高性能和云计算的可伸缩和可预测的运行时的 Unikernel。}。\cite{bib:14-rusty-hermit}
 
 该项目完全使用 Rust 语言开发，Rust 的所有权模型保证了它的内存/线程安全，
-并且让开发者能够在编译时就消除许多种 bug。因此，与通用编程语言相比，使用 Rust
- 进行内核开发会留下更少的漏洞，得到更加安全的内核。
+并且让开发者能够在编译时就消除许多种 bugs。因此，与通用编程语言相比，使用 Rust
+进行内核开发会留下更少的漏洞，得到更加安全的内核。
 
 开发者扩展了 Rust 工具链以至于 RustyHermit 的 build 过程
 与 Rust 通常的工作流程相似。使用 Rust runtime 而且不直接使用 OS 服务的
- Rust 应用程序能够直接在 RustyHermit 上运行而不需要修改。因此，原则上，
- 每一个现有的 Rust 应用程序都可以建立在 RustyHermit 之上。\cite{bib:17-rusty-hermit2}
+Rust 应用程序能够直接在 RustyHermit 上运行而不需要修改。因此，原则上，
+每一个现有的 Rust 应用程序都可以建立在 RustyHermit 之上。\cite{bib:17-rusty-hermit2}
 
 
 RustyHermit 中优化实现了网络栈。它使用 \href{https://github.com/smoltcp-rs/smoltcp}{smoltcp}
@@ -291,7 +292,7 @@ Sung, Olivier, Lankes and Ravindran\cite{bib:18-intra-unikernel}
 包括安全内核代码与不安全内核代码之间的隔离、内核代码与用户代码之间的隔离。
 在一组宏基准测试中，带有隔离功能的 unikernel 仅减慢了0.6\%。
 
-这篇论文中的内容可以作为我们实现 runikraft 的参考。
+%这篇论文中的内容可以作为我们实现 runikraft 的参考。
 
 \subsubsection{Rumprun}\sectionauthor{陈建绿}
 
@@ -305,7 +306,7 @@ Rumprun 则允许构建高度自定义的解决方案，并且占用的空间最
 Rumprun unikernel 支持用 C、 C++ 、 Erlang、 Go、
 Java、 Javascript (node.js)、 Python、 Ruby 和 Rust 等语言编写的应用程序。
 
-在 \href{https://github.com/rumpkernel/rumprun-packages}{rumprun-packages repository}
+在\ \href{https://github.com/rumpkernel/rumprun-packages}{rumprun-packages repository}\
 中可以找到用于 Rumprun 的现成软件包，比如 \texttt{LevelDB},
 \texttt{Memcached}, \texttt{nanomsg}, \texttt{Nginx} 和 \texttt{Redis}。
 
@@ -373,15 +374,15 @@ Rumprun 也有一些限制：
 
 \subsubsection{Nanos}\sectionauthor{陈建绿}
 
-\href{https://github.com/nanovms/nanos}{Nanos(Github)}一个比较新的正在开发中的 Unikernel。
+\href{https://github.com/nanovms/nanos}{Nanos}\ 一个比较新的正在开发中的 Unikernel。
 
 \begin{itemize}
-\item Nanos 是一个新的内核，旨在虚拟化环境中运行一个且仅有一个应用程序。
+\item Nanos 是一个新的内核，旨在在虚拟化环境中运行一个且仅有一个应用程序。
 与 Windows 或 Linux 等通用操作系统相比，它有几个限制——即它是一个单进程系统，
 不支持运行多个程序，也不具备通过 ssh 进行用户或远程管理的概念。
 \item Nanos 的目标是成为一个比 Linux 安全得多的系统。
 它做到这一点的几个依赖：没有用户的概念，每个虚拟机只运行一个进程，限制每个虚拟机中包含的代码数量。
-\item Nanos 并不打算在裸金属上运行，所以开发者努力使其内核\textit{尽可能简单}。
+\item Nanos 并不打算在裸金属上运行，所以开发者努力使其内核尽可能简单。
 \end{itemize}
 
 %这也许会对我们的项目有所帮助。
@@ -389,7 +390,7 @@ Rumprun 也有一些限制：
 \subsubsection{Unikraft}\sectionauthor{张子辰}
 Unikraft是一个比较新的unikernel。它在设计时就充分考虑
 了现有的unikernels的优缺点。它在保持unikernel的极简化、
-高效的同时，兼容了完整的POSIX兼容层，使开发者可以轻松地将现有的为Linux
+高效的同时，引入了完整的POSIX兼容层，使开发者可以轻松地将现有的为Linux
 编写的代码移植到unikernel上。Unikraft由若干低耦合的模块组成，内存分配器、
 调度器、网络栈、引导代码都是独立的微型库。Unikraft的API即为微型库本身，
 这意味着可以在生成时轻松地添加或移除APIs。\cite{bib:unikraft}
@@ -443,7 +444,7 @@ Unikraft的作者有意将它们分割到了不同的库中，并尽可能降低
 类似地，数据库这样的硬盘密集型程序可以使用标准的\texttt{vfscore}微型库（③），
 或者用\texttt{ukblock} API提高吞吐量（⑧）。
 
-调度器也是可以插拔的（④），而且每个CPU核可以运行不同的调度器。
+调度器也是可插拔的（④），而且每个CPU核可以运行不同的调度器。
 
 
 与其他unikernels相比，Unikraft的系统镜像更小、运行所需内存更小、吞吐量更大：
@@ -514,7 +515,7 @@ Intel CET、ARM SB等安全特性。\cite{bib:unikraft-secuirty}
 &ClickOS&\resizebox{\linewidth}{\height}{MirageOS}&\resizebox{\linewidth}{\height}{IncludeOS}&\resizebox{\linewidth}{\height}{RustyHermit}&Nanos&Rumprun&Unikraft\\\hline
 \endhead
 实现语言&C++&OCaml&C++&Rust&C&C&C\\\hline
-支持架构&x86-32、x86-64&x86-64、ARM-64&x86-32、x86-64、ARM-64&x86-64、ARM-64&x86-64、ARM-64、RISCV-64gc&x86-32、x86-64、ARM-64&x86-64、ARM-32、ARM-64\\\hline
+支持架构&x86-32、x86-64&x86-64、ARM-64&x86-32、x86-64、ARM-64&x86-64、ARM-64&x86-64、ARM-64、RISCV-64&x86-32、x86-64、ARM-64&x86-64、ARM-32、ARM-64\\\hline
 支持平台&Xen&KVM、Xen&KVM、Virtual Box、VMWare、x86物理机&QEMU、Uhyve&众多，包括但不限于Xen、KVM、VMWare、Virtual Box等&Xen、嵌入式设备&KVM、Xen、Solo5、Linux用户态\\\hline
 支持语言&C、C++&OCaml&C、C++&Rust、C、C++、Go、Fortran&众多，包括但不限于C、Go、PHP、Node、Ruby、Lua、Perl等，理论上支持任何ELF文件&众多，包括但不限于C、C++、Erlang、Go、Java、Javascript (node.js)、Python、Ruby 、Rust等&众多，包括但不限于C、C++、Go、Python、Ruby、Web Assembly、Lua等\\\hline
 构建系统&Click configuration language&Opam&Conan、CMake&cargo、CMake&系统与用户程序分别构建，系统使用Makefile构建&buildrump&Kraft、Kconfig\\\hline
@@ -676,7 +677,7 @@ RISC-V是于2010年诞生自加州大学伯克利分校的精简指令集架构�
 的问题。系统缺乏明确的功能组件，所以系统必须作为一个整体维护。
 
 在Runikraft中，只有极少数平台层的代码被放到了系统的核心组件中，而调度器、
-分配器等组件一律是micro-libraies。这些micro-libraires遵循一套明确
+分配器等组件一律是micro-libraries。这些micro-libraries遵循一套明确
 定义的APIs，同一个系统模块可以有多种实现，用户可以轻松为自己的需求选择合适的系统组件的实现。
 %Rust语言中的trait非常适合这种接口与实现分离的设计。
 从Unikraft给出
