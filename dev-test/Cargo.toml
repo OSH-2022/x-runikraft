@@ -9,3 +9,4 @@
     runikraft = {path = "../core"}
     rkalloc = {path = "../lib/rkalloc"}
     rkalloc_empty = {path = "../lib/rkalloc_empty"}
+    rkblkdev={path="../lib/rkblkdev"}
