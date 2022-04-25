@@ -1,3 +1,5 @@
+***本文件仅供参考，最终报告是[midterm-report](https://github.com/OSH-2022/x-runikraft/blob/c908cadaa4614f89e02869ed30f80af4a23f15df/report/4_midterm/midterm.pdf)分支的`midterm-report.pdf`。***
+
 # 中期报告大纲
 
 ## 1. 目录部分

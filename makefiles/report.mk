@@ -43,11 +43,11 @@ all: research-report.pdf feasibility-report.pdf
 ../runikraft-report.cls: $(REPORT_ROOT_DIR)/runikraft-report.cls
 	cp $(REPORT_ROOT_DIR)/runikraft-report.cls ../runikraft-report.cls
 
-research-report.pdf: $(REPORT_ROOT_DIR)/11_research/research-report.tex ../runikraft-report.cls
-	env TEXINPUTS=$(REPORT_ROOT_DIR)/11_research:$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(REPORT_ROOT_DIR)/11_research/research-report.tex
+research-report.pdf: $(REPORT_ROOT_DIR)/2_research/research-report.tex ../runikraft-report.cls
+	env TEXINPUTS=$(REPORT_ROOT_DIR)/2_research:$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(REPORT_ROOT_DIR)/2_research/research-report.tex
 
-feasibility-report.bib: $(REPORT_ROOT_DIR)/20_feasibility/feasibility-report.bib
-	cp $(REPORT_ROOT_DIR)/20_feasibility/feasibility-report.bib feasibility-report.bib
+feasibility-report.bib: $(REPORT_ROOT_DIR)/3_feasibility/feasibility-report.bib
+	cp $(REPORT_ROOT_DIR)/3_feasibility/feasibility-report.bib feasibility-report.bib
 
-feasibility-report.pdf: $(REPORT_ROOT_DIR)/20_feasibility/feasibility-report.tex feasibility-report.bib ../runikraft-report.cls
-	env TEXINPUTS=$(REPORT_ROOT_DIR)/20_feasibility:$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(REPORT_ROOT_DIR)/20_feasibility/feasibility-report.tex
+feasibility-report.pdf: $(REPORT_ROOT_DIR)/3_feasibility/feasibility-report.tex feasibility-report.bib ../runikraft-report.cls
+	env TEXINPUTS=$(REPORT_ROOT_DIR)/3_feasibility:$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(REPORT_ROOT_DIR)/3_feasibility/feasibility-report.tex
