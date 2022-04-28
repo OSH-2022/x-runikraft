@@ -21,7 +21,7 @@ debug:
 use runikraft as rk;
 
 use rkalloc::RKalloc;
-use rkalloc_empty::RKallocEmpty;
+use rkalloc_buddy::RKallocBuddy;
 use rk::plat::time;
 
 static mut HEAP_SPACE: [u8;1000] = [0;1000];
@@ -30,7 +30,7 @@ static mut HEAP_SPACE: [u8;1000] = [0;1000];
 fn main() {
     let mut alloc;
     unsafe {
-        alloc = RKallocEmpty::new(HEAP_SPACE.as_mut_ptr(),1000);
+        alloc = RKallocBuddy::new(HEAP_SPACE.as_mut_ptr(),1000);
     }
     rk::println!("Hello, world!");
     let p1 = unsafe{alloc.malloc(10)};

@@ -8,5 +8,5 @@
 [dependencies]
     runikraft = {path = "../core"}
     rkalloc = {path = "../lib/rkalloc"}
-    rkalloc_empty = {path = "../lib/rkalloc_empty"}
+    rkalloc_buddy = {path = "../lib/rkalloc_buddy"}
     rkblkdev={path="../lib/rkblkdev"}

@@ -4,7 +4,7 @@ members = [
     "core",
     "dev-test",
     "lib/rkalloc",
-    "lib/rkalloc_empty",
+    "lib/rkalloc_buddy",
     "lib/rkring",
     "lib/rkblkdev"
 ]

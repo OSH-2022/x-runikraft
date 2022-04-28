@@ -7,7 +7,7 @@ name = "dev-test"
 version = "0.1.0"
 dependencies = [
  "rkalloc",
- "rkalloc_empty",
+ "rkalloc_buddy",
  "rkblkdev",
  "runikraft",
 ]
@@ -17,7 +17,7 @@ name = "rkalloc"
 version = "0.1.0"
 
 [[package]]
-name = "rkalloc_empty"
+name = "rkalloc_buddy"
 version = "0.1.0"
 dependencies = [
  "rkalloc",

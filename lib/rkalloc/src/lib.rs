@@ -1,86 +1,73 @@
 #![no_std]
 
-//alloc的alloc_error_handler是unstable API
-// extern crate alloc;
-// use alloc::alloc::{GlobalAlloc,Layout};
+/// Runikraft的内存分配器API
+/// `RKalloc`没有模仿`uk_alloc`，而是模仿了`alloc::alloc::GlobalAlloc`，
+/// 因为`GlobalAlloc`要求实现的函数更少，而且`dealloc`函数要求提供分配时
+/// 的`size`和`align`，实现起来更容易
+/// 
+/// # 安全性
+/// 
+/// `self`具有内部可变性，但是RKalloc是底层的分配器，不能在分配时加锁，所以
+/// 调用者必须保证，调用环境不能出现竞争
+pub unsafe trait RKalloc {
+    /// 分配大小为`size`，对齐要求为`align`(必须是2^n)的连续内存空间
+    /// 
+    /// 成功时返回非空指针，失败时返回空指针
+    unsafe fn alloc(&self, size: usize, align: usize) -> *mut u8;
 
-//TODO: 暂时不支持分页，所有线程在同一个地址空间下执行
-pub trait RKalloc {
-    /// 分配大小为size的连续内存空间
-    unsafe fn malloc(&mut self, size: usize)->*mut u8;
-    /// 分配足以容纳n个大小为size的对象的连续内存空间
-    unsafe fn calloc(&mut self, nmemb: usize, size: usize)->*mut u8;
-    /// 分配满足对齐要求的内存空间
-    unsafe fn memalign(&mut self, align: usize, size: usize)->*mut u8;
-    /// 调整内存空间大小，并复制原有内容
-    unsafe fn realloc(&mut self, ptr: *const u8, size: usize)->*mut u8;
-    /// 释放内存空间
-    unsafe fn free(&mut self, ptr: *const u8);
-    //unsafe fn palloc(&mut self, num_pages: usize)->*mut c_void;
-    //unsafe fn pfree(&mut self, ptr: *c_void, num_pages: usize);
-    /// [可选] 把可用内存加入分配器
-    unsafe fn addmem(&mut self, _base: *const u8, _size: usize)->i32 {-1}
-    // TODO: maxalloc availmem pmaxalloc pavailmem
+    /// 解分配内存
+    /// 
+    /// # 安全性
+    /// 
+    /// - `ptr` 必须由同一个分配器分配
+    /// - `size`和`align`必须和`alloc`时一致
+    unsafe fn dealloc(&self, ptr: *mut u8, size: usize, align: usize);
+
+    /// 与`alloc`类似，但在分配后清空内存
+    unsafe fn alloc_zeroed(&self, size: usize, align: usize) -> *mut u8{
+        let ptr = self.alloc(size, align);
+        if !ptr.is_null(){
+            ptr.write_bytes(0, size);
+        }
+        ptr
+    }
+
+    /// 重新分配内存，将原有内存区域的数据照原样复制到新的内存区域，
+    /// 成功时返回新内存区域的地址，并自动释放原有的空间
+    /// 失败时返回空指针，原本的内存空间保持不变
+    ///
+    /// # 安全性
+    /// 
+    /// - `old_ptr` 必须由同一个分配器分配
+    /// - `old_size`和`align`必须和`alloc`时一致
+    unsafe fn realloc(&self, old_ptr: *mut u8, old_size: usize, new_size: usize, align: usize) -> *mut u8{
+        if new_size == old_size{
+            return old_ptr;
+        }
+        let new_ptr = self.alloc(new_size, align);
+        if !new_ptr.is_null() {
+            new_ptr.copy_from_nonoverlapping(old_ptr, old_size);
+            self.dealloc(old_ptr, old_size, align);
+        }
+        new_ptr
+    }
 }
 
-//把指针和usize强制绑定为一个union很丑陋，但这是我找到的唯一的创建全局多态指针的方法
-union AllocWrapper{
-    p: *mut dyn RKalloc,
-    s: usize
+/// 为C接口拓展的内存分配器，相比Rkalloc，它支持运行时不提供size、alloc
+pub unsafe trait RKallocExt: RKalloc {
+    /// 解分配内存
+    /// 
+    /// # 安全性
+    /// 
+    /// - `ptr` 必须由同一个分配器分配
+    unsafe fn dealloc_ext(&self, ptr: *mut u8);
+
+    /// 重新分配内存，将原有内存区域的数据照原样复制到新的内存区域，
+    /// 成功时返回新内存区域的地址，并自动释放原有的空间
+    /// 失败时返回空指针，原本的内存空间保持不变
+    ///
+    /// # 安全性
+    /// 
+    /// - `old_ptr` 必须由同一个分配器分配
+    unsafe fn realloc_ext(&self, old_ptr: *mut u8, new_size: usize) -> *mut u8;
 }
-
-//#[global_allocator]
-static mut ALLOC: AllocWrapper = AllocWrapper{s:0};
-
-//Rust 风格的分配器
-// #[alloc_error_handler]
-// fn allocate_fail(layout: Layout) -> ! {
-//     panic!("Allocation fail: layout = {:?}", layout);
-// }
-
-// unsafe impl GlobalAlloc for AllocWrapper {
-//     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-//         assert!(self.s!=0);
-//         (*self.p).calloc(layout.align(),layout.size())
-//     }
-//     unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout){
-//         assert!(self.s!=0);
-//         (*self.p).free(ptr);
-//     }
-// }
-
-/// 注册全局分配器
-pub unsafe fn register_alloc(alloc: *mut dyn RKalloc){
-    ALLOC.p = alloc;
-}
-
-pub unsafe fn malloc(size: usize)->*mut u8{
-    assert!(ALLOC.s!=0);
-    (*ALLOC.p).malloc(size)
-}
-
-pub unsafe fn calloc(nmemb: usize, size: usize)->*mut u8{
-    assert!(ALLOC.s!=0);
-    (*ALLOC.p).calloc(nmemb,size)
-}
-
-pub unsafe fn memalign(align: usize, size: usize)->*mut u8{
-    assert!(ALLOC.s!=0);
-    (*ALLOC.p).calloc(align,size)
-}
-
-pub unsafe fn realloc(ptr: *const u8, size: usize)->*mut u8{
-    assert!(ALLOC.s!=0);
-    (*ALLOC.p).realloc(ptr,size)
-}
-
-pub unsafe fn free(ptr: *const u8){
-    assert!(ALLOC.s!=0);
-    (*ALLOC.p).free(ptr)
-}
-
-pub unsafe fn addmem(base: *const u8, size: usize)->i32{
-    assert!(ALLOC.s!=0);
-    (*ALLOC.p).addmem(base,size)
-}
-

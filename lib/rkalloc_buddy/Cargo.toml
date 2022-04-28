@@ -1,5 +1,5 @@
 [package]
-name = "rkalloc_empty"
+name = "rkalloc_buddy"
 version = "0.1.0"
 edition = "2021"
 
