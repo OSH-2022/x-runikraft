@@ -24,18 +24,18 @@ use rkalloc::RKalloc;
 use rkalloc_buddy::RKallocBuddy;
 use rk::plat::time;
 
-static mut HEAP_SPACE: [u8;1000] = [0;1000];
+static mut HEAP_SPACE: [u8;1024] = [0;1024];
 
 #[no_mangle]
 fn main() {
-    let mut alloc;
+    let alloc;
     unsafe {
-        alloc = RKallocBuddy::new(HEAP_SPACE.as_mut_ptr(),1000);
+        alloc = RKallocBuddy::new(HEAP_SPACE.as_mut_ptr(),1024);
     }
     rk::println!("Hello, world!");
-    let p1 = unsafe{alloc.malloc(10)};
+    let p1 = unsafe{alloc.alloc(10,1)};
     rk::println!("p1={:?}",p1);
-    let p2 = unsafe{alloc.malloc(5)};
+    let p2 = unsafe{alloc.alloc(5,1)};
     rk::println!("p2={:?}",p2);
     rk::println!("sleep for 10s");
     let start = time::get_ticks();

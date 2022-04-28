@@ -8,7 +8,6 @@ version = "0.1.0"
 dependencies = [
  "rkalloc",
  "rkalloc_buddy",
- "rkblkdev",
  "runikraft",
 ]
 
@@ -22,10 +21,6 @@ version = "0.1.0"
 dependencies = [
  "rkalloc",
 ]
-
-[[package]]
-name = "rkblkdev"
-version = "0.1.0"
 
 [[package]]
 name = "rkring"

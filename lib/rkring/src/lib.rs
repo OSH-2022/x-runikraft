@@ -11,38 +11,38 @@ pub struct Ring {
 impl Ring {
     /// `count`: 容量
     /// `alloc`: 分配器
-    fn new(count: i32,a: &dyn RKalloc)->Ring{
+    pub fn new(count: i32,a: &dyn RKalloc)->Ring{
+        Ring{}
+    }
+    pub fn enqueue(&self,buf: *mut u8) -> Result<(),i32> {
+        Err(-1)
+    }
+    pub fn dequeue_mc(&self) -> Option<*mut u8>{
+        None
+    }
+    pub fn dequeue_sc(&self) -> Option<*mut u8>{
+        None
+    }
+    pub fn advance_sc(&self){
 
     }
-    fn enqueue(&self,buf: *mut u8) -> Result<(),i32> {
-
-    }
-    fn dequeue_mc(&self) -> Option<*mut u8>{
-
-    }
-    fn dequeue_sc(&self) -> Option<*mut u8>{
-
-    }
-    fn advance_sc(&self){
-
-    }
-    fn putback_sc(&self, new: *mut u8){
+    pub fn putback_sc(&self, new: *mut u8){
         
     }
-    fn peek(&self) -> Option<*mut u8>{
-
+    pub fn peek(&self) -> Option<*mut u8>{
+        None
     }
-    fn peek_clear_sc(&self) -> Option<*mut u8>{
-
+    pub fn peek_clear_sc(&self) -> Option<*mut u8>{
+        None
     }
-    fn full(&self)->bool{
-
+    pub fn full(&self)->bool{
+        false
     }
-    fn empty(&self)->bool{
-
+    pub fn empty(&self)->bool{
+        false
     }
-    fn count(&self)->usize{
-
+    pub fn count(&self)->usize{
+        0
     }
 }
 

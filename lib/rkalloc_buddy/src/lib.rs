@@ -152,7 +152,7 @@ const fn log2_usize(mut x: usize) -> usize{
     let mut y = 0_usize;
     if x >= 4294967296 {y+=32; x>>=32;}
     if x >= 65536 {y+=16; x>>=16;}
-    if x >= 128 {y+=8; x>>=8;}
+    if x >= 256 {y+=8; x>>=8;}
     if x >= 16 {y+=4; x>>=4;}
     if x >= 4 {y+=2; x>>=2;}
     if x >=2 {y+=1;}
@@ -183,9 +183,13 @@ impl RKallocBuddy<'_> {
         //总的16B-块数
         let n_blocks = size/MIN_SIZE;
         //用来存元数据的16B-块数
-        let n_meta_blocks = (n_blocks+64)/65; //ceil(n_blocks/65)
+        let mut n_meta_blocks = (n_blocks+64)/65; //ceil(n_blocks/65)
         //用来存能被分配出去的数据的16B-块数
-        let n_data_blocks = n_blocks - n_meta_blocks;
+        let mut n_data_blocks = n_blocks - n_meta_blocks;
+        if !n_data_blocks.is_power_of_two() {
+            n_data_blocks -= n_meta_blocks;
+            n_meta_blocks *= 2;
+        }
         debug_assert!(n_meta_blocks >= n_data_blocks/64);
         //let meta_size = n_meta_blocks*MIN_SIZE;
         let data_size = n_data_blocks*MIN_SIZE;
@@ -193,12 +197,13 @@ impl RKallocBuddy<'_> {
         let max_order = log2_usize(data_size);
         let root_order = if 1<<max_order == data_size {max_order} else{max_order+1};
         let mut free_list_head = [null_mut(); MAX_ORDER - MIN_ORDER + 1];
+        debug_assert!((1<<root_order-MIN_ORDER+1)/64 < n_meta_blocks*2);
 
         //将空闲结点加入空闲结点链表
         {
             let mut size = data_size;
             let mut base = base;
-            while size> 0{
+            while size > 0{
                 let i = log2_usize(size);
                 let node = base as *mut Node;
                 (*node).init();
@@ -212,7 +217,7 @@ impl RKallocBuddy<'_> {
             free_list_head,
             max_order,
             root_order,
-            meta_data: Bitset::new(base.add(size) as *mut usize, n_meta_blocks),
+            meta_data: Bitset::new(base.add(size) as *mut usize, n_meta_blocks*2),
             base: base as *const Node,
             size_left: data_size,
             size_total: size,
@@ -317,7 +322,7 @@ unsafe impl RKalloc for RKallocBuddy<'_> {
         //实际上需要分配的内存大小
         let size = max(max(size,align),MIN_SIZE);
         //剩余空间不足
-        if self.size_left < self.size_total{
+        if self.size_left < size{
             return null_mut();
         }
         let mut_self = &mut *(self as *const Self as *mut Self);
