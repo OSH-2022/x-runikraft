@@ -79,7 +79,7 @@ pub struct RKallocBuddy<'a> {
     max_order: usize,   //order的最大值，等于floor(log2(total))
     root_order: usize,  //根区块的order，等于ceil(log2(total))
     meta_data: Bitset<'a>,
-    base: *const Node,  //内存空间的基地址，只被index函数使用，为了方便，干脆用Node指针
+    base: *const u8,  //内存空间的基地址
     //统计信息
     size_left: usize,   //剩余可用空间大小
     size_total: usize,  //总可用空间大小
@@ -96,7 +96,12 @@ impl Bitset<'_> {
         Bitset{data: core::slice::from_raw_parts_mut(data, len)}
     }
     fn get(&self, index: usize) -> bool {
-        (self.data[index/64] & (1usize<<index%64)) !=0
+        if index/64 >= self.data.len() {
+            false
+        }
+        else {
+            (self.data[index/64] & (1usize<<index%64)) !=0
+        }
     }
     fn set(&mut self, index: usize, data: bool) {
         if data {
@@ -159,14 +164,43 @@ const fn log2_usize(mut x: usize) -> usize{
     y
 }
 
+/// 通过二分查找确定元数据块的数量
+/// - `t`: 数据块总数
+/// - `m`: 元数据块数
+/// - `d`: t-m
+/// m满足 m>= ceil( (2^ceil(log2(d)) -2 + d +1)/128 )
+///         = floor((2^ceil(log2(d)) -2 + d)/128) + 1
+/// 其中的(2^ceil(log2(d)) -2 + d)是最大的可分配数据块在元数据对应的bitset的索引
+/// 可以初步估计 floor(t/65) <= m <= ceil(t/43)
+fn find_n_meta(t: usize) -> usize {
+    let (mut l,mut r) = (t/65,(t+42)/43);
+    let ok = |m: usize|{
+        let d = t - m;
+        let mut log2 = log2_usize(d);
+        if d != 1<<log2 {log2+=1;}
+        m >= ((1<<log2)-2+d)/128 + 1 
+    };
+    while l != r {
+        let mid = l+r>>1;
+        if ok(mid) {
+            r = mid;
+        }
+        else {
+            l = mid+1;
+        }
+    }
+    l
+}
+
 impl RKallocBuddy<'_> {
     ///确定一个结点的在meta_data中的索引
     #[inline(always)]
     fn index(&self, addr: *const Node, order: usize) -> usize {
+        let addr = addr as *const u8;
         debug_assert!(order>=MIN_ORDER);
         debug_assert!(order<=self.max_order);
         debug_assert!(addr>=self.base);
-        (1<<(self.root_order-order)) - 1 + unsafe{addr.offset_from(self.base) as usize}
+        (1<<(self.root_order-order)) - 1 + unsafe{addr.offset_from(self.base) as usize}/(1<<order)
     }
 
     /// 创建伙伴分配器示例
@@ -183,13 +217,9 @@ impl RKallocBuddy<'_> {
         //总的16B-块数
         let n_blocks = size/MIN_SIZE;
         //用来存元数据的16B-块数
-        let mut n_meta_blocks = (n_blocks+64)/65; //ceil(n_blocks/65)
+        let n_meta_blocks = find_n_meta(n_blocks);
         //用来存能被分配出去的数据的16B-块数
-        let mut n_data_blocks = n_blocks - n_meta_blocks;
-        if !n_data_blocks.is_power_of_two() {
-            n_data_blocks -= n_meta_blocks;
-            n_meta_blocks *= 2;
-        }
+        let n_data_blocks = n_blocks - n_meta_blocks;
         debug_assert!(n_meta_blocks >= n_data_blocks/64);
         //let meta_size = n_meta_blocks*MIN_SIZE;
         let data_size = n_data_blocks*MIN_SIZE;
@@ -197,7 +227,7 @@ impl RKallocBuddy<'_> {
         let max_order = log2_usize(data_size);
         let root_order = if 1<<max_order == data_size {max_order} else{max_order+1};
         let mut free_list_head = [null_mut(); MAX_ORDER - MIN_ORDER + 1];
-        debug_assert!((1<<root_order-MIN_ORDER+1)/64 < n_meta_blocks*2);
+        //debug_assert!((1<<root_order-MIN_ORDER+1)/64 < n_meta_blocks*2);
 
         //将空闲结点加入空闲结点链表
         {
@@ -218,7 +248,7 @@ impl RKallocBuddy<'_> {
             max_order,
             root_order,
             meta_data: Bitset::new(base.add(size) as *mut usize, n_meta_blocks*2),
-            base: base as *const Node,
+            base,
             size_left: data_size,
             size_total: size,
         }
@@ -245,6 +275,8 @@ impl RKallocBuddy<'_> {
             i-=1;
             self.split(ptr, i);
         }
+        debug_assert!(self.meta_data.get(self.index(ptr, i))==false);
+        self.meta_data.set(self.index(ptr, i),true);
         
         // 清空元数据
         (*ptr).pre = null_mut();
@@ -258,6 +290,7 @@ impl RKallocBuddy<'_> {
         let mut ptr = ptr as *mut Node;
         let mut order = log2_usize(size);
         let mut i = self.index(ptr, order);
+        self.meta_data.set(i, false);
         //i的伙伴是空闲的，将i与i的伙伴合并
         while i!=0 && !self.meta_data.get(sibling(i)) && self.meta_data.get(parent(i)){
             ptr = self.merge(ptr, order, i);
@@ -329,6 +362,7 @@ unsafe impl RKalloc for RKallocBuddy<'_> {
         return mut_self.alloc_mut(size);
     }
     unsafe fn dealloc(&self, ptr: *mut u8, size: usize, align: usize) {
+        if ptr.is_null() {return;}
         debug_assert!(align.is_power_of_two());
         debug_assert!(align<=PAGE_ALIGNMENT);
         let mut_self = &mut *(self as *const Self as *mut Self);

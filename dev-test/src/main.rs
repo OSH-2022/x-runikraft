@@ -22,7 +22,7 @@ use runikraft as rk;
 
 use rkalloc::RKalloc;
 use rkalloc_buddy::RKallocBuddy;
-use rk::plat::time;
+// use rk::plat::time;
 
 static mut HEAP_SPACE: [u8;1024] = [0;1024];
 
@@ -33,15 +33,24 @@ fn main() {
         alloc = RKallocBuddy::new(HEAP_SPACE.as_mut_ptr(),1024);
     }
     rk::println!("Hello, world!");
-    let p1 = unsafe{alloc.alloc(10,1)};
-    rk::println!("p1={:?}",p1);
-    let p2 = unsafe{alloc.alloc(5,1)};
-    rk::println!("p2={:?}",p2);
-    rk::println!("sleep for 10s");
-    let start = time::get_ticks();
-    loop {
-        if (time::get_ticks() - start).as_secs()>=10 {break;}
+    rk::println!("base = {:?}",unsafe{HEAP_SPACE.as_mut_ptr()});
+    let mut ptr = [0 as *mut u8;64];
+    for i in 0..32 {
+        ptr[i*2] = unsafe {alloc.alloc(16, 16)};
+        ptr[i*2+1] = unsafe {alloc.alloc(32, 16)};
+        rk::println!("p{}={:?}",i*2,ptr[i*2]);
+        rk::println!("p{}={:?}",i*2+1,ptr[i*2+1]);
+        unsafe {alloc.dealloc(ptr[i*2+1], 32, 16);}
     }
-    let end = time::get_ticks();
-    rk::println!("slept for {:?}",end - start);
+    for i in 0..32 {
+        unsafe {alloc.dealloc(ptr[i*2], 16, 16);}
+    }
+//     rk::println!("sleep for 10s");
+//     let start = time::get_ticks();
+//     loop {
+//         if (time::get_ticks() - start).as_secs()>=10 {break;}
+//     }
+//     let end = time::get_ticks();
+//     rk::println!("slept for {:?}",end - start);
+// }
 }
