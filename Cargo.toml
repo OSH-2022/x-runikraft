@@ -3,9 +3,14 @@
 members = [
     "core",
     "dev-test",
+    "lib/rkplat",
     "lib/rkalloc",
     "lib/rkalloc_buddy",
     "lib/rkring",
+<<<<<<< HEAD
     "lib/rkmbox",
 #    "lib/rkblkdev"
+=======
+    #"lib/rkblkdev"
+>>>>>>> 0c7c927cd3f3676431d252816fb729f685d312dd
 ]

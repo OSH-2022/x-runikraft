@@ -67,13 +67,13 @@ impl Write for RustStyleOutput {
 #[macro_export]
 macro_rules! print {
     ($fmt: literal $(, $($arg: tt)+)?) => {
-        $crate::plat::console::__print(format_args!($fmt $(, $($arg)+)?));
+        $crate::console::__print(format_args!($fmt $(, $($arg)+)?));
     }
 }
 
 #[macro_export]
 macro_rules! println {
     ($fmt: literal $(, $($arg: tt)+)?) => {
-        $crate::plat::console::__print(format_args!(concat!($fmt, "\n") $(, $($arg)+)?));
+        $crate::console::__print(format_args!(concat!($fmt, "\n") $(, $($arg)+)?));
     }
 }

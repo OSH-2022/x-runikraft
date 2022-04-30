@@ -1,0 +1,11 @@
+[package]
+name = "rkplat"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+    default = ["has_smp"]
+    has_smp = []            # 对称多处理器支持
+
+[dependencies]
+    rkalloc = {path = "../rkalloc"}

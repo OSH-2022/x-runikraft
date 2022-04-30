@@ -3,11 +3,7 @@
     version = "0.1.0"
     edition = "2021"
 
-[features]
-    default = ["has_smp"]
-    has_smp = []            # 对称多处理器支持
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-    rkalloc = {path = "../lib/rkalloc"}
+    
