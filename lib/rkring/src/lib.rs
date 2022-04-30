@@ -27,8 +27,24 @@ impl Ring {
     pub fn enqueue(&self,buf: *mut u8) -> Result<(),i32> {
         Err(-1)
     }
-    pub fn dequeue_mc(&self) -> Option<*mut u8>{
-        None
+    pub fn dequeue_mc(&mut self) -> Option<*mut u8>{
+        let mut cons_head: u32;
+        let mut cons_next: u32;
+        let buf: *mut u8;
+        // critical_enter()
+        loop {
+            cons_head = self.br_cons_head;
+            cons_next = (cons_head + 1) & self.br_cons_mask as u32;
+            if cons_head == self.br_prod_tail {
+                // critical_exit()
+                return None;
+            }
+            if {
+                break;
+            }
+        }
+        buf = self.br_ring[cons_head as usize];
+        return Some(buf);
     }
     pub fn dequeue_sc(&mut self) -> Option<*mut u8>{
         let cons_head: u32;
@@ -39,12 +55,12 @@ impl Ring {
         prod_tail = AtomicU32::new(self.br_prod_tail).load(Ordering::SeqCst);
         cons_next = (cons_head + 1) & self.br_cons_mask as u32;
         if cons_head == prod_tail {
-            return None
+            return None;
         }
         self.br_cons_head = cons_next;
         buf = self.br_ring[cons_head as usize];
         self.br_cons_tail = cons_next;
-        return Some(buf)
+        return Some(buf);
     }
     pub fn advance_sc(&mut self){
         let cons_head = self.br_cons_head;
