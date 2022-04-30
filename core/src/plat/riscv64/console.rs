@@ -17,8 +17,8 @@ fn getchar()->Result<usize,usize> {
 
 /// 向内核控制台输出字符串
 /// 注意字符串不必是合法的UTF-8，也不会因null终止
-/// @param buf: 字符串缓冲区
-/// @return 输出的字符数
+/// - `buf`: 字符串缓冲区
+/// - 返回值: 输出的字符数
 pub fn coutk(buf: &[u8]) -> Result<usize,()>{
     for i in buf{
         if !putchar(*i as usize){
@@ -34,8 +34,8 @@ pub fn coutd(buf: &[u8]) -> Result<usize,()>{
 }
 
 /// 从控制台读入字符
-/// @param buf 目标缓冲区
-/// @return 读入的字符数
+/// - `buf`: 目标缓冲区
+/// - 返回值 读入的字符数
 pub fn cink(buf: &mut [u8]) -> Result<usize,()>{
     let mut cnt:usize = 0;
     for i in buf{
