@@ -1,6 +1,10 @@
 #![no_std]
 
+
 use rkalloc::RKalloc;
+
+type Sector = usize;
+
 //blkreq.h
 
 ///支持的操作
@@ -19,13 +23,13 @@ pub struct RkBlkreq {
     ///操作类型
     operation: RkBlkreqOp,
     ///操作开始的起始扇区
-    start_sector: __sector,
+    start_sector: Sector,
     ///扇区数量的大小
-    nb_sectors: __sector,
+    nb_sectors: Sector,
     ///指向数据的指针
-    aio_buf: *mut core::ffi::c_void,
+    aio_buf: *mut u8,
     ///回复的请求的参数
-    cb_cookie: *mut core::ffi::c_void,
+    cb_cookie: *mut u8,
 
     //输出成员
     ///请求的状态：完成/未完成
@@ -45,7 +49,7 @@ pub trait RkBlkreqEvent {
     ///@参数 cookie_callback
     ///	由用户在递交请求时设定的可选参数
     ///
-    fn rk_blkreq_eent_t(&self, cb_cookie: *mut core::ffi::c_void);
+    fn rk_blkreq_eent_t(&self, cb_cookie: *mut u8);
 
     ///初始化一个请求结构体
     ///
@@ -73,7 +77,7 @@ pub trait RkBlkreqEvent {
     ///
     ///	请求回复的参数
     ///
-    fn rk_blkreq_init(&self, op: RkBlkreqOp, start::__sector, nb_sectors: __sector, aio_buf: *mut core::ffi::c_void, cb_cookie: *mut core::ffi::c_void);
+    fn rk_blkreq_init(&self, op: RkBlkreqOp, start: Sector, nb_sectors: Sector, aio_buf: *mut u8, cb_cookie: *mut u8);
 
     ///检查请求是否结束
     fn rk_blkreg_is_done(&self) -> bool;
@@ -83,7 +87,7 @@ pub trait RkBlkreqEvent {
     fn rk_blkreq_finished(&self);
 }
 
-///blkdev_core.h
+//blkdev_core.h
 
 
 ///用来描述块设备的枚举类型
@@ -126,9 +130,10 @@ pub struct RkBlkdevQueueConf {
     a: *mut rk_alloc,
     ///TODO
     ///回调的参数指针
-    callback_pointer: *mut core::ffi::c_void,
+    callback_pointer: *mut u8,
     ///描述符的调度器
-    s: *mut rk_sched,            ///TODO
+    s: *mut rk_sched,
+    ///TODO
 }
 
 impl RkBlkdevQueueConf {
@@ -148,14 +153,14 @@ impl RkBlkdevQueueConf {
     ///
     ///注意：为了处理接收到的响应，应该调用dev的finish_reqs方法
     ///
-    pub fn callback(dev: * uk_blkdev, queue_id: u16, argp: *mut core::ffi::c_void) {}
+    pub fn callback(dev: * uk_blkdev, queue_id: u16, argp: *mut u8) {}
 }
 
 pub trait RkBlkdevOps {
     ///得到初始设备容量的驱动程序回调类型
     fn get_info(&self, dev_info: *mut RkBlkdevInfo);
     ///配置块设备的驱动程序回调类型
-    fn dev_configure(&self, * RkBlkdevConf) -> isize;
+    fn dev_configure(&self, conf:* RkBlkdevConf) -> isize;
     ///得到关于设备队列信息的驱动程序回调类型
     fn queue_get_info(&self, queue_id: u16, q_info: *mut RkBlkdevQueueInfo) -> isize;
     ///建立Runikraft块设备队列的驱动程序回调类型
@@ -177,14 +182,14 @@ pub trait RkBlkdevOps {
 ///设备信息
 pub struct RkBlkdevCap {
     ///扇区数量
-    sectors: __sector,
+    sectors: Sector,
     //TODO
     ///扇区大小
     ssize: usize,
     ///访问模式（只读（O_RDONLY）、读写（RDWR）、只写（O_WRONLY））
     mode: isize,
     ///一次操作最多支持的扇区数量
-    max_sectors_per_req: __sector,
+    max_sectors_per_req: Sector,
     ///用于从现在开始的请求的数据对齐方式（字节数）
     ioalign: u16,
 }
@@ -196,7 +201,7 @@ struct RkBlkdevEventHandler {
     //回调
     //使用静态方法实现
     ///回调的参数
-    cookie: *mut core::ffi::c_void,
+    cookie: *mut u8,
     ///触发器事件的信号量
     events: rk_semaphore,
     ///TODO
@@ -213,7 +218,7 @@ struct RkBlkdevEventHandler {
 }
 
 impl RkBlkdevEventHandler {
-    pub fn callback(dev: * uk_blkdev, queue_id: u16, argp: *mut core::ffi::c_void) {}
+    pub fn callback(dev: * uk_blkdev, queue_id: u16, argp: *mut u8) {}
 }
 
 ///@内部
@@ -263,30 +268,65 @@ pub trait RkBlkdevT {
     ///
     /// @参数 a
     ///
-    ///	将被用于librkblkdev私有数据的分配器
+    ///    将被用于librkblkdev私有数据的分配器
     ///
     /// @参数 drv_name
     ///
-    ///	（可选）驱动名称
-    ///	给这个字符串分配的内存必须保持可用直到设备被登记
+    ///    （可选）驱动名称
+    ///    给这个字符串分配的内存必须保持可用直到设备被登记
     ///
     /// @返回值
     ///
-    ///	 - （-ENOMEM）：私有分配
-    ///	 - （正值）：成功时的块设备的身份
-    fn rk_blkdev_drv_register(&self, a: &dyn RKalloc, drv_name: * u8) -> usize;///TODO
+    ///     - （-ENOMEM）：私有分配
+    ///     - （正值）：成功时的块设备的身份
+    fn rk_blkdev_drv_register(&self, a: &dyn RKalloc, drv_name: * u8) -> usize;
+    ///TODO
 
     /// 把一个队列事件向应用程序接口用户前移
     /// 可以（并且应该）在设备中断的上下文中调用
     ///
     /// @参数 queue_id
     ///
-    ///	接收事件相应的队列身份
+    ///    接收事件相应的队列身份
     fn rk_blkdev_drv_queue_event(&self, queue_id: i16);
 
     /// 释放给Runikraft块设备的数据
     /// 把设备从列表中移除
     fn rk_blkdev_drv_unregister(&self);
+
+    /// 返回块设备的身份
+    ///
+    /// @参数 id
+    ///     要配置的Runikraft块设备的识别符
+    ///
+    /// @返回值
+    /// - None：如果没有定义名称
+    /// - &str：如果名称可得到，返回字符串的引用
+    ///
+    fn rk_blkdev_drv_name_get(&self) -> Option<&str>;//TODO
+
+    ///
+    /// 返回一个块设备的当前状态
+    ///
+    /// @返回值
+    /// - enum RkBlkdevState：当前设备状态
+    ///
+    fn rk_blkdev_state_get(&self) -> RkblkdevState;
+
+    ///
+    /// 询问设备容量
+    /// 信息对设备初始化有用（例如可支持队列得的最大值）
+    ///
+    /// @参数 dev_info
+    ///
+    ///     一个指向将装有块设备上下文信息的*RkBlkdevInfo*类型的指针
+    ///
+    /// @返回值
+    ///
+    /// - 0：成功
+    /// - <0：驱动器错误
+    ///
+    fn rk_blkdev_get_info(&self, dev_info: &rk_blkdev_info);
 }
 
 
@@ -296,9 +336,9 @@ pub trait RkBlkdevT {
 /// 得到可得到的Runikraft块设备的数量
 ///
 /// @返回值
-///	- （usize）：块设备的数量
+///    - （usize）：块设备的数量
 ///
-fn rk_blkdev_count()->usize{0}          //TODO
+fn rk_blkdev_count() -> usize { 0 }          //TODO
 
 ///
 /// 得到一个Runikraft块设备的引用，基于它的身份
@@ -312,4 +352,7 @@ fn rk_blkdev_count()->usize{0}          //TODO
 /// - None：在列表中没有找到设备
 /// - Some(&mut RkBlkdev)：将传递给应用程序接口的引用
 ///
-fn rk_blkdev_get(id:usize)->Option<&mut RkBlkdev>{None} //TODO
+fn rk_blkdev_get(id: usize) -> Option<&mut RkBlkdev> { None } //TODO
+
+///
+///
