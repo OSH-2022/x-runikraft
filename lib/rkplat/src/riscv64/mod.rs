@@ -13,4 +13,6 @@ pub mod irq;
 mod sbi;
 
 // 寄存器
-mod reg;
+//mod reg;
+//mod mcause;
+//mod mstauts;
