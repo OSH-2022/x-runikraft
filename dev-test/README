@@ -1,5 +1,8 @@
 开发时临时使用的测试文件 
 
+使用方式
+    把需要测试的文件重命名成main.rs, 测试文件和需要测试的crate同名.
+
 build:
     cargo build --release
     rust-objcopy --strip-all build/riscv64gc-unknown-none-elf/release/dev-test -O binary build/riscv64gc-unknown-none-elf/release/dev-test.bin
