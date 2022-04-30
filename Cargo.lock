@@ -23,7 +23,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rkblkdev"
+name = "rkmbox"
 version = "0.1.0"
 
 [[package]]
@@ -43,3 +43,6 @@ dependencies = [
 [[package]]
 name = "runikraft"
 version = "0.1.0"
+dependencies = [
+ "rkalloc",
+]

@@ -5,6 +5,11 @@ pub struct IRQFlag {
     flag: usize,
 }
 
+impl IRQFlag {
+    // 将当前的 @flag 存储到 RISCV 中 
+    //fn set_flag
+}
+
 /// 启用中断
 pub fn enable_irq() {
 
