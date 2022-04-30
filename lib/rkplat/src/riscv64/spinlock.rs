@@ -16,12 +16,12 @@ mod inner {
             unsafe {
                 arch::asm!(
                 r#" 1:  lw t0, ({lock})   #读当前的值
-                        beqz t0, 3    #如果没有被上锁，就尝试上锁
+                        beqz t0, 3f   #如果没有被上锁，就尝试上锁
                     2:  .insn i 0x0F,0,x0,x0,0x010  #arch::pause的实现
-                        j 1           #重试
+                        j 1b          #重试
                     3:  li t0, 1
                         amoswap.w.aq t1, t0, ({lock})   #尝试获取锁
-                        bnez t1, 1    #获取失败
+                        bnez t1, 2b   #获取失败
                 "#,
                     lock = in(reg) &self.lock,
                 );
@@ -33,10 +33,10 @@ mod inner {
             unsafe {
                 arch::asm!(
                 r#" 1:  lw t0, ({lock})   #读当前的值
-                        bnez t0, 3    #已结被上锁，上锁失败
+                        bnez t0, 3f   #已结被上锁，上锁失败
                         li t0, 1
                         amoswap.w.aq t1, t0, ({lock})   #尝试获取锁
-                        bnez t1, 3    #获取失败
+                        bnez t1, 3f   #获取失败
                         li {ret}, 1
                     3:  
                 "#,
