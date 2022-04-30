@@ -7,5 +7,5 @@ members = [
     "lib/rkalloc",
     "lib/rkalloc_buddy",
     "lib/rkring",
-    "lib/rkblkdev"
+    #"lib/rkblkdev"
 ]
