@@ -41,7 +41,7 @@ pub const BIT_TSR: usize = 0x400000;
 pub const BIT_SD: usize = 0x80000000;
 
 pub struct Mstauts {
-    bits: usize;
+    bits: usize,
 }
 
 impl Mstauts {
@@ -116,70 +116,70 @@ impl Mstauts {
 
     // 设置数值
     #[inline(always)]
-    pub fn set_uie(mut &self) {
+    pub fn set_uie(&mut self) {
         self = self.bits | BIT_UIE 
     }
     #[inline(always)]
-    pub fn set_sie(mut &self) {
+    pub fn set_sie(&mut self) {
         self = self.bits | BIT_SIE 
     }
     #[inline(always)]
-    pub fn set_mie(mut &self) {
+    pub fn set_mie(&mut self) {
         self = self.bits | BIT_MIE 
     }
     #[inline(always)]
-    pub fn set_upie(mut &self) {
+    pub fn set_upie(&mut self) {
         self = self.bits | BIT_UPIE 
     }
     #[inline(always)]
-    pub fn set_spie(mut &self) {
+    pub fn set_spie(&mut self) {
         self = self.bits | BIT_SPIE 
     }
     #[inline(always)]
-    pub fn set_mpie(mut &self) {
+    pub fn set_mpie(&mut self) {
         self = self.bits | BIT_MPIE
     }
     #[inline(always)]
-    pub fn set_spp(mut &self) {
+    pub fn set_spp(&mut self) {
         self = self.bits | BIT_SPP
     }
     #[inline(always)]
-    pub fn set_mpp(mut &self) {
+    pub fn set_mpp(&mut self) {
         self = self.bits | BIT_MPP
     }
     #[inline(always)]
-    pub fn set_fs(mut &self) {
+    pub fn set_fs(&mut self) {
         self = self.bits | BIT_FS
     }
     #[inline(always)]
-    pub fn set_xs(mut &self) {
+    pub fn set_xs(&mut self) {
         self = self.bits | BIT_XS
     }
     #[inline(always)]
-    pub fn set_mprv(mut &self) {
+    pub fn set_mprv(&mut self) {
         self = self.bits | BIT_MPRV
     }
     #[inline(always)]
-    pub fn set_sum(mut &self) {
+    pub fn set_sum(&mut self) {
         self = self.bits | BIT_SUM
     }
     #[inline(always)]
-    pub fn set_mxr(mut &self) {
+    pub fn set_mxr(&mut self) {
         self = self.bits | BIT_MXR
     }
-    pub fn set_tvm(mut &self) {
+    pub fn set_tvm(&mut self) {
         self = self.bits | BIT_TVM
     }
     #[inline(always)]
-    pub fn set_tw(mut &self) {
+    pub fn set_tw(&mut self) {
         self = self.bits | BIT_TW
     }
     #[inline(always)]
-    pub fn set_tsr(mut &self) {
+    pub fn set_tsr(&mut self) {
         self = self.bits | BIT_TSR
     }
     #[inline(always)]
-    pub fn set_sd(mut &self) {
+    pub fn set_sd(&mut self) {
         self = self.bits | BIT_SD
     }
     
@@ -200,11 +200,11 @@ impl Mstauts {
 
     // 将 mstauts 的值读取到 @bit 中
     #[inline(always)]
-    pub unsafe fn mstauts_read(mut &self) {
+    pub unsafe fn mstauts_read(&mut self) {
         let number: usize = 0;
         arch::asm!("csrrc a0, 0x300, a1",
                 out("a0") self.bits,
-                in("a1") nunber
+                in("a1") number
                 );
     }
 

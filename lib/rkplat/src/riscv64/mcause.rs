@@ -57,11 +57,11 @@ impl Mcause {
     // 将 mcause 的值读取到 @bit 中
     
     #[inline(always)]
-    pub unsafe fn mcause_read(mut &self) {
+    pub unsafe fn mcause_read(&mut self) {
         let number: usize = 0;
         arch::asm!("csrrc a0, 0x342, a1",
                 out("a0") self.bits,
-                in("a1") nunber
+                in("a1") number
                 );
     }
 

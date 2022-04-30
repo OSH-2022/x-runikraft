@@ -153,18 +153,18 @@ impl RkBlkdevQueueConf {
     ///
     ///注意：为了处理接收到的响应，应该调用dev的finish_reqs方法
     ///
-    pub fn callback(dev: * uk_blkdev, queue_id: u16, argp: *mut u8) {}
+    pub fn callback(dev: *mut uk_blkdev, queue_id: u16, argp: *mut u8) {}
 }
 
 pub trait RkBlkdevOps {
     ///得到初始设备容量的驱动程序回调类型
     fn get_info(&self, dev_info: *mut RkBlkdevInfo);
     ///配置块设备的驱动程序回调类型
-    fn dev_configure(&self, conf:* RkBlkdevConf) -> isize;
+    fn dev_configure(&self, conf:*mut RkBlkdevConf) -> isize;
     ///得到关于设备队列信息的驱动程序回调类型
     fn queue_get_info(&self, queue_id: u16, q_info: *mut RkBlkdevQueueInfo) -> isize;
     ///建立Runikraft块设备队列的驱动程序回调类型
-    fn queue_configure(&self, queue_id: u16, nb_desc: u16, queue_conf: * RkBlkdevQueueConf) -> *mut RkBlkdevQueue;
+    fn queue_configure(&self, queue_id: u16, nb_desc: u16, queue_conf: *mut RkBlkdevQueueConf) -> *mut RkBlkdevQueue;
     ///开启已配置的Runikraft块设备的驱动程序回调类型
     fn dev_start(&self) -> isize;
     ///停止Runikraft块设备的驱动程序回调类型
@@ -218,12 +218,12 @@ struct RkBlkdevEventHandler {
 }
 
 impl RkBlkdevEventHandler {
-    pub fn callback(dev: * uk_blkdev, queue_id: u16, argp: *mut u8) {}
+    pub fn callback(dev: *mut uk_blkdev, queue_id: u16, argp: *mut u8) {}
 }
 
 ///@内部
 ///librkblkdev中的和每个块设备相关的内部数据
-pub struct RkBlkdevData {
+pub struct RkBlkdevData<'a> {
     ///设备身份识别符
     id: u16,
     ///设备状态
@@ -231,7 +231,7 @@ pub struct RkBlkdevData {
     ///每个队列的事件处理器
     queue_handler: [uk_blkdev_event_handler; CONFIG_LIBUKBLKDEV_MAXNBQUEUES],
     ///设备名称
-    drv_name: * char,
+    drv_name: &'a str,
     ///分配器
     a: *mut uk_alloc,
 }
@@ -279,7 +279,7 @@ pub trait RkBlkdevT {
     ///
     ///     - （-ENOMEM）：私有分配
     ///     - （正值）：成功时的块设备的身份
-    fn rk_blkdev_drv_register(&self, a: &dyn RKalloc, drv_name: * u8) -> usize;
+    fn rk_blkdev_drv_register(&self, a: &dyn RKalloc, drv_name: &str) -> usize;
     ///TODO
 
     /// 把一个队列事件向应用程序接口用户前移
