@@ -71,3 +71,17 @@ pub unsafe trait RKallocExt: RKalloc {
     /// - `old_ptr` 必须由同一个分配器分配
     unsafe fn realloc_ext(&self, old_ptr: *mut u8, new_size: usize) -> *mut u8;
 }
+
+/// 分配器的状态信息
+pub trait RKallocState {
+    /// 总空间
+    fn total_size(&self)->usize;
+    /// 可用空间
+    /// 
+    /// **注意**: 
+    /// - total_size-free_size不等于请求分配的空间的总大小，因为 1. 为了满足对齐要求和分配器
+    /// 实现定义的最小分配空间要求，实际分配的空间大于等于请求分配的空间；2. 分配器的元数据需要
+    /// 占用内存空间。
+    /// - free_size大于等于请求分配的空间时不一定能分配成功，因为可能无法找到足够大的连续内存空间。
+    fn free_size(&self)->usize;
+}

@@ -59,7 +59,7 @@
 //! 结点已经被分配的内存区域。
 #![no_std]
 
-use rkalloc::{RKalloc};
+use rkalloc::{RKalloc, RKallocState};
 use core::cmp::max;
 use core::ptr::null_mut;
 
@@ -80,7 +80,7 @@ pub struct RKallocBuddy<'a> {
     root_order: usize,  //根区块的order，等于ceil(log2(total))
     meta_data: Bitset<'a>,
     base: *const u8,  //内存空间的基地址
-    //统计信息
+    //状态信息
     size_left: usize,   //剩余可用空间大小
     size_total: usize,  //总可用空间大小
 }
@@ -132,25 +132,38 @@ impl Node {
     }
 }
 
-///在结点head之后插入结点node
-unsafe fn insert_node(head: *mut Node, node: *mut Node) {
-    debug_assert!(!head.is_null());
-    debug_assert!(!node.is_null());
-    (*node).next = (*head).next;
-    (*head).next = node;
-    debug_assert!(!(*node).next.is_null());
-    (*(*node).next).pre = node;
-    (*node).pre = head;
-}
+impl RKallocBuddy<'_> {
+    ///在结点head之后插入结点node
+    unsafe fn insert_node(&mut self, order: usize, node: *mut Node) {
+        debug_assert!(!node.is_null());
+        if self.free_list_head[order-MIN_ORDER].is_null() {
+            (*node).init();
+            self.free_list_head[order-MIN_ORDER] = node;
+        }
+        else {
+            let head = self.free_list_head[order-MIN_ORDER];
+            (*node).next = (*head).next;
+            (*head).next = node;
+            debug_assert!(!(*node).next.is_null());
+            (*(*node).next).pre = node;
+            (*node).pre = head;
+        }
+    }
 
-///把一个结点移出链表
-unsafe fn remove_node(node: *mut Node){
-    debug_assert!(!node.is_null());
-    debug_assert!(!(*node).pre.is_null());
-    debug_assert!(!(*node).next.is_null());
-    debug_assert!((*node).next != (*node).pre);
-    (*(*node).pre).next=(*node).next;
-    (*(*node).next).pre=(*node).pre;
+    ///把一个结点移出链表
+    unsafe fn remove_node(&mut self, order: usize, node: *mut Node){
+        debug_assert!(!node.is_null());
+        debug_assert!(!(*node).pre.is_null());
+        debug_assert!(!(*node).next.is_null());
+        if (*node).next == node {
+            self.free_list_head[order-MIN_ORDER] = null_mut();
+        }
+        else {
+            (*(*node).pre).next = (*node).next;
+            (*(*node).next).pre = (*node).pre;
+            self.free_list_head[order-MIN_ORDER] = (*node).pre;
+        }
+    }
 }
 
 const fn log2_usize(mut x: usize) -> usize{
@@ -268,8 +281,7 @@ impl RKallocBuddy<'_> {
 
         let ptr = self.free_list_head[i-MIN_ORDER];
         debug_assert!(!ptr.is_null());
-        if (*ptr).next != (*ptr).pre {remove_node(ptr);}
-        else {self.free_list_head[i-MIN_ORDER]=null_mut();}
+        self.remove_node(i, ptr);
 
         while i!=log2size {
             i-=1;
@@ -297,13 +309,7 @@ impl RKallocBuddy<'_> {
             order += 1;
             i = parent(i);
         }
-        if !self.free_list_head[order-MIN_ORDER].is_null(){
-            insert_node(self.free_list_head[order-MIN_ORDER], ptr);
-        }
-        else {
-            (*ptr).init();
-            self.free_list_head[order-MIN_ORDER] = ptr;
-        }
+        self.insert_node(order, ptr);
         self.size_left += size;
     }
 
@@ -331,16 +337,14 @@ impl RKallocBuddy<'_> {
         //i左孩子，i的伙伴的起始地址是ptr+(1<<order-MIN_ORDER)
         if i%2 == 1 {
             let buddy = ptr.add(1<<order-MIN_ORDER);
-            if (*buddy).pre != (*buddy).next {remove_node(buddy);}
-            else {self.free_list_head[order-MIN_ORDER] = null_mut();}
+            self.remove_node(order, buddy);
             debug_assert!(self.meta_data.get(parent(i)));
             self.meta_data.set(parent(i), false);
             ptr
         }
         else {
             let buddy = ptr.sub(1<<order-MIN_ORDER);
-            if (*buddy).pre != (*buddy).next {remove_node(buddy);}
-            else {self.free_list_head[order-MIN_ORDER] = null_mut();}
+            self.remove_node(order, buddy);
             debug_assert!(self.meta_data.get(parent(i)));
             self.meta_data.set(parent(i), false);
             buddy
@@ -370,6 +374,13 @@ unsafe impl RKalloc for RKallocBuddy<'_> {
         mut_self.dealloc_mut(ptr, size);
     }
 }
+
+impl RKallocState for RKallocBuddy<'_> {
+    fn total_size(&self)->usize { self.size_total }
+    fn free_size(&self) ->usize { self.size_left }
+}
+
+mod debug;
 
 // unsafe impl RKallocExt for RKallocBuddy<'_> {
     

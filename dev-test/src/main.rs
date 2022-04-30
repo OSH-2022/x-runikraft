@@ -1,50 +1,54 @@
-/* 
-build:
-    cargo build --release
-    rust-objcopy --strip-all build/riscv64gc-unknown-none-elf/release/dev-test -O binary build/riscv64gc-unknown-none-elf/release/dev-test.bin
-
-run:
-    qemu-system-riscv64 -machine virt -nographic -bios $RISCV_BIOS -device loader,file=build/riscv64gc-unknown-none-elf/release/dev-test.bin,addr=0x80200000 -s -S
-
-debug:
-    riscv64-unknown-elf-gdb -ex 'file build/riscv64gc-unknown-none-elf/release/dev-test' -ex 'set arch riscv:rv64' -ex 'target remote localhost:1234'
-    x/10i $pc: 反汇编PC后的10条指令
-    b *0x80200000: 设置断点
-    si: 执行一条指令
-    p $r0: 查看寄存器
-    c: 继续执行
-    Ctrl+C: 暂停执行
-*/
 #![no_std]
 #![no_main]
 
 use runikraft as rk;
 
-use rkalloc::RKalloc;
+use rkalloc::{RKalloc, RKallocState};
 use rkalloc_buddy::RKallocBuddy;
 // use rk::plat::time;
 
 static mut HEAP_SPACE: [u8;1024] = [0;1024];
 
 #[no_mangle]
-fn main() {
+unsafe fn main() {
     let alloc;
-    unsafe {
-        alloc = RKallocBuddy::new(HEAP_SPACE.as_mut_ptr(),1024);
-    }
-    rk::println!("Hello, world!");
-    rk::println!("base = {:?}",unsafe{HEAP_SPACE.as_mut_ptr()});
+    alloc = RKallocBuddy::new(HEAP_SPACE.as_mut_ptr(),1024);
+    rk::println!("base = {:?}",HEAP_SPACE.as_mut_ptr());
+    rk::println!("total size={}, free size={}",alloc.total_size(),alloc.free_size());
+    rk::println!("\x1b[38;2;0;240;0m{}: \x1b[38;2;240;0;0m{:?}\x1b[0m","After new",alloc);
     let mut ptr = [0 as *mut u8;64];
     for i in 0..32 {
-        ptr[i*2] = unsafe {alloc.alloc(16, 16)};
-        ptr[i*2+1] = unsafe {alloc.alloc(32, 16)};
+        ptr[i*2] = alloc.alloc(16, 16);
+        rk::println!("\x1b[38;2;0;240;0m{}: \x1b[38;2;240;0;0m{:?}\x1b[0m","After alloc 16",alloc);
+        ptr[i*2+1] = alloc.alloc(32, 16);
+        rk::println!("\x1b[38;2;0;240;0m{}: \x1b[38;2;240;0;0m{:?}\x1b[0m","After alloc 32",alloc);
         rk::println!("p{}={:?}",i*2,ptr[i*2]);
         rk::println!("p{}={:?}",i*2+1,ptr[i*2+1]);
-        unsafe {alloc.dealloc(ptr[i*2+1], 32, 16);}
+        rk::println!("free size={}",alloc.free_size());
+        alloc.dealloc(ptr[i*2+1], 32, 16);
+        rk::println!("\x1b[38;2;0;240;0m{}: \x1b[38;2;240;0;0m{:?}\x1b[0m","After dealloc 32",alloc);
     }
     for i in 0..32 {
-        unsafe {alloc.dealloc(ptr[i*2], 16, 16);}
+        alloc.dealloc(ptr[i*2], 16, 16);
+        rk::println!("\x1b[38;2;0;240;0m{}: \x1b[38;2;240;0;0m{:?}\x1b[0m","After dealloc 16",alloc);
+        rk::println!("free size={}",alloc.free_size());
     }
+    ptr[0]=alloc.alloc(512, 1);
+    rk::println!("ptr[0]={:?}, free size={}",ptr[0],alloc.free_size());
+    rk::println!("\x1b[38;2;0;240;0m{}: \x1b[38;2;240;0;0m{:?}\x1b[0m","After alloc 512",alloc);
+
+    ptr[1]=alloc.alloc(128, 1);
+    rk::println!("ptr[1]={:?}, free size={}",ptr[1],alloc.free_size());
+    rk::println!("\x1b[38;2;0;240;0m{}: \x1b[38;2;240;0;0m{:?}\x1b[0m","After alloc 128",alloc);
+
+    alloc.dealloc(ptr[0], 512, 1);
+    rk::println!("free size={}",alloc.free_size());
+    rk::println!("\x1b[38;2;0;240;0m{}: \x1b[38;2;240;0;0m{:?}\x1b[0m","After dealloc 512",alloc);
+
+    ptr[0]=alloc.alloc(256, 1);
+    rk::println!("ptr[0]={:?}, free size={}",ptr[0],alloc.free_size());
+    rk::println!("\x1b[38;2;0;240;0m{}: \x1b[38;2;240;0;0m{:?}\x1b[0m","After alloc 256",alloc);
+
 //     rk::println!("sleep for 10s");
 //     let start = time::get_ticks();
 //     loop {
