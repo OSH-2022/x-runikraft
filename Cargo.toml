@@ -3,6 +3,7 @@
 members = [
     "core",
     "dev-test",
+    "lib/rkplat",
     "lib/rkalloc",
     "lib/rkalloc_buddy",
     "lib/rkring",
