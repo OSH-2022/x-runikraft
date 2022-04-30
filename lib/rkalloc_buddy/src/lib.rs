@@ -57,9 +57,11 @@
 //! 
 //! 当内存区域的大小size不是2的幂时，记n=ceil(log2(size))，则可以将内存区域视为大小为2^n但末尾的一些
 //! 结点已经被分配的内存区域。
+
+// TODO: 更好的realloc实现
 #![no_std]
 
-use rkalloc::{RKalloc, RKallocState};
+use rkalloc::{RKalloc, RKallocState, RKallocExt};
 use core::cmp::max;
 use core::ptr::null_mut;
 
@@ -80,6 +82,7 @@ pub struct RKallocBuddy<'a> {
     root_order: usize,  //根区块的order，等于ceil(log2(total))
     meta_data: Bitset<'a>,
     base: *const u8,  //内存空间的基地址
+    size_data: usize,
     //状态信息
     size_left: usize,   //剩余可用空间大小
     size_total: usize,  //总可用空间大小
@@ -262,6 +265,7 @@ impl RKallocBuddy<'_> {
             root_order,
             meta_data: Bitset::new(base.add(size) as *mut usize, n_meta_blocks*2),
             base,
+            size_data: data_size,
             size_left: data_size,
             size_total: size,
         }
@@ -350,6 +354,22 @@ impl RKallocBuddy<'_> {
             buddy
         }
     }
+
+    /// 获取指针指向的内存空间在分配时使用的size
+    fn find_size_when_alloc(&self, ptr: *mut u8) -> usize {
+        if ptr as usize % 16 != 0 {
+            panic!("{:?} is not correctly aligned",ptr);
+        }
+        let ptr = ptr as *mut Node;
+        for order in (4..self.root_order).rev() {
+            if ptr as usize % (1<<order) !=0 {continue;}
+            if ptr as usize - self.base as usize + (1<<order) > self.size_data {continue;}
+            if self.meta_data.get(self.index(ptr, order)) == false {
+                return 1<<order+1;
+            }
+        }
+        16
+    }
 }
 
 unsafe impl RKalloc for RKallocBuddy<'_> {
@@ -375,13 +395,25 @@ unsafe impl RKalloc for RKallocBuddy<'_> {
     }
 }
 
+unsafe impl RKallocExt for RKallocBuddy<'_> {
+    unsafe fn dealloc_ext(&self, ptr: *mut u8) {
+        if ptr.is_null() {return;}
+        let size = self.find_size_when_alloc(ptr);
+        let mut_self = &mut *(self as *const Self as *mut Self);
+        mut_self.dealloc_mut(ptr, size);
+    }
+
+    unsafe fn realloc_ext(&self, old_ptr: *mut u8, new_size: usize) -> *mut u8 {
+        if old_ptr.is_null() {return self.alloc(new_size, 16);}
+        let old_size = self.find_size_when_alloc(old_ptr);
+        self.realloc(old_ptr, old_size, new_size, 16)
+    }
+}
+
+
 impl RKallocState for RKallocBuddy<'_> {
     fn total_size(&self)->usize { self.size_total }
     fn free_size(&self) ->usize { self.size_left }
 }
 
 mod debug;
-
-// unsafe impl RKallocExt for RKallocBuddy<'_> {
-    
-// }

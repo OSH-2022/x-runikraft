@@ -44,7 +44,7 @@ pub trait RkBlkreqEvent {
 	//@参数 cookie_callback
 	//	由用户在递交请求时设定的可选参数
 	//
-	fn rk_blkreq_event_t(&self,cb_cookie:*mut core::ffi::c_void);
+	fn rk_blkreq_eent_t(&self,cb_cookie:*mut core::ffi::c_void);
 
 //初始化一个请求结构体
 	//@参数 req
@@ -62,9 +62,12 @@ pub trait RkBlkreqEvent {
 	//
 	fn rk_blkreq_init(&self, op: RkBlkreqOp, start::__sector, nb_sectors:__sector, aio_buf:*mut core::ffi::c_void, cb_cookie:*mut core::ffi::c_void);
 
-//检查请求是否结束
+	//检查请求是否结束
 	fn rk_blkreg_is_done(&self)->bool;
-			
+
+
+	//当结束时设置一个请求
+	fn rk_blkreq_finished(&self);
 }
 
 //blkdev_core.h
@@ -229,29 +232,35 @@ pub trait RkBlkdevT {
 	//向Runikraft块设备提交请求的驱动程序回调类型
 	fn submit_one(&self,queue:*mut rk_blkdev_queue,req:*mut rk_blkreq)->isize;
 	//完成一串Runikraft快设备 请求的驱动程序回调类型
-	fn finish_reqs(&self,queue:ek_blkdev_req)->isize;
-}
-
+	fn finish_reqs(&self,queue:rk_blkdev_req)->isize;
 //
 //blkdev_driver.h
 //
 
-//
-//向设备链表增加Runikraft块设备
-//一旦驱动增加了新找到的设备，这个函数就应该被调用
-//
-//@参数 dev
-//	
-//@参数 a
-//	将被用于librkblkdev私有数据的分配器
-//@参数 drv_name
-//	（可选）驱动名称
-//	给这个字符串分配的内存必须保持可用直到设备被登记
-//@返回值 
-//	-（-ENOMEM）：私有分配
-//	-（正值）：成功时的块设备的身份
-//
+	//向设备链表增加Runikraft块设备
+	//一旦驱动增加了新找到的设备，这个函数就应该被调用
+	//
+	//@参数 a
+	//	将被用于librkblkdev私有数据的分配器
+	//@参数 drv_name
+	//	（可选）驱动名称
+	//	给这个字符串分配的内存必须保持可用直到设备被登记
+	//@返回值
+	//	-（-ENOMEM）：私有分配
+	//	-（正值）：成功时的块设备的身份
+	fn rk_blkdev_drv_register(&self, a:*dyn Rkalloc, drv_name:*u8) ->usize;//TODO
 
+	//把一个队列事件向应用程序接口用户前移
+	//可以（并且应该）在设备中断的上下文中调用
+	//
+	//@参数 queue_id
+	//	接收事件相应的队列身份
+	fn rk_blkdev_drv_queue_event(&self, queue_id:i16);
+
+	//释放给Runikraft块设备的数据
+	//把设备从列表中移除
+	fn rk_blkdev_drv_unregister(&self);
+}
 
 
 //
