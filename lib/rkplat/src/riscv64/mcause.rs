@@ -47,6 +47,7 @@ pub struct Mcause {
 }
 
 impl Mcause {
+    #[inline(always)]
     pub fn get_bits(&self) -> usize {
         self.bits
     } 
