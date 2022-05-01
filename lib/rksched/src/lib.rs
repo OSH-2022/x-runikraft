@@ -1,6 +1,6 @@
 #![no_std]
 
-use rkalloc_buddy::{RKallocBuddy};
+use rkalloc::RKalloc;
 use core::time::Duration;
 //thread.h, wait.h, thread_attr.h, wait_types.h
 
@@ -168,6 +168,7 @@ impl<'a, T> RKthread<'a, T> {
     ////////////////////////////////
     pub fn create(name: *const char, function: fn(*mut T), data: *mut T) -> RKthread<'a, T> {
         // TODO
+        panic!();
     }
 
     fn kill(&mut self) {
@@ -248,12 +249,12 @@ impl<'a, T> RKthread<'a, T> {
     }
 
     //线程初始化
-    unsafe fn init(&mut self, /*cbs: *mut plat_ctx_callbacks, */allocator: *mut RKallocBuddy,
+    unsafe fn init(&mut self, /*cbs: *mut plat_ctx_callbacks, */allocator: &dyn RKalloc,
                    name: *const char, stack: *mut T, tls: *const char, entry: fn(*mut T), arg: *mut T) {
         // TODO
     }
     //线程完成
-    unsafe fn finish(&mut self, allocator: *mut RKallocBuddy) {
+    unsafe fn finish(&mut self, allocator: &dyn RKalloc) {
         // TODO
     }
 
@@ -275,6 +276,7 @@ impl<'a, T> RKthread<'a, T> {
 //返回当前线程的函数
 fn thread_current<'a, T>() -> &'a mut RKthread<'a, T> {
     // TODO
+    panic!();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -286,7 +288,7 @@ pub struct RKsched<'a, T> {
     idle: RKthread<'a, T>,
     // exited_threads: /* 尾队列头结点类型，其中的指针类型是 *mut RKthread */
     // plat_ctx_cbs: /* plat context callbacks 类型*/
-    allocator: &'a mut RKallocBuddy,
+    allocator: &'a dyn RKalloc,
     next: &'a mut RKsched<'a, T>,
     prv: *mut T,
     // 下面是函数“指针”部分，用于调用非抢占式调度器的相应函数，待确定是否加入
@@ -365,8 +367,9 @@ impl<'a, T> RKsched<'a, T> {
     ////////////////////////////////
     /// RKsched 非API 部分
     ////////////////////////////////
-    pub fn sched_create(allocator: &'a mut RKallocBuddy, prv_size: usize) -> RKsched<'a, T> {
+    pub fn sched_create(allocator: &'a dyn RKalloc, prv_size: usize) -> RKsched<'a, T> {
         // TODO
+        panic!();
     }
 
     //待完成的调度器初始化函数，会将函数传入
@@ -375,7 +378,7 @@ impl<'a, T> RKsched<'a, T> {
     fn idle_init(&mut self, stack: *mut T, function: fn(*mut T)) {}
 
     fn get_idle(&'a self) -> &'a mut RKthread<'a, T> {
-        let idle: &'a mut RKthread<'a, T> = &mut self.idle;
+        let idle: &'a mut RKthread<'a, T> = unsafe{&mut *(&self.idle as *const RKthread<'a,T> as *mut RKthread<'a,T>)};
         idle
     }
 

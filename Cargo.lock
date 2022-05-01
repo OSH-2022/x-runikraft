@@ -12,13 +12,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "list"
-version = "0.1.0"
-dependencies = [
- "rkalloc",
-]
-
-[[package]]
 name = "rkalloc"
 version = "0.1.0"
 
@@ -59,8 +52,8 @@ dependencies = [
 name = "rksched"
 version = "0.1.0"
 dependencies = [
- "list",
  "rkalloc",
+ "runikraft",
 ]
 
 [[package]]
