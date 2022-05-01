@@ -128,14 +128,14 @@ pub struct RkBlkdevQueueInfo {
 pub struct RkBlkdevQueue {}
 
 ///用于配置Runikraft块设备队列的结构体
-pub struct RkBlkdevQueueConf {
+pub struct RkBlkdevQueueConf<'a> {
     ///用于设备描述符环的分配器
-    a: &dyn rkalloc::RKalloc,
+    a: &'a dyn rkalloc::RKalloc,
     ///TODO
     ///回调的参数指针
     callback_pointer: *mut u8,
     ///描述符的调度器
-    s: &dyn rksched::RKsched<>;               //TODO
+    s: &'a rksched::RKsched<'a,Self>,             //TODO
 }
 
 impl RkBlkdevQueueConf {
@@ -199,7 +199,7 @@ pub struct RkBlkdevCap {
 ///@内部
 ///
 ///事件处理程序配置
-struct RkBlkdevEventHandler {
+struct RkBlkdevEventHandler<'a> {
     //回调
     //使用静态方法实现
     ///回调的参数
@@ -208,7 +208,7 @@ struct RkBlkdevEventHandler {
     events: rk_semaphore,
     ///TODO
     ///块设备的引用
-    dev: *mut RkBlkdev,
+    dev: &'a mut RkBlkdev<'a>,
     ///TODO
     ///分配器线程
     dispatcher: *mut rk_thread,
@@ -231,29 +231,29 @@ pub struct RkBlkdevData<'a> {
     ///设备状态
     state: RkBlkdevState,
     ///每个队列的事件处理器
-    queue_handler: [RkBlkdevEventHandler; CONFIG_LIBUKBLKDEV_MAXNBQUEUES],
+    queue_handler: [RkBlkdevEventHandler<'a>; CONFIG_LIBUKBLKDEV_MAXNBQUEUES],
     ///设备名称
     drv_name: &'a str,
     ///分配器
-    a: &dyn rkalloc::RKalloc,
+    a: &'a dyn rkalloc::RKalloc,
 }
 
-pub struct RkBlkdev {
+pub struct RkBlkdev<'a> {
     ///提交请求的函数指针
     ///用特征实现
     ///配置请求的函数指针
     ///用特征实现
     ///内部应用程序接口状态数据的指针
-    _data: RkBlkdevData,
+    _data: RkBlkdevData<'a>,
     ///容量
     capabilities: rk_blkdev_cap,
     ///驱动器回调函数
-    dev_ops: &dyn RkBlkdevOps,
+    dev_ops: &'a dyn RkBlkdevOps,
     ///队列指针（私有应用程序接口）
     _queue: [RkBlkdevQueue; CONFIG_LIBUKBLKDEV_MAXNBQUEUES],
     ///块设备队列入口
-    _list_tqe_next: *mut RkBlkdev,
-    _list_tqe_prev: *mut *mut RkBlkdev,
+    _list_tqe_next: &'a mut RkBlkdev<'a>,
+    _list_tqe_prev: &'a mut *mut RkBlkdev<'a>,
 }
 
 pub trait RkBlkdevT {
