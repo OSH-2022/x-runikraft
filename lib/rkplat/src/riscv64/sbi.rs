@@ -15,21 +15,20 @@ pub const SBI_SRST: usize = 0x53525354;
 use core::arch;
 
 #[inline(always)]
-pub fn sbi_call(eid: usize, fid: usize, arg0: usize, arg1: usize, arg2: usize) -> Result<usize,usize>
+pub fn sbi_call(eid: usize, fid: usize, arg0: usize, arg1: usize, arg2: usize) -> Result<usize, usize>
 {
     let mut error;
     let mut value;
     unsafe {
         arch::asm!("ecall",
-            inlateout("a0")arg0=>error,
-            inlateout("a1")arg1=>value,
-            in("a2")arg2,
-            in("a7")eid,in("a6")fid);
+        inlateout("a0")arg0 => error,
+        inlateout("a1")arg1 => value,
+        in("a2")arg2,
+        in("a7")eid, in("a6")fid);
     }
-    if error == 0{
+    if error == 0 {
         Ok(value)
-    }
-    else{
+    } else {
         Err(error)
     }
 }

@@ -2,6 +2,7 @@
 
 
 use rkalloc::RKalloc;
+use rksched::RKsched;
 
 
 type Sector = usize;
@@ -134,7 +135,7 @@ pub struct RkBlkdevQueueConf {
     ///回调的参数指针
     callback_pointer: *mut u8,
     ///描述符的调度器
-    s: &dyn rksched::,               //TODO
+    s: &dyn rksched::RKsched<>;               //TODO
 }
 
 impl RkBlkdevQueueConf {

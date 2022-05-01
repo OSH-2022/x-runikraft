@@ -50,20 +50,18 @@ impl Mcause {
     #[inline(always)]
     pub fn get_bits(&self) -> usize {
         self.bits
-    } 
+    }
 
     // mcause 对应 csr 编号为 0x342
 
     // 将 mcause 的值读取到 @bit 中
-    
     #[inline(always)]
     pub unsafe fn mcause_read(&mut self) {
         let number: usize = 0;
         arch::asm!("csrrc a0, 0x342, a1",
-                out("a0") self.bits,
-                in("a1") number
-                );
+        out("a0") self.bits,
+        in("a1") number
+        );
     }
-
 }
  

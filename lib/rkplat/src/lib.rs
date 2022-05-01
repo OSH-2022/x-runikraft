@@ -11,9 +11,9 @@ mod riscv64;
 pub use riscv64::*;
 
 #[panic_handler]
-fn __panic_handler(info: &panic::PanicInfo)->!
+fn __panic_handler(info: &panic::PanicInfo) -> !
 {
-    println!("Kernel panic!\n{:?}",info);
+    println!("Kernel panic!\n{:?}", info);
     bootstrap::crash();
 }
 

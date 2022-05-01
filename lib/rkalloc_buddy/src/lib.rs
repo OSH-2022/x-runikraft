@@ -29,13 +29,13 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 //! 伙伴分配器（buddy allocator）。
-//! 
+//!
 //! # 设计
-//! 
+//!
 //! 这里不介绍伙伴分配器的定义，只介绍具体的实现。
-//! 
+//!
 //! 首先考虑大小为2^n的被管理的内存区域。
-//! 
+//!
 //! 最小的块的长度是2^4 bytes，能容纳2个指针；最大的块的大小为2^48 bytes，是AMD64支持的最大内存容量。
 //! 用双向链表维护空闲块，链表的结点`Node`储存在它对应的内存区域的开头。
 //! 用树状bitset维护所有的内存区块的分配情况（元数据）：
@@ -52,9 +52,9 @@
 //!     - i 被分配
 //!     - i 被二分成了两个子结点
 //! 初始时，元数据的所有位都是0，如果一块内存i被分配，则i的孩子一定全是0，i和i的祖先一定全是1。
-//! 
+//!
 //! 元数据被储存在被管理的内存区块的末尾，它们需要占用2^(n-10)个最小的块。
-//! 
+//!
 //! 当内存区域的大小size不是2的幂时，记n=ceil(log2(size))，则可以将内存区域视为大小为2^n但末尾的一些
 //! 结点已经被分配的内存区域。
 
@@ -78,52 +78,62 @@ pub struct RKallocBuddy<'a> {
     //空闲区块列表(双向循环链表)，order-MIN_ORDER才是free_list_head的索引
     //【注意】访问free_list_head时，下标通常是[i-MIN_ORDER]
     free_list_head: [*mut Node; MAX_ORDER - MIN_ORDER + 1],
-    max_order: usize,   //order的最大值，等于floor(log2(total))
-    root_order: usize,  //根区块的order，等于ceil(log2(total))
+    max_order: usize,
+    //order的最大值，等于floor(log2(total))
+    root_order: usize,
+    //根区块的order，等于ceil(log2(total))
     meta_data: Bitset<'a>,
-    base: *const u8,  //内存空间的基地址
+    base: *const u8,
+    //内存空间的基地址
     size_data: usize,
     //状态信息
-    size_left: usize,   //剩余可用空间大小
+    size_left: usize,
+    //剩余可用空间大小
     size_total: usize,  //总可用空间大小
 }
 
 /// 大小和Node相同的Bitset, 储存空间的分配情况
 struct Bitset<'a> {
-    data: &'a mut [usize]
+    data: &'a mut [usize],
 }
 
 impl Bitset<'_> {
     unsafe fn new(data: *mut usize, len: usize) -> Self {
         data.write_bytes(0, len);
-        Bitset{data: core::slice::from_raw_parts_mut(data, len)}
+        Bitset { data: core::slice::from_raw_parts_mut(data, len) }
     }
     fn get(&self, index: usize) -> bool {
-        if index/64 >= self.data.len() {
+        if index / 64 >= self.data.len() {
             false
-        }
-        else {
-            (self.data[index/64] & (1usize<<index%64)) !=0
+        } else {
+            (self.data[index / 64] & (1usize << index % 64)) != 0
         }
     }
     fn set(&mut self, index: usize, data: bool) {
         if data {
-            self.data[index/64] |= 1usize<<index%64;
-        }
-        else {
-            self.data[index/64] &= !(1usize<<index%64);
+            self.data[index / 64] |= 1usize << index % 64;
+        } else {
+            self.data[index / 64] &= !(1usize << index % 64);
         }
     }
 }
 
-#[inline(always)] fn lchild(i: usize)->usize {i*2+1}
-#[inline(always)] fn rchild(i: usize)->usize {i*2+2}
-#[inline(always)] fn parent(i: usize)->usize {(i-1)/2}
-#[inline(always)] fn sibling(i: usize)->usize {((i-1)^1)+1}
+#[inline(always)]
+fn lchild(i: usize) -> usize { i * 2 + 1 }
+
+#[inline(always)]
+fn rchild(i: usize) -> usize { i * 2 + 2 }
+
+#[inline(always)]
+fn parent(i: usize) -> usize { (i - 1) / 2 }
+
+#[inline(always)]
+fn sibling(i: usize) -> usize { ((i - 1) ^ 1) + 1 }
 
 #[derive(Clone, Copy)]
 struct Node {
-    pub pre: *mut Node,     //前驱结点
+    pub pre: *mut Node,
+    //前驱结点
     pub next: *mut Node,    //后继结点
 }
 
@@ -139,12 +149,11 @@ impl RKallocBuddy<'_> {
     ///在结点head之后插入结点node
     unsafe fn insert_node(&mut self, order: usize, node: *mut Node) {
         debug_assert!(!node.is_null());
-        if self.free_list_head[order-MIN_ORDER].is_null() {
+        if self.free_list_head[order - MIN_ORDER].is_null() {
             (*node).init();
-            self.free_list_head[order-MIN_ORDER] = node;
-        }
-        else {
-            let head = self.free_list_head[order-MIN_ORDER];
+            self.free_list_head[order - MIN_ORDER] = node;
+        } else {
+            let head = self.free_list_head[order - MIN_ORDER];
             (*node).next = (*head).next;
             (*head).next = node;
             debug_assert!(!(*node).next.is_null());
@@ -154,29 +163,43 @@ impl RKallocBuddy<'_> {
     }
 
     ///把一个结点移出链表
-    unsafe fn remove_node(&mut self, order: usize, node: *mut Node){
+    unsafe fn remove_node(&mut self, order: usize, node: *mut Node) {
         debug_assert!(!node.is_null());
         debug_assert!(!(*node).pre.is_null());
         debug_assert!(!(*node).next.is_null());
         if (*node).next == node {
-            self.free_list_head[order-MIN_ORDER] = null_mut();
-        }
-        else {
+            self.free_list_head[order - MIN_ORDER] = null_mut();
+        } else {
             (*(*node).pre).next = (*node).next;
             (*(*node).next).pre = (*node).pre;
-            self.free_list_head[order-MIN_ORDER] = (*node).pre;
+            self.free_list_head[order - MIN_ORDER] = (*node).pre;
         }
     }
 }
 
-const fn log2_usize(mut x: usize) -> usize{
+const fn log2_usize(mut x: usize) -> usize {
     let mut y = 0_usize;
-    if x >= 4294967296 {y+=32; x>>=32;}
-    if x >= 65536 {y+=16; x>>=16;}
-    if x >= 256 {y+=8; x>>=8;}
-    if x >= 16 {y+=4; x>>=4;}
-    if x >= 4 {y+=2; x>>=2;}
-    if x >=2 {y+=1;}
+    if x >= 4294967296 {
+        y += 32;
+        x >>= 32;
+    }
+    if x >= 65536 {
+        y += 16;
+        x >>= 16;
+    }
+    if x >= 256 {
+        y += 8;
+        x >>= 8;
+    }
+    if x >= 16 {
+        y += 4;
+        x >>= 4;
+    }
+    if x >= 4 {
+        y += 2;
+        x >>= 2;
+    }
+    if x >= 2 { y += 1; }
     y
 }
 
@@ -189,20 +212,19 @@ const fn log2_usize(mut x: usize) -> usize{
 /// 其中的(2^ceil(log2(d)) -2 + d)是最大的可分配数据块在元数据对应的bitset的索引
 /// 可以初步估计 floor(t/65) <= m <= ceil(t/43)
 fn find_n_meta(t: usize) -> usize {
-    let (mut l,mut r) = (t/65,(t+42)/43);
-    let ok = |m: usize|{
+    let (mut l, mut r) = (t / 65, (t + 42) / 43);
+    let ok = |m: usize| {
         let d = t - m;
         let mut log2 = log2_usize(d);
-        if d != 1<<log2 {log2+=1;}
-        m >= ((1<<log2)-2+d)/128 + 1 
+        if d != 1 << log2 { log2 += 1; }
+        m >= ((1 << log2) - 2 + d) / 128 + 1
     };
     while l != r {
-        let mid = l+r>>1;
+        let mid = l + r >> 1;
         if ok(mid) {
             r = mid;
-        }
-        else {
-            l = mid+1;
+        } else {
+            l = mid + 1;
         }
     }
     l
@@ -213,10 +235,10 @@ impl RKallocBuddy<'_> {
     #[inline(always)]
     fn index(&self, addr: *const Node, order: usize) -> usize {
         let addr = addr as *const u8;
-        debug_assert!(order>=MIN_ORDER);
-        debug_assert!(order<=self.max_order);
-        debug_assert!(addr>=self.base);
-        (1<<(self.root_order-order)) - 1 + unsafe{addr.offset_from(self.base) as usize}/(1<<order)
+        debug_assert!(order >= MIN_ORDER);
+        debug_assert!(order <= self.max_order);
+        debug_assert!(addr >= self.base);
+        (1 << (self.root_order - order)) - 1 + unsafe { addr.offset_from(self.base) as usize } / (1 << order)
     }
 
     /// 创建伙伴分配器示例
@@ -224,24 +246,24 @@ impl RKallocBuddy<'_> {
     /// - `size`: 内存区域的大小，不必是2^n，但必须是16的倍数
     /// # 安全性
     /// - base..base+size范围的地址不能有其他用途
-    pub unsafe fn new(base: *mut u8, size: usize)->Self {
+    pub unsafe fn new(base: *mut u8, size: usize) -> Self {
         debug_assert!(!base.is_null());
         debug_assert!(size % MIN_SIZE == 0);
         debug_assert!(base as usize % PAGE_ALIGNMENT == 0);
         debug_assert!(size <= MAX_SIZE);
 
         //总的16B-块数
-        let n_blocks = size/MIN_SIZE;
+        let n_blocks = size / MIN_SIZE;
         //用来存元数据的16B-块数
         let n_meta_blocks = find_n_meta(n_blocks);
         //用来存能被分配出去的数据的16B-块数
         let n_data_blocks = n_blocks - n_meta_blocks;
-        debug_assert!(n_meta_blocks >= n_data_blocks/64);
+        debug_assert!(n_meta_blocks >= n_data_blocks / 64);
         //let meta_size = n_meta_blocks*MIN_SIZE;
-        let data_size = n_data_blocks*MIN_SIZE;
+        let data_size = n_data_blocks * MIN_SIZE;
 
         let max_order = log2_usize(data_size);
-        let root_order = if 1<<max_order == data_size {max_order} else{max_order+1};
+        let root_order = if 1 << max_order == data_size { max_order } else { max_order + 1 };
         let mut free_list_head = [null_mut(); MAX_ORDER - MIN_ORDER + 1];
         //debug_assert!((1<<root_order-MIN_ORDER+1)/64 < n_meta_blocks*2);
 
@@ -249,21 +271,21 @@ impl RKallocBuddy<'_> {
         {
             let mut size = data_size;
             let mut base = base;
-            while size > 0{
+            while size > 0 {
                 let i = log2_usize(size);
                 let node = base as *mut Node;
                 (*node).init();
-                free_list_head[i-MIN_ORDER] = node;
-                base = base.offset(1<<i);
-                size -= 1<<i;
+                free_list_head[i - MIN_ORDER] = node;
+                base = base.offset(1 << i);
+                size -= 1 << i;
             }
         }
-        
+
         RKallocBuddy {
             free_list_head,
             max_order,
             root_order,
-            meta_data: Bitset::new(base.add(size) as *mut usize, n_meta_blocks*2),
+            meta_data: Bitset::new(base.add(size) as *mut usize, n_meta_blocks * 2),
             base,
             size_data: data_size,
             size_left: data_size,
@@ -277,23 +299,23 @@ impl RKallocBuddy<'_> {
         let log2size = log2_usize(size);
         let mut i = log2size;
         //从log2size开始，找到大小为2^i的空闲的块
-        while i<=self.max_order && self.free_list_head[i-MIN_ORDER].is_null(){
-            i+=1;
+        while i <= self.max_order && self.free_list_head[i - MIN_ORDER].is_null() {
+            i += 1;
         }
         //找不到大小足够的块
-        if i > self.max_order {return null_mut();}
+        if i > self.max_order { return null_mut(); }
 
-        let ptr = self.free_list_head[i-MIN_ORDER];
+        let ptr = self.free_list_head[i - MIN_ORDER];
         debug_assert!(!ptr.is_null());
         self.remove_node(i, ptr);
 
-        while i!=log2size {
-            i-=1;
+        while i != log2size {
+            i -= 1;
             self.split(ptr, i);
         }
-        debug_assert!(self.meta_data.get(self.index(ptr, i))==false);
-        self.meta_data.set(self.index(ptr, i),true);
-        
+        debug_assert!(self.meta_data.get(self.index(ptr, i)) == false);
+        self.meta_data.set(self.index(ptr, i), true);
+
         // 清空元数据
         (*ptr).pre = null_mut();
         (*ptr).next = null_mut();
@@ -308,7 +330,7 @@ impl RKallocBuddy<'_> {
         let mut i = self.index(ptr, order);
         self.meta_data.set(i, false);
         //i的伙伴是空闲的，将i与i的伙伴合并
-        while i!=0 && !self.meta_data.get(sibling(i)) && self.meta_data.get(parent(i)){
+        while i != 0 && !self.meta_data.get(sibling(i)) && self.meta_data.get(parent(i)) {
             ptr = self.merge(ptr, order, i);
             order += 1;
             i = parent(i);
@@ -319,35 +341,34 @@ impl RKallocBuddy<'_> {
 
     /// 将一个大的内存块分割成两个小的，将地址较大的一段插入free_list_head[order-MIN_ORDER]处
     /// 【注意】order是ptr拆分后的order，而不是ptr本身的order
-    unsafe fn split(&mut self, mut ptr: *mut Node, order: usize){
-        let i = self.index(ptr, order+1);
+    unsafe fn split(&mut self, mut ptr: *mut Node, order: usize) {
+        let i = self.index(ptr, order + 1);
         //把它标记为被分裂了
-        debug_assert!(self.meta_data.get(i)==false);
-        self.meta_data.set(i,true); 
+        debug_assert!(self.meta_data.get(i) == false);
+        self.meta_data.set(i, true);
         //它的分裂产生的两个子结点应该处在可用状态
-        debug_assert!(self.meta_data.get(lchild(i))==false);
-        debug_assert!(self.meta_data.get(rchild(i))==false);
-        ptr = (ptr as *mut u8).offset(1<<order) as *mut Node; //现在ptr指向分裂后的结点的右孩子
+        debug_assert!(self.meta_data.get(lchild(i)) == false);
+        debug_assert!(self.meta_data.get(rchild(i)) == false);
+        ptr = (ptr as *mut u8).offset(1 << order) as *mut Node; //现在ptr指向分裂后的结点的右孩子
         //找不到更小的块才会去尝试拆分更大的块, 所以order层的可用结点列表一定是空的
-        debug_assert!(self.free_list_head[order-MIN_ORDER].is_null());
+        debug_assert!(self.free_list_head[order - MIN_ORDER].is_null());
         (*ptr).init();
-        self.free_list_head[order-MIN_ORDER] = ptr;
+        self.free_list_head[order - MIN_ORDER] = ptr;
     }
 
     /// 把位于`free_list`之外的`ptr`与位于`free_list`之内的伙伴内存块合并，返回合并后的内存块的地址
     /// 合并后的内存块**不**被拆入`free_list`中，`order`是ptr自身的order, `i`是`ptr`在meta_data中的索引
-    unsafe fn merge(&mut self, ptr: *mut Node, order: usize, i: usize) -> *mut Node{
+    unsafe fn merge(&mut self, ptr: *mut Node, order: usize, i: usize) -> *mut Node {
         debug_assert_eq!(i, self.index(ptr, order));
         //i左孩子，i的伙伴的起始地址是ptr+(1<<order-MIN_ORDER)
-        if i%2 == 1 {
-            let buddy = ptr.add(1<<order-MIN_ORDER);
+        if i % 2 == 1 {
+            let buddy = ptr.add(1 << order - MIN_ORDER);
             self.remove_node(order, buddy);
             debug_assert!(self.meta_data.get(parent(i)));
             self.meta_data.set(parent(i), false);
             ptr
-        }
-        else {
-            let buddy = ptr.sub(1<<order-MIN_ORDER);
+        } else {
+            let buddy = ptr.sub(1 << order - MIN_ORDER);
             self.remove_node(order, buddy);
             debug_assert!(self.meta_data.get(parent(i)));
             self.meta_data.set(parent(i), false);
@@ -358,14 +379,14 @@ impl RKallocBuddy<'_> {
     /// 获取指针指向的内存空间在分配时使用的size
     fn find_size_when_alloc(&self, ptr: *mut u8) -> usize {
         if ptr as usize % 16 != 0 {
-            panic!("{:?} is not correctly aligned",ptr);
+            panic!("{:?} is not correctly aligned", ptr);
         }
         let ptr = ptr as *mut Node;
         for order in (4..self.root_order).rev() {
-            if ptr as usize % (1<<order) !=0 {continue;}
-            if ptr as usize - self.base as usize + (1<<order) > self.size_data {continue;}
+            if ptr as usize % (1 << order) != 0 { continue; }
+            if ptr as usize - self.base as usize + (1 << order) > self.size_data { continue; }
             if self.meta_data.get(self.index(ptr, order)) == false {
-                return 1<<order+1;
+                return 1 << order + 1;
             }
         }
         16
@@ -373,38 +394,38 @@ impl RKallocBuddy<'_> {
 }
 
 unsafe impl RKalloc for RKallocBuddy<'_> {
-    unsafe fn alloc(&self, size: usize, align: usize) -> *mut u8{
+    unsafe fn alloc(&self, size: usize, align: usize) -> *mut u8 {
         debug_assert!(align.is_power_of_two());
-        debug_assert!(align<=PAGE_ALIGNMENT);
+        debug_assert!(align <= PAGE_ALIGNMENT);
         //实际上需要分配的内存大小
-        let size = max(max(size,align),MIN_SIZE);
+        let size = max(max(size, align), MIN_SIZE);
         //剩余空间不足
-        if self.size_left < size{
+        if self.size_left < size {
             return null_mut();
         }
         let mut_self = &mut *(self as *const Self as *mut Self);
         return mut_self.alloc_mut(size);
     }
     unsafe fn dealloc(&self, ptr: *mut u8, size: usize, align: usize) {
-        if ptr.is_null() {return;}
+        if ptr.is_null() { return; }
         debug_assert!(align.is_power_of_two());
-        debug_assert!(align<=PAGE_ALIGNMENT);
+        debug_assert!(align <= PAGE_ALIGNMENT);
         let mut_self = &mut *(self as *const Self as *mut Self);
-        let size = max(max(size,align),MIN_SIZE);
+        let size = max(max(size, align), MIN_SIZE);
         mut_self.dealloc_mut(ptr, size);
     }
 }
 
 unsafe impl RKallocExt for RKallocBuddy<'_> {
     unsafe fn dealloc_ext(&self, ptr: *mut u8) {
-        if ptr.is_null() {return;}
+        if ptr.is_null() { return; }
         let size = self.find_size_when_alloc(ptr);
         let mut_self = &mut *(self as *const Self as *mut Self);
         mut_self.dealloc_mut(ptr, size);
     }
 
     unsafe fn realloc_ext(&self, old_ptr: *mut u8, new_size: usize) -> *mut u8 {
-        if old_ptr.is_null() {return self.alloc(new_size, 16);}
+        if old_ptr.is_null() { return self.alloc(new_size, 16); }
         let old_size = self.find_size_when_alloc(old_ptr);
         self.realloc(old_ptr, old_size, new_size, 16)
     }
@@ -412,8 +433,8 @@ unsafe impl RKallocExt for RKallocBuddy<'_> {
 
 
 impl RKallocState for RKallocBuddy<'_> {
-    fn total_size(&self)->usize { self.size_total }
-    fn free_size(&self) ->usize { self.size_left }
+    fn total_size(&self) -> usize { self.size_total }
+    fn free_size(&self) -> usize { self.size_left }
 }
 
 mod debug;

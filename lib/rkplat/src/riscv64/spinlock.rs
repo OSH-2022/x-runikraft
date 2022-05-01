@@ -1,7 +1,7 @@
-
 #[cfg(feature = "has_smp")]
 mod inner {
     use core::arch;
+
     /// 自旋锁
     pub struct SpinLock {
         lock: i32,
@@ -9,7 +9,7 @@ mod inner {
 
     impl SpinLock {
         pub fn new() -> SpinLock {
-            SpinLock{lock: 0}
+            SpinLock { lock: 0 }
         }
         /// 上锁
         pub fn lock(&self) {
@@ -51,14 +51,14 @@ mod inner {
             assert!(self.lock != 0);
             unsafe {
                 arch::asm!(
-                    " amoswap.w.rl zero,zero,({lock})",
-                    lock = in(reg) &self.lock)
+                " amoswap.w.rl zero,zero,({lock})",
+                lock = in(reg) &self.lock)
             }
         }
         /// 已上锁时返回true
-        pub fn is_locked(&self) -> bool{
-            unsafe{arch::asm!("fence w,r");}
-            self.lock !=0 
+        pub fn is_locked(&self) -> bool {
+            unsafe { arch::asm!("fence w,r"); }
+            self.lock != 0
         }
     }
 }
@@ -69,12 +69,16 @@ mod inner {
 
     impl SpinLock {
         pub fn new() -> SpinLock {
-            SpinLock{}
+            SpinLock {}
         }
-        #[inline(always)] pub fn lock(&self) {}
-        #[inline(always)] pub fn trylock(&self) -> bool { true }
-        #[inline(always)] pub fn unlock(&self) {}
-        #[inline(always)] pub fn is_locked(&self) -> bool{ false }
+        #[inline(always)]
+        pub fn lock(&self) {}
+        #[inline(always)]
+        pub fn trylock(&self) -> bool { true }
+        #[inline(always)]
+        pub fn unlock(&self) {}
+        #[inline(always)]
+        pub fn is_locked(&self) -> bool { false }
     }
 }
 

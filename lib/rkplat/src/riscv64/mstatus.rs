@@ -48,23 +48,23 @@ impl Mstauts {
     // 获取数值
     #[inline(always)]
     pub fn get_uie(&self) -> usize {
-        self.bits & BIT_UIE 
+        self.bits & BIT_UIE
     }
     #[inline(always)]
     pub fn get_sie(&self) -> usize {
-        self.bits & BIT_SIE 
+        self.bits & BIT_SIE
     }
     #[inline(always)]
     pub fn get_mie(&self) -> usize {
-        self.bits & BIT_MIE 
+        self.bits & BIT_MIE
     }
     #[inline(always)]
     pub fn get_upie(&self) -> usize {
-        self.bits & BIT_UPIE 
+        self.bits & BIT_UPIE
     }
     #[inline(always)]
     pub fn get_spie(&self) -> usize {
-        self.bits & BIT_SPIE 
+        self.bits & BIT_SPIE
     }
     #[inline(always)]
     pub fn get_mpie(&self) -> usize {
@@ -117,23 +117,23 @@ impl Mstauts {
     // 设置数值
     #[inline(always)]
     pub fn set_uie(&mut self) {
-        self = self.bits | BIT_UIE 
+        self = self.bits | BIT_UIE
     }
     #[inline(always)]
     pub fn set_sie(&mut self) {
-        self = self.bits | BIT_SIE 
+        self = self.bits | BIT_SIE
     }
     #[inline(always)]
     pub fn set_mie(&mut self) {
-        self = self.bits | BIT_MIE 
+        self = self.bits | BIT_MIE
     }
     #[inline(always)]
     pub fn set_upie(&mut self) {
-        self = self.bits | BIT_UPIE 
+        self = self.bits | BIT_UPIE
     }
     #[inline(always)]
     pub fn set_spie(&mut self) {
-        self = self.bits | BIT_SPIE 
+        self = self.bits | BIT_SPIE
     }
     #[inline(always)]
     pub fn set_mpie(&mut self) {
@@ -182,7 +182,7 @@ impl Mstauts {
     pub fn set_sd(&mut self) {
         self = self.bits | BIT_SD
     }
-    
+
 
     // 硬件操作
     // mstatus 对应 csr 编号为 0x300
@@ -194,8 +194,8 @@ impl Mstauts {
     pub unsafe fn mstatus_clear(&self) {
         let number = !self.bits;
         arch::asm!("csrrc zero, 0x300, a0",
-                in("a0") number
-                );
+        in("a0") number
+        );
     }
 
     // 将 mstauts 的值读取到 @bit 中
@@ -203,9 +203,8 @@ impl Mstauts {
     pub unsafe fn mstauts_read(&mut self) {
         let number: usize = 0;
         arch::asm!("csrrc a0, 0x300, a1",
-                out("a0") self.bits,
-                in("a1") number
-                );
+        out("a0") self.bits,
+        in("a1") number
+        );
     }
-
 }

@@ -69,14 +69,16 @@ impl<'a, T> RKwaitQ<'a, T> {
 ////////////////////////////////////////////////////////////////////////
 
 //一些要用到的常量
-const RK_THREAD_ATTR_PRIO_INVALID: i32       = -1;
-const RK_THREAD_ATTR_PRIO_MIN: i32           = 0;
-const RK_THREAD_ATTR_PRIO_MAX: i32           = 255;
-const RK_THREAD_ATTR_PRIO_DEFAULT: i32       = 127;
+const RK_THREAD_ATTR_PRIO_INVALID: i32 = -1;
+const RK_THREAD_ATTR_PRIO_MIN: i32 = 0;
+const RK_THREAD_ATTR_PRIO_MAX: i32 = 255;
+const RK_THREAD_ATTR_PRIO_DEFAULT: i32 = 127;
 
-const RK_THREAD_ATTR_TIMESLICE_NIL: u64      = 0;
+const RK_THREAD_ATTR_TIMESLICE_NIL: u64 = 0;
+
 //优先级类型 prio_t 为 i32
 type PrioT = i32;
+
 //状态类型
 enum ThreadAttrState {
     Waitable,
@@ -156,9 +158,9 @@ pub struct RKthread<'a, T> {
 }
 
 //一些要用到的常量
-const RUNNABLE_FLAG: u32     = 0x00000001;
-const EXITED_FLAG: u32       = 0x00000002;
-const QUEUEABLE_FLAG: u32    = 0x00000004;
+const RUNNABLE_FLAG: u32 = 0x00000001;
+const EXITED_FLAG: u32 = 0x00000002;
+const QUEUEABLE_FLAG: u32 = 0x00000004;
 
 impl<'a, T> RKthread<'a, T> {
     ////////////////////////////////
@@ -247,7 +249,7 @@ impl<'a, T> RKthread<'a, T> {
 
     //线程初始化
     unsafe fn init(&mut self, /*cbs: *mut plat_ctx_callbacks, */allocator: *mut RKallocBuddy,
-            name: *const char, stack: *mut T, tls: *const char, entry: fn(*mut T), arg: *mut T) {
+                   name: *const char, stack: *mut T, tls: *const char, entry: fn(*mut T), arg: *mut T) {
         // TODO
     }
     //线程完成
@@ -268,7 +270,6 @@ impl<'a, T> RKthread<'a, T> {
     }
 
     //后面还有一些仿函数宏未完成(thread.h 145~167)
-    
 }
 
 //返回当前线程的函数
@@ -364,16 +365,14 @@ impl<'a, T> RKsched<'a, T> {
     ////////////////////////////////
     /// RKsched 非API 部分
     ////////////////////////////////
-    pub fn sched_create(allocator: &'a mut RKallocBuddy, prv_size: usize) -> RKsched<'a, T>{
+    pub fn sched_create(allocator: &'a mut RKallocBuddy, prv_size: usize) -> RKsched<'a, T> {
         // TODO
     }
 
     //待完成的调度器初始化函数，会将函数传入
     // fn init(&mut self, )
 
-    fn idle_init(&mut self, stack: *mut T, function: fn(*mut T)) {
-
-    }
+    fn idle_init(&mut self, stack: *mut T, function: fn(*mut T)) {}
 
     fn get_idle(&'a self) -> &'a mut RKthread<'a, T> {
         let idle: &'a mut RKthread<'a, T> = &mut self.idle;
