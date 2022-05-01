@@ -12,6 +12,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "list"
+version = "0.1.0"
+dependencies = [
+ "rkalloc",
+]
+
+[[package]]
 name = "rkalloc"
 version = "0.1.0"
 
@@ -20,6 +27,14 @@ name = "rkalloc_buddy"
 version = "0.1.0"
 dependencies = [
  "rkalloc",
+]
+
+[[package]]
+name = "rkblkdev"
+version = "0.1.0"
+dependencies = [
+ "rkalloc",
+ "rksched",
 ]
 
 [[package]]
@@ -37,6 +52,14 @@ dependencies = [
 name = "rkring"
 version = "0.1.0"
 dependencies = [
+ "rkalloc",
+]
+
+[[package]]
+name = "rksched"
+version = "0.1.0"
+dependencies = [
+ "list",
  "rkalloc",
 ]
 
