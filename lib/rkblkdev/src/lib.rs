@@ -8,6 +8,13 @@ use rksched::RKsched;
 type Sector = usize;
 type Atomic = u32;
 
+fn rk_assert<T>(t:T){
+    while 0{
+
+    }
+}
+
+
 //blkreq.h
 
 ///支持的操作
@@ -135,7 +142,7 @@ pub struct RkBlkdevQueueConf<'a> {
     ///回调的参数指针
     callback_pointer: *mut u8,
     ///描述符的调度器
-    s: &'a rksched::RKsched<'a,Self>,             //TODO
+    s: &'a rksched::RKsched<'a, Self>,             //TODO
 }
 
 impl RkBlkdevQueueConf {
@@ -328,7 +335,60 @@ pub trait RkBlkdevT {
     /// - 0：成功
     /// - <0：驱动器错误
     ///
-    fn rk_blkdev_get_info(&self, dev_info: &RkBlkdevInfo);
+    fn rk_blkdev_get_info(&self, dev_info: &RkBlkdevInfo)->isize;
+
+    ///
+    /// 为Runikraft块设备分配并建立一个队列
+    /// 这个队列负责请求和响应
+    ///
+    /// @参数 queue_id
+    ///
+    ///     将建立队列的索引
+    ///
+    ///     值必须位于过去应用于rk_blkdev_configure()的范围[0,nb_queue-1]内
+    ///
+    /// @参数 nb_desc
+    ///
+    ///     队列中描述符的数量
+    ///
+    ///     检查rk_blkdev_queue_get_info()以取回限制
+    ///
+    /// @参数 queue_conf
+    ///
+    ///     指向将用于队列配置的数据的指针
+    ///
+    ///     这个可以在多个队列配置之间共享
+    ///
+    /// @返回值
+    ///
+    ///     - 0：成功，收到被正确建立的队列
+    ///     - <0：不能分配也不能建立环描述符
+    ///
+    fn rk_blkdev_queue_configure(&self,queue_id:u16,nb_desc:u16,queue_conf:&RkBlkdevQueueConf)->isize;
+
+    ///
+    /// 开启块设备
+    ///
+    /// 设备开启步骤是最后一步，并且由设定卸载特性及开始传输、以及接收设备单元组成
+    ///
+    /// 一旦成功，被Runikraft块应用程序接口的所有基本函数都可以被调用
+    ///
+    /// @返回值
+    /// - 0：成功，Runikraft块设备开启
+    /// - <0：驱动程序设备开启函数的错误码
+    ///
+    fn rk_blkdev_start(&self)->isize;
+
+    ///得到存有关于设备信息的容量信息，例如nb_of_sectors、sector_size等等
+    ///
+    /// @返回值
+    ///
+    ///     一个指向类型*RkBlkdevCapabilities*的指针
+    ///
+    fn rk_blkdev_cap(&self)->&RkBlkdevCap;
+
+    ///允许队列中断
+    ///
 }
 
 
