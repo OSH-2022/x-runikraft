@@ -1,13 +1,10 @@
 use rkalloc::RKalloc;
+use runikraft::list::SList;
 use super::constants::*;
+use super::lcpu;
 //use runikraft::list::SList;
 
-union AllocWrapper {
-    a: *const dyn RKalloc,
-    i: usize
-}
-
-static mut ALLOCATOR: AllocWrapper = AllocWrapper{i:0};
+static mut ALLOCATOR: Option<*const dyn RKalloc> = None;
 /// 中断响应函数，返回false将中断转交给下一个函数处理，返回true表示中断处理完毕
 pub type IRQHandlerFunc = fn(*mut u8)->bool;
 
@@ -16,13 +13,13 @@ struct IRQHandler {
     arg: *mut u8,
 }
 
-// static mut irq_handlers = [SList<IRQHandler>::new(); MAX_IRQ];
+/// 直接[None;128]会报 E0277
+static mut IRQ_HANDLERS:[Option<SList::<IRQHandler>>;MAX_IRQ] = include!("128None.txt");
 
 
 fn allocator() -> &'static dyn RKalloc {
     unsafe {
-        assert_ne!(ALLOCATOR.i,0);
-        &*ALLOCATOR.a
+        &*ALLOCATOR.unwrap()
     }
 }
 
@@ -36,8 +33,11 @@ fn allocator() -> &'static dyn RKalloc {
 /// 
 /// 必须保证分配器`a`在系统关机前仍有效，`a`可以拥有静态生命周期，也可以位于boot stack上
 pub unsafe fn init(a: *const dyn RKalloc) -> Result<(), i32> {
-    assert_eq!(ALLOCATOR.i,0);
-    ALLOCATOR.a = a;
+    assert!(ALLOCATOR.is_none());
+    ALLOCATOR = Some(a);
+    for i in &mut IRQ_HANDLERS{
+        *i = Some(SList::new(allocator()));
+    }
     Ok(())
 }
 
@@ -55,6 +55,15 @@ pub unsafe fn init(a: *const dyn RKalloc) -> Result<(), i32> {
 pub unsafe fn register(irq: usize, func: IRQHandlerFunc, arg: *mut u8) -> Result<(), i32> 
 {
     let handler = IRQHandler{func,arg};
-
+    let flags =lcpu::save_irqf(); 
+    IRQ_HANDLERS[irq].as_mut().unwrap().push_front(handler).unwrap();
+    lcpu::restore_irqf(flags);
+    //TODO
+    // intctrl_clear_irq(irq);
     Err(-1)
+}
+
+//TODO: 
+extern "C" fn __rkplat_irq_handle(irq: usize) {
+    
 }
