@@ -1,6 +1,6 @@
-#![no_std]
 use rkalloc::RKalloc;
 use core::ptr::null_mut;
+
 /// 不带头结点链表的 trait 声明
 pub trait RKlist<T> {
     /// 获取第一个结点，从 Ok() 中获取

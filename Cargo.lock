@@ -39,6 +39,7 @@ name = "rkplat"
 version = "0.1.0"
 dependencies = [
  "rkalloc",
+ "runikraft",
 ]
 
 [[package]]
