@@ -6,7 +6,7 @@ use rksched::RKsched;
 
 
 type Sector = usize;
-type Atomic =u32;
+type Atomic = u32;
 
 //blkreq.h
 
@@ -162,7 +162,7 @@ pub trait RkBlkdevOps {
     ///得到初始设备容量的驱动程序回调类型
     fn get_info(&self, dev_info: *mut RkBlkdevInfo);
     ///配置块设备的驱动程序回调类型
-    fn dev_configure(&self, conf:*mut RkBlkdevConf) -> isize;
+    fn dev_configure(&self, conf: *mut RkBlkdevConf) -> isize;
     ///得到关于设备队列信息的驱动程序回调类型
     fn queue_get_info(&self, queue_id: u16, q_info: *mut RkBlkdevQueueInfo) -> isize;
     ///建立Runikraft块设备队列的驱动程序回调类型
