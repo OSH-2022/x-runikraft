@@ -29,8 +29,47 @@ impl Ring {
     pub fn new(count: i32, a: &dyn RKalloc) -> Ring {
         panic!("");
     }
-    pub fn enqueue(&self, buf: *mut u8) -> Result<(), i32> {
-        Err(-1)
+    pub fn enqueue(&mut self, buf: *mut u8) -> Result<(), i32> {
+        let mut prod_head: u32;
+        let mut prod_next: u32;
+        let mut cons_tail: u32;
+        // critical_enter()
+        //__asm__ __volatile__("" : : : "memory")
+        loop {
+            prod_head = self.br_prod_head;
+            prod_next = (prod_head + 1) & self.br_prod_mask as u32;
+            cons_tail = self.br_cons_tail;
+            
+            if prod_next == cons_tail {
+                //rmb()
+                if prod_head == self.br_prod_head && cons_tail == self.br_cons_tail {
+                    self.br_drops = self.br_drops + 1;
+                    //critical_exit()
+                    //__asm__ __volatile__("" : : : "memory")
+                    return Err(-105);
+                }
+                continue;
+            }
+
+            match AtomicU32::new(self.br_prod_head).compare_exchange(prod_head, prod_next, Ordering::SeqCst, Ordering::SeqCst) {
+                Ok(success) => success,
+                Err(_) => { break },
+            };
+        }
+        self.br_ring[prod_head as usize] = buf;
+        loop {
+            if self.br_prod_tail != prod_head {
+                //ukarch_spinwait();
+                //__asm__ __volatile__("pause" : : : "memory");         //lcpu.rs
+            }
+            else {
+                break;
+            }
+        }
+        AtomicU32::new(self.br_prod_tail).store(prod_next, Ordering::SeqCst);
+        //critical_exit()
+        //__asm__ __volatile__("" : : : "memory")
+        return Ok(());
     }
     pub fn dequeue_mc(&mut self) -> Option<*mut u8>{
         let mut cons_head: u32;
