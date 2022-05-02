@@ -56,7 +56,9 @@ unsafe fn main() {
     println!("");
 
     for i in slist.iter_mut() {
-        i.data = rkplat::time::monotonic_clock().as_micros() as i32;
+        let t = rkplat::time::monotonic_clock();
+        println!("time={:?}",t);
+        i.data = t.as_secs() as i32;
     }
     for i in slist.iter() {
         print!("{} ",i.data);

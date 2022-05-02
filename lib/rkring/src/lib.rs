@@ -56,7 +56,7 @@ impl Ring {
                 Err(_) => { break },
             };
         }
-        self.br_ring[prod_head as usize] = buf;
+        self.br_ring.data[prod_head as usize] = buf;
         loop {
             if self.br_prod_tail != prod_head {
                 //ukarch_spinwait();
@@ -78,18 +78,18 @@ impl Ring {
         // critical_enter()
         //__asm__ __volatile__("" : : : "memory")
         loop {
-            cons_head = self.br_cons_head;
+            cons_head = self.br_cons_head.data;
             cons_next = (cons_head + 1) & self.br_cons_mask as u32;
             if cons_head == self.br_prod_tail {
                 // critical_exit()
                 return None;
             }
-            match AtomicU32::new(self.br_cons_head).compare_exchange(cons_head, cons_next, Ordering::SeqCst, Ordering::SeqCst) {
+            match AtomicU32::new(self.br_cons_head.data).compare_exchange(cons_head, cons_next, Ordering::SeqCst, Ordering::SeqCst) {
                 Ok(success) => success,
                 Err(_) => { break },
             };
         }
-        buf = self.br_ring[cons_head as usize];
+        buf = self.br_ring.data[cons_head as usize];
         loop {
             if self.br_cons_tail != cons_next {
                 //ukarch_spinwait();
