@@ -8,14 +8,10 @@ use rksched::RKsched;
 type Sector = usize;
 type Atomic = u32;
 
-fn rk_assert<T>(t:T){
-    while 0{
 
-    }
+fn rk_assert<T>() {
+    while false {}
 }
-
-
-//blkreq.h
 
 ///支持的操作
 pub enum RkBlkreqOp {
@@ -97,9 +93,6 @@ pub trait RkBlkreqEvent {
     fn rk_blkreq_finished(&self);
 }
 
-//blkdev_core.h
-
-
 ///用来描述块设备的枚举类型
 pub enum RkBlkdevState {
     RkBlkdevInvalid(u8),
@@ -145,7 +138,7 @@ pub struct RkBlkdevQueueConf<'a> {
     s: &'a rksched::RKsched<'a, Self>,             //TODO
 }
 
-impl RkBlkdevQueueConf {
+impl RkBlkdevQueueConf<'static> {
     ///用于队列事件回调的函数类型
     ///
     ///@参数 dev
@@ -213,20 +206,19 @@ struct RkBlkdevEventHandler<'a> {
     cookie: *mut u8,
     ///触发器事件的信号量
     events: rk_semaphore,
-    ///TODO
+    //TODO
     ///块设备的引用
     dev: &'a mut RkBlkdev<'a>,
-    ///TODO
     ///分配器线程
     dispatcher: *mut rk_thread,
-    ///TODO
+    //TODO
     ///线程名称的引用
     dispatcher_name: *mut char,
     ///分配器的调度器
-    dispatcher_s: *mut rk_sched,                    //TODO
+    dispatcher_s: &'a mut rksched::RKsched<'a, Self>,                    //TODO
 }
 
-impl RkBlkdevEventHandler {
+impl RkBlkdevEventHandler<'static> {
     pub fn callback(dev: &mut RkBlkdev, queue_id: u16, argp: *mut u8) {}
 }
 
@@ -253,7 +245,7 @@ pub struct RkBlkdev<'a> {
     ///内部应用程序接口状态数据的指针
     _data: RkBlkdevData<'a>,
     ///容量
-    capabilities: rk_blkdev_cap,
+    capabilities: RkBlkdevCap,
     ///驱动器回调函数
     dev_ops: &'a dyn RkBlkdevOps,
     ///队列指针（私有应用程序接口）
@@ -286,8 +278,8 @@ pub trait RkBlkdevT {
     ///
     /// @返回值
     ///
-    ///     - （-ENOMEM）：私有分配
-    ///     - （正值）：成功时的块设备的身份
+    /// - （-ENOMEM）：私有分配
+    /// - （正值）：成功时的块设备的身份
     fn rk_blkdev_drv_register(&self, a: &dyn RKalloc, drv_name: &str) -> usize;
     ///TODO
 
@@ -335,7 +327,7 @@ pub trait RkBlkdevT {
     /// - 0：成功
     /// - <0：驱动器错误
     ///
-    fn rk_blkdev_get_info(&self, dev_info: &RkBlkdevInfo)->isize;
+    fn rk_blkdev_get_info(&self, dev_info: &RkBlkdevInfo) -> isize;
 
     ///
     /// 为Runikraft块设备分配并建立一个队列
@@ -361,10 +353,10 @@ pub trait RkBlkdevT {
     ///
     /// @返回值
     ///
-    ///     - 0：成功，收到被正确建立的队列
-    ///     - <0：不能分配也不能建立环描述符
+    /// - 0：成功，收到被正确建立的队列
+    /// - <0：不能分配也不能建立环描述符
     ///
-    fn rk_blkdev_queue_configure(&self,queue_id:u16,nb_desc:u16,queue_conf:&RkBlkdevQueueConf)->isize;
+    fn rk_blkdev_queue_configure(&self, queue_id: u16, nb_desc: u16, queue_conf: &RkBlkdevQueueConf) -> isize;
 
     ///
     /// 开启块设备
@@ -377,7 +369,7 @@ pub trait RkBlkdevT {
     /// - 0：成功，Runikraft块设备开启
     /// - <0：驱动程序设备开启函数的错误码
     ///
-    fn rk_blkdev_start(&self)->isize;
+    fn rk_blkdev_start(&self) -> isize;
 
     ///得到存有关于设备信息的容量信息，例如nb_of_sectors、sector_size等等
     ///
@@ -385,15 +377,111 @@ pub trait RkBlkdevT {
     ///
     ///     一个指向类型*RkBlkdevCapabilities*的指针
     ///
-    fn rk_blkdev_cap(&self)->&RkBlkdevCap;
+    fn rk_blkdev_cap(&self) -> &RkBlkdevCap;
 
     ///允许队列中断
     ///
+    /// @参数 queue_id
+    ///
+    /// 将被建立的队列的指引
+    ///
+    /// 值必须位于过去应用于rk_blkdev_configure()的范围[0,nb_queue-1]内
+    ///
+    /// @返回值
+    /// - 0：成功，中断被允许
+    /// - -ENOTSUP：驱动设备不支持中断
+    ///
+    fn rk_blkdev_queue_intr_enable(&self, queue_id: u16) -> isize;
+
+    /// 禁止队列中断
+    ///
+    /// @参数 queue_id
+    ///
+    /// 将被建立的队列的指引
+    ///
+    /// 值必须位于过去应用于rk_blkdev_configure()的范围\[0,nb_queue-1\]内
+    ///
+    /// @返回值
+    /// - 0：成功，中断被禁止
+    /// - -ENOTSUP：驱动设备不支持中断
+    ///
+    fn rk_blkdev_queue_intr_disble(&self, queue_id: u16) -> isize;
+
+    /// 向设备发送一个异步非阻塞模式请求
+    ///
+    /// @参数 queue_id
+    ///
+    /// 将被建立的队列的指引
+    ///
+    /// 值必须位于过去应用于rk_blkdev_configure()的范围\[0,nb_queue-1\]内
+    ///
+    /// @参数 rqe
+    ///
+    /// 请求结构体
+    ///
+    /// @返回值
+    /// - >=0：状态标记正值
+    ///     - RK_BLKDEV_STATUS_SUCCESS：`req`被成功加入队列
+    ///     - RK_BLKDEV_STATUS_MORE：表明为了后续的传输仍然至少可得到一个描述符
+    ///
+    ///       如果标记没有被设置，表明队列已满
+    ///
+    ///         这仅仅可能在RK_BLKDEV_STATUS_SUCCESS时被同时设置
+    /// - <0：从驱动程序得到的错误码，没有发送任何请求
+    ///
+    fn rk_blkdev_queue_submit_one(&self, queue_id: u16, req: &mut RkBlkreq) -> isize;
+
+    /// 在队列和在目标队列上重新被许可的中断被重新许可之前，从它们那里得到回应
+    ///
+    /// @参数 queue_id
+    ///
+    /// 队列的指引
+    ///
+    /// @返回值
+    /// - 0：成功
+    /// - <0：当驱动程序返回错误的时候
+    ///
+    fn rk_blkdev_queue_finish_reqs(&self,queue_id:u16)->isize;
+
+    ///停止一个Runikraft块设备，并且把他的状态设定为RK_BLKDEV_CONFIGED状态
+    ///
+    /// 从现在开始，用户不能发送任何请求
+    ///
+    /// 如果有被挂起的请求，这个函数将返回-EBUSY因为队列非空。
+    ///
+    /// 如果采用的是轮询而不是中断，要确保在调用这个函数前清空队列并且处理所有的响应
+    ///
+    /// 设备可以通过调用rk_blkdev_start来重启
+    ///
+    /// @返回值
+    /// - 0：成功
+    /// - <0：当驱动程序返回错误的时候
+    fn rk_blkdev_stop(&self)->isize;
+
+    ///清空一个队列和它的Runikraft设备描述符
+    ///
+    /// @参数 queue_id
+    ///
+    /// 将被建立的队列的指引
+    ///
+    /// 值必须位于过去应用于rk_blkdev_configure()的范围\[0,nb_queue-1\]内
+    ///
+    /// @返回值
+    /// - 0：成功
+    /// - <0：当驱动程序返回错误的时候
+    fn rk_blkdev_queue_unconfigure(&self,queue:u16)->isize;
+
+    /// 关闭一个已经停止的Runikraft块设备
+    ///
+    /// 这个函数释放除被RK_BLKDEV_UNCONFIGURE状态使用的所有资源
+    ///
+    /// 设备可以通过调用rk_blkdev_configure来重新配置
+    ///
+    /// @返回值
+    /// - 0：成功
+    /// - <0：当驱动程序返回错误的时候
+    fn rk_blkdev_unconfigure(&self)->isize;
 }
-
-
-//blkdev.h
-
 
 /// 得到可得到的Runikraft块设备的数量
 ///
@@ -414,6 +502,78 @@ fn rk_blkdev_count() -> usize { 0 }          //TODO
 /// - None：在列表中没有找到设备
 /// - Some(&mut RkBlkdev)：将传递给应用程序接口的引用
 ///
-fn rk_blkdev_get(id: usize) -> Option<&'static mut RkBlkdev> { None } //TODO
+fn rk_blkdev_get(id: usize) -> Option<&'static mut RkBlkdev<'static>> { None } //TODO
 
+///
+/// 测试由`rk_blkdev_submit_one`返回的状态标记
+///
+/// 当函数返回一个错误码或者被选中的一个标记没有被设定，这个函数返回假
+///
+/// @参数 status
+///
+/// 返回状态（整型）
+///
+/// @参数 flag
+///
+/// 要测试的标记
+///
+/// @返回值
+/// - true：所有标记被设定并且没有负值
+/// - false：至少一个标记没有被设定或状态是负值
+///
+fn rk_blkdev_status_test_set(status: isize, flag: isize) -> bool { false }
 
+///
+/// 测试由`rk_blkdev_submit_one`返回的未设置标记
+///
+/// 当函数返回一个错误码或者被选中的一个标记被设定，这个函数返回假
+///
+/// @参数 status
+///
+/// 返回状态（整型）
+///
+/// @参数 flag
+///
+/// 要测试的标记
+///
+/// @返回值
+/// - true：标记没有被设定并且没有负值
+/// - false：至少一个标记被设定或状态是负值
+///
+fn rk_blkdev_status_test_unset(status: isize, flag: isize) -> bool { false }
+
+/// 测试`rk_blkdev_submut_one`返回的状态是否表明了一个成功的操作
+///
+/// @参数 status
+///
+/// 返回状态（整型）
+///
+/// @返回值
+/// - true：操作是成功的
+/// - false：操作是不成功的或者发生了错误
+///
+fn rk_blkdev_status_successful(status:isize)->bool{false}
+
+/// 测试`rk_blkdev_submut_one`返回的状态是否表明操作需要被重试
+///
+/// @参数 status
+///
+/// 返回状态（整型）
+///
+/// @返回值
+/// - true：操作应该被重试
+/// - false：操作是成功的或者发生了错误
+///
+fn rk_blkdev_status_notready(status:isize)->bool{false}
+
+/// 测试`rk_blkdev_submut_one`返回的状态是否表明了上一个操作可以被再一次成功重复
+///
+/// @参数 status
+///
+/// 返回状态（整型）
+///
+/// @返回值
+/// - true：状态RK_BLKDEV_STATUS_MORE被设置
+/// - false：操作是成功的或者发生了错误
+///
+fn rk_blkdev_status_more(status:isize)->bool{false}

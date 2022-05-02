@@ -9,6 +9,7 @@ dependencies = [
  "rkalloc",
  "rkalloc_buddy",
  "rkplat",
+ "runikraft",
 ]
 
 [[package]]
@@ -39,6 +40,7 @@ name = "rkplat"
 version = "0.1.0"
 dependencies = [
  "rkalloc",
+ "runikraft",
 ]
 
 [[package]]

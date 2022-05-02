@@ -1,4 +1,5 @@
 #![no_std]
+use core::mem::{align_of,size_of};
 
 /// Runikraft的内存分配器API
 /// `RKalloc`没有模仿`uk_alloc`，而是模仿了`alloc::alloc::GlobalAlloc`，
@@ -84,4 +85,17 @@ pub trait RKallocState {
     /// 占用内存空间。
     /// - free_size大于等于请求分配的空间时不一定能分配成功，因为可能无法找到足够大的连续内存空间。
     fn free_size(&self) -> usize;
+}
+
+/// 分配一段空间，并把T保存在此处
+pub unsafe fn alloc_type<T> (alloc: &dyn RKalloc, elem: T) -> *mut T{
+    let p = alloc.alloc(size_of::<T>(), align_of::<T>()) as *mut T;
+    *p = elem;
+    p
+}
+
+/// 释放*T的空间，并调用drop
+pub unsafe fn dealloc_type<T> (alloc: &dyn RKalloc, ptr: *mut T) {
+    ptr.drop_in_place();
+    alloc.dealloc(ptr as *mut u8, size_of::<T>(), align_of::<T>());
 }

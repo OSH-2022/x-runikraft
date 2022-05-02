@@ -9,6 +9,7 @@ pub mod spinlock;
 //
 //pub mod thread;
 
+mod constants;
 
 // supervisor binary interface
 mod sbi;
