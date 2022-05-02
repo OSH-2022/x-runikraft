@@ -44,9 +44,10 @@ impl Ring {
                 // critical_exit()
                 return None;
             }
-            // if {
-            //     break;
-            // }
+            match AtomicU32::new(self.br_cons_head).compare_exchange(cons_head, cons_next, Ordering::SeqCst, Ordering::SeqCst) {
+                Ok(success) => success,
+                Err(_) => { break },
+            };
         }
         buf = self.br_ring.data[cons_head as usize];
         return Some(buf);
