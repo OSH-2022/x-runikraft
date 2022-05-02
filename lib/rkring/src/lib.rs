@@ -32,13 +32,14 @@ impl Ring {
     pub fn enqueue(&self, buf: *mut u8) -> Result<(), i32> {
         Err(-1)
     }
-    pub fn dequeue_mc(&mut self) -> Option<*mut u8> {
+    pub fn dequeue_mc(&mut self) -> Option<*mut u8>{
         let mut cons_head: u32;
         let mut cons_next: u32;
         let buf: *mut u8;
         // critical_enter()
+        //__asm__ __volatile__("" : : : "memory")
         loop {
-            cons_head = self.br_cons_head.data;
+            cons_head = self.br_cons_head;
             cons_next = (cons_head + 1) & self.br_cons_mask as u32;
             if cons_head == self.br_prod_tail {
                 // critical_exit()
@@ -49,7 +50,19 @@ impl Ring {
                 Err(_) => { break },
             };
         }
-        buf = self.br_ring.data[cons_head as usize];
+        buf = self.br_ring[cons_head as usize];
+        loop {
+            if self.br_cons_tail != cons_next {
+                //ukarch_spinwait();
+                //__asm__ __volatile__("pause" : : : "memory");         //lcpu.rs
+            }
+            else {
+                break;
+            }
+        }
+        AtomicU32::new(self.br_cons_tail).store(cons_next, Ordering::SeqCst);
+        //critical_exit()
+        //__asm__ __volatile__("" : : : "memory")
         return Some(buf);
     }
     pub fn dequeue_sc(&mut self) -> Option<*mut u8> {
