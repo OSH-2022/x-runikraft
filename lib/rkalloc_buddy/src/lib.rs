@@ -285,7 +285,7 @@ impl RKallocBuddy<'_> {
             free_list_head,
             max_order,
             root_order,
-            meta_data: Bitset::new(base.add(size) as *mut usize, n_meta_blocks * 2),
+            meta_data: Bitset::new(base.add(data_size) as *mut usize, n_meta_blocks * 2),
             base,
             size_data: data_size,
             size_left: data_size,
