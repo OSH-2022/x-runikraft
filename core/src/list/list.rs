@@ -329,7 +329,7 @@ impl<'a,T> List<'a,T> {
 }
 
 impl<'a,T> List<'a,T> {
-    fn push_front_node(&mut self, mut node: *mut Node<T>) -> Result<(),&'static str>{
+    fn push_front_node(&mut self, node: *mut Node<T>) -> Result<(),&'static str>{
         if node.is_null() {return Err("fail to allocate memory");}
         unsafe{
             debug_assert!((*node).prev.is_null());
