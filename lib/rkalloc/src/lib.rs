@@ -1,5 +1,5 @@
 #![no_std]
-use core::mem::{align_of,size_of};
+use core::mem::{align_of,size_of, ManuallyDrop};
 
 /// Runikraft的内存分配器API
 /// `RKalloc`没有模仿`uk_alloc`，而是模仿了`alloc::alloc::GlobalAlloc`，
@@ -90,7 +90,8 @@ pub trait RKallocState {
 /// 分配一段空间，并把T保存在此处
 pub unsafe fn alloc_type<T> (alloc: &dyn RKalloc, elem: T) -> *mut T{
     let p = alloc.alloc(size_of::<T>(), align_of::<T>()) as *mut T;
-    *p = elem;
+    let elem = ManuallyDrop::new(elem);
+    p.copy_from_nonoverlapping(&*elem, 1);
     p
 }
 

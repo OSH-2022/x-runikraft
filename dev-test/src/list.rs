@@ -30,45 +30,56 @@ impl Drop for Struct {
 unsafe fn main() {
     let alloc;
     alloc = RKallocBuddy::new(HEAP_SPACE.as_mut_ptr(),1024);
-    let mut slist = list::SList::<Struct>::new(&alloc);
+    let mut dlist = list::List::<Struct>::new(&alloc);
     for i in 0..10 {
-        slist.push_front(Struct::new(i)).unwrap();
+        dlist.push_front(Struct::new(i)).unwrap();
         println!("after push_front {}, free_size={}",i,alloc.free_size());
     }
-    for i in slist.iter() {
+    for i in dlist.iter() {
         print!("{} ",i.data);
     }
     println!("");
-    let mut pos = slist.head_mut();
+    let mut pos = dlist.head_mut();
     pos.next().unwrap();
-    slist.insert_after(pos,Struct::new(15)).unwrap();
-    slist.insert_after(pos,Struct::new(16)).unwrap();
-    for i in slist.iter() {
+    dlist.insert_after(pos,Struct::new(15)).unwrap();
+    dlist.insert_before(pos,Struct::new(16)).unwrap();
+    pos.prev().unwrap();
+    pos.prev().unwrap();
+    assert!(pos.is_head());
+    dlist.insert_before(pos, Struct::new(-100)).unwrap();
+    for i in dlist.iter() {
         print!("{} ",i.data);
     }
     println!("");
     pos.advance(5).unwrap();
-    match pos.advance(-5){
-        Ok(_)=>{},
-        Err(_)=>{println!("pos.advance(-5) failed");}
-    }
-    slist.remove_after(pos);
-    slist.remove_after(pos);
-    for i in slist.iter() {
+    dlist.remove_after(pos);
+    dlist.remove_after(pos);
+    pos.advance(-5).unwrap();
+    (_, pos) = dlist.remove(pos);
+    dlist.remove_before(pos);
+    assert!(pos.is_head());
+    for i in dlist.iter() {
         print!("{} ",i.data);
     }
     println!("");
 
-    for i in slist.iter_mut() {
+    for i in dlist.iter_mut() {
         i.data = rkplat::time::monotonic_clock().as_micros() as i32;
     }
-    for i in slist.iter() {
+    for i in dlist.iter() {
         print!("{} ",i.data);
     }
-
     println!("");
-    while !slist.is_empty() {
-        let i = slist.pop_front().unwrap();
+    {
+        let mut i = dlist.iter();
+        for _ in 1..dlist.len() {i.next();}
+        while let Some(i) = i.prev() {
+            print!("{} ",i.data);
+        }
+    }
+    println!("");
+    while !dlist.is_empty() {
+        let i = dlist.pop_front().unwrap();
         println!("after pop_front {}, free_size={}",i.data,alloc.free_size());
     }
 }

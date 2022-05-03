@@ -143,8 +143,11 @@ impl<'a,T> List<'a,T> {
             let ptr = self.head;
             unsafe{
                 self.head = (*ptr).next;
-                debug_assert!(!(*self.head).prev.is_null());
-                (*self.head).prev = null_mut();
+                // 删除最后一个结点后，head is null
+                if !self.head.is_null() {
+                    debug_assert!(!(*self.head).prev.is_null());
+                    (*self.head).prev = null_mut();
+                }
             }
             let old_head = unsafe{ptr.replace(Node::null())};
             unsafe{rkalloc::dealloc_type(self.alloc, ptr);}
@@ -191,6 +194,31 @@ impl<'a,T> List<'a,T> {
         ListPosMut { pos: self.head }
     }
 
+    /// 在迭代器指向的位置之前插入
+    /// 
+    /// # 安全性
+    /// 
+    /// `pos`必须和`self`属于同一个链表
+    pub unsafe fn insert_before(&mut self, pos: ListPosMut<T>, element: T) -> Result<(),&'static str>{
+        if pos.pos.is_null() {
+            return Err("invalid position");
+        }
+        let node = rkalloc::alloc_type(self.alloc, Node::new(element));
+        if node.is_null() {return Err("fail to allocate memory");}
+        (*node).prev=(*pos.pos).prev;
+        (*node).next=pos.pos;
+        (*(pos.pos)).prev = node;
+        if !(*node).prev.is_null() {
+            (*(*node).prev).next=node;
+        }
+        else {
+            debug_assert!(self.head == pos.pos);
+            self.head = node;
+        }
+        self.size += 1;
+        Ok(())
+    }
+
     /// 在迭代器指向的位置之后插入
     /// 
     /// # 安全性
@@ -210,6 +238,70 @@ impl<'a,T> List<'a,T> {
         }
         self.size += 1;
         Ok(())
+    }
+
+    /// 在迭代器指向的位置之前删除
+    /// 
+    /// # 安全性
+    /// 
+    /// `pos`必须和`self`属于同一个链表
+    pub unsafe fn remove_before(&mut self, pos: ListPosMut<T>) -> Option<T> {
+        assert!(!pos.pos.is_null());
+        if (*pos.pos).prev.is_null() {
+            None
+        }
+        else {
+            self.size -= 1;
+            let ptr = (*pos.pos).prev;
+            (*(pos.pos)).prev = (*ptr).prev;
+            if !(*ptr).prev.is_null() {
+                (*(*ptr).prev).next = pos.pos;
+            }
+            else {
+                debug_assert!(self.head == ptr);
+                self.head = pos.pos;
+            }
+            let old_head = ptr.replace(Node::null());
+            rkalloc::dealloc_type(self.alloc, ptr);
+            old_head.element
+        }
+    }
+
+    /// 删除迭代器指向的位置
+    /// 
+    /// 返回值：(被删除的元素, pos.next()或pos.prev()或空位置)
+    /// 
+    /// # 安全性
+    /// 
+    /// - `pos`必须和`self`属于同一个链表
+    /// - 成功删除后，ListPosMut<T>将无效
+    pub unsafe fn remove(&mut self, pos: ListPosMut<T>) -> (T,ListPosMut<T>) {
+        assert!(!pos.pos.is_null());
+        self.size -= 1;
+        let ptr = pos.pos;
+        if !(*ptr).next.is_null() {
+            (*(*ptr).next).prev = (*ptr).prev;
+            if !(*ptr).prev.is_null() {
+                (*(*ptr).prev).next = (*ptr).next;
+            }
+            else {
+                debug_assert!(self.head == ptr);
+                self.head = (*ptr).next;
+            }
+            let old_head = ptr.replace(Node::null());
+            rkalloc::dealloc_type(self.alloc, ptr);
+            (old_head.element.unwrap(), ListPosMut{pos: old_head.next})
+        }
+        else if !(*ptr).prev.is_null() {
+            (*(*ptr).prev).next = (*ptr).next;
+            let old_head = ptr.replace(Node::null());
+            rkalloc::dealloc_type(self.alloc, ptr);
+            (old_head.element.unwrap(), ListPosMut{pos: old_head.prev})
+        }
+        else {
+            let old_head = ptr.replace(Node::null());
+            (old_head.element.unwrap(), ListPosMut{pos: null_mut()})
+        }
     }
 
     /// 在迭代器指向的位置之后删除
@@ -242,6 +334,9 @@ impl<'a,T> List<'a,T> {
         unsafe{
             debug_assert!((*node).prev.is_null());
             (*node).next = self.head;
+            if !self.head.is_null() {
+                (*self.head).prev = node;
+            }
             self.head = node;
         }
         Ok(())
@@ -349,13 +444,37 @@ impl<T> ListPos<T> {
             Ok(())
         }
     }
+    /// 移动到上一个位置
+    pub fn prev(&mut self)->Result<(),()>{
+        if self.pos.is_null() {return Err(());}
+        unsafe {
+            self.pos = (*self.pos).prev;
+            Ok(())
+        }
+    }
     /// 移动多个位置
-    pub fn advance(&mut self, dis: usize) -> Result<(),()> {
-        for _ in 0..dis {
-            self.next()?
+    pub fn advance(&mut self, dis: isize) -> Result<(),()> {
+        if dis > 0 {
+            for _ in 0..dis {
+                self.next()?
+            }
+        }
+        else if dis < 0 {
+            for _ in 0..-dis {
+                self.prev()?
+            }
         }
         Ok(())
     }
+
+    pub fn is_head(&self) -> bool {
+        unsafe {(*self.pos).prev.is_null()}
+    }
+
+    pub fn is_tail(&self) -> bool {
+        unsafe {(*self.pos).next.is_null()}
+    }
+    
     pub fn is_null(&self) -> bool{
         self.pos.is_null()
     }
@@ -377,13 +496,37 @@ impl<T> ListPosMut<T> {
             Ok(())
         }
     }
+    /// 移动到上一个位置
+    pub fn prev(&mut self)->Result<(),()>{
+        if self.pos.is_null() {return Err(());}
+        unsafe {
+            self.pos = (*self.pos).prev;
+            Ok(())
+        }
+    }
     /// 移动多个位置
-    pub fn advance(&mut self, dis: usize) -> Result<(),()> {
-        for _ in 0..dis {
-            self.next()?
+    pub fn advance(&mut self, dis: isize) -> Result<(),()> {
+        if dis > 0 {
+            for _ in 0..dis {
+                self.next()?
+            }
+        }
+        else if dis < 0 {
+            for _ in 0..-dis {
+                self.prev()?
+            }
         }
         Ok(())
     }
+
+    pub fn is_head(&self) -> bool {
+        unsafe {(*self.pos).prev.is_null()}
+    }
+
+    pub fn is_tail(&self) -> bool {
+        unsafe {(*self.pos).next.is_null()}
+    }
+
     pub fn is_null(&self) -> bool{
         self.pos.is_null()
     }

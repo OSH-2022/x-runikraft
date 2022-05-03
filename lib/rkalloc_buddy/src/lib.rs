@@ -179,28 +179,19 @@ impl RKallocBuddy<'_> {
 
 const fn log2_usize(mut x: usize) -> usize {
     let mut y = 0_usize;
-    if x >= 4294967296 {
-        y += 32;
-        x >>= 32;
-    }
-    if x >= 65536 {
-        y += 16;
-        x >>= 16;
-    }
-    if x >= 256 {
-        y += 8;
-        x >>= 8;
-    }
-    if x >= 16 {
-        y += 4;
-        x >>= 4;
-    }
-    if x >= 4 {
-        y += 2;
-        x >>= 2;
-    }
-    if x >= 2 { y += 1; }
+    if x>=4294967296 {y+=32;x>>=32;}
+    if x>=65536 {y+=16;x>>=16;}
+    if x>=256 {y+=8;x>>=8;}
+    if x>=16 {y+=4;x>>=4;}
+    if x>=4 {y+=2;x>>=2;}
+    if x>=2 {y+=1;}
     y
+}
+
+const fn min_power2(x: usize) -> usize {
+    let y = log2_usize(x);
+    if 1<<y == x {x}
+    else {1<<(y+1)}
 }
 
 /// 通过二分查找确定元数据块的数量
@@ -215,9 +206,7 @@ fn find_n_meta(t: usize) -> usize {
     let (mut l, mut r) = (t / 65, (t + 42) / 43);
     let ok = |m: usize| {
         let d = t - m;
-        let mut log2 = log2_usize(d);
-        if d != 1 << log2 { log2 += 1; }
-        m >= ((1 << log2) - 2 + d) / 128 + 1
+        m >= (min_power2(d) - 2 + d) / 128 + 1
     };
     while l != r {
         let mid = l + r >> 1;
@@ -398,7 +387,7 @@ unsafe impl RKalloc for RKallocBuddy<'_> {
         debug_assert!(align.is_power_of_two());
         debug_assert!(align <= PAGE_ALIGNMENT);
         //实际上需要分配的内存大小
-        let size = max(max(size, align), MIN_SIZE);
+        let size = min_power2(max(max(size, align), MIN_SIZE));
         //剩余空间不足
         if self.size_left < size {
             return null_mut();
@@ -411,7 +400,7 @@ unsafe impl RKalloc for RKallocBuddy<'_> {
         debug_assert!(align.is_power_of_two());
         debug_assert!(align <= PAGE_ALIGNMENT);
         let mut_self = &mut *(self as *const Self as *mut Self);
-        let size = max(max(size, align), MIN_SIZE);
+        let size = min_power2(max(max(size, align), MIN_SIZE));
         mut_self.dealloc_mut(ptr, size);
     }
 }

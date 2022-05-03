@@ -304,7 +304,10 @@ impl<T> SListPos<T> {
         }
     }
     /// 移动多个位置
-    pub fn advance(&mut self, dis: usize) -> Result<(),()> {
+    pub fn advance(&mut self, dis: isize) -> Result<(),()> {
+        if dis < 0 {
+            return Err(());
+        }
         for _ in 0..dis {
             self.next()?
         }
@@ -337,7 +340,10 @@ impl<T> SListPosMut<T> {
         }
     }
     /// 移动多个位置
-    pub fn advance(&mut self, dis: usize) -> Result<(),()> {
+    pub fn advance(&mut self, dis: isize) -> Result<(),()> {
+        if dis < 0 {
+            return Err(());
+        }
         for _ in 0..dis {
             self.next()?
         }
