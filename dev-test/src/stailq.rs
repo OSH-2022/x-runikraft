@@ -62,7 +62,7 @@ unsafe fn main() {
     println!("");
 
     pos = slist.tail_mut();
-    slist.insert_after(pos, Struct::new(123));
+    slist.insert_after(pos, Struct::new(123)).unwrap;
     assert_eq!(123,slist.tail().data);
     for i in slist.iter() {
         print!("{} ",i.data);

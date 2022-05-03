@@ -288,9 +288,9 @@ impl<T> SListIter<'_,T> {
 }
 
 impl<T> SListIterMut<'_,T> {
-    /// 转换为`SListPos`
-    pub fn as_pos(&self) -> SListPos<T> {
-        SListPos { pos: self.head }
+    /// 转换为`SListPosMut`
+    pub fn as_pos(&self) -> SListPosMut<T> {
+        SListPosMut { pos: self.head }
     }
 }
 

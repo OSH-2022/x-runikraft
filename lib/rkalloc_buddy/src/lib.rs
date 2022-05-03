@@ -78,18 +78,15 @@ pub struct RKallocBuddy<'a> {
     //空闲区块列表(双向循环链表)，order-MIN_ORDER才是free_list_head的索引
     //【注意】访问free_list_head时，下标通常是[i-MIN_ORDER]
     free_list_head: [*mut Node; MAX_ORDER - MIN_ORDER + 1],
-    max_order: usize,
-    //order的最大值，等于floor(log2(total))
-    root_order: usize,
-    //根区块的order，等于ceil(log2(total))
+    max_order: usize,       //order的最大值，等于floor(log2(total))
+    root_order: usize,      //根区块的order，等于ceil(log2(total))
     meta_data: Bitset<'a>,
-    base: *const u8,
-    //内存空间的基地址
-    size_data: usize,
+    base: *const u8,        //内存空间的基地址
+
     //状态信息
-    size_left: usize,
-    //剩余可用空间大小
-    size_total: usize,  //总可用空间大小
+    size_data: usize,    
+    size_left: usize,       //剩余可用空间大小
+    size_total: usize,      //总可用空间大小
 }
 
 /// 大小和Node相同的Bitset, 储存空间的分配情况
@@ -105,14 +102,16 @@ impl Bitset<'_> {
     fn get(&self, index: usize) -> bool {
         if index / 64 >= self.data.len() {
             false
-        } else {
+        }
+        else {
             (self.data[index / 64] & (1usize << index % 64)) != 0
         }
     }
     fn set(&mut self, index: usize, data: bool) {
         if data {
             self.data[index / 64] |= 1usize << index % 64;
-        } else {
+        }
+        else {
             self.data[index / 64] &= !(1usize << index % 64);
         }
     }
@@ -132,8 +131,7 @@ fn sibling(i: usize) -> usize { ((i - 1) ^ 1) + 1 }
 
 #[derive(Clone, Copy)]
 struct Node {
-    pub pre: *mut Node,
-    //前驱结点
+    pub pre: *mut Node,     //前驱结点
     pub next: *mut Node,    //后继结点
 }
 
@@ -152,7 +150,8 @@ impl RKallocBuddy<'_> {
         if self.free_list_head[order - MIN_ORDER].is_null() {
             (*node).init();
             self.free_list_head[order - MIN_ORDER] = node;
-        } else {
+        }
+        else {
             let head = self.free_list_head[order - MIN_ORDER];
             (*node).next = (*head).next;
             (*head).next = node;
@@ -169,7 +168,8 @@ impl RKallocBuddy<'_> {
         debug_assert!(!(*node).next.is_null());
         if (*node).next == node {
             self.free_list_head[order - MIN_ORDER] = null_mut();
-        } else {
+        }
+        else {
             (*(*node).pre).next = (*node).next;
             (*(*node).next).pre = (*node).pre;
             self.free_list_head[order - MIN_ORDER] = (*node).pre;
@@ -212,7 +212,8 @@ fn find_n_meta(t: usize) -> usize {
         let mid = l + r >> 1;
         if ok(mid) {
             r = mid;
-        } else {
+        }
+        else {
             l = mid + 1;
         }
     }
@@ -356,7 +357,8 @@ impl RKallocBuddy<'_> {
             debug_assert!(self.meta_data.get(parent(i)));
             self.meta_data.set(parent(i), false);
             ptr
-        } else {
+        }
+        else {
             let buddy = ptr.sub(1 << order - MIN_ORDER);
             self.remove_node(order, buddy);
             debug_assert!(self.meta_data.get(parent(i)));
@@ -378,7 +380,7 @@ impl RKallocBuddy<'_> {
                 return 1 << order + 1;
             }
         }
-        16
+        MIN_SIZE
     }
 }
 

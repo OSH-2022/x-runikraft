@@ -345,16 +345,16 @@ impl<T> ExactSizeIterator for STailqIterMut<'_,T> {
 }
 
 impl<T> STailqIter<'_,T> {
-    /// 转换为`SListPos`
+    /// 转换为`STailqPos`
     pub fn as_pos(&self) -> STailqPos<T> {
         STailqPos { pos: self.head }
     }
 }
 
 impl<T> STailqIterMut<'_,T> {
-    /// 转换为`SListPos`
-    pub fn as_pos(&self) -> STailqPos<T> {
-        STailqPos { pos: self.head }
+    /// 转换为`STailqPosMut`
+    pub fn as_pos(&self) -> STailqPosMut<T> {
+        STailqPosMut { pos: self.head }
     }
 }
 
