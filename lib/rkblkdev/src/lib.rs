@@ -1,17 +1,22 @@
 #![no_std]
 
 
-use rkalloc::RKalloc;
+use core::borrow::BorrowMut;
+use core::intrinsics::size_of;
+use core::sync::atomic::{AtomicU16, Ordering};
+use rkalloc::{alloc_type, RKalloc};
 use rksched::RKsched;
+pub use std::sync::atomic::AtomicU16;
+pub use std::sync::atomic::Ordering;
 
+static BLKDEV_COUT:AtomicU16=AtomicU16::new(0);
 
 type Sector = usize;
 type Atomic = u32;
 
 
-fn rk_assert<T>() {
-    while false {}
-}
+
+
 
 ///支持的操作
 pub enum RkBlkreqOp {
@@ -55,7 +60,7 @@ pub trait RkBlkreqEvent {
     ///@参数 cookie_callback
     ///	由用户在递交请求时设定的可选参数
     ///
-    fn rk_blkreq_eent_t(&self, cb_cookie: *mut u8);
+    fn rk_blkreq_ent_t(&self, cb_cookie: *mut u8);
 
     ///初始化一个请求结构体
     ///
@@ -95,10 +100,10 @@ pub trait RkBlkreqEvent {
 
 ///用来描述块设备的枚举类型
 pub enum RkBlkdevState {
-    RkBlkdevInvalid(u8),
-    RkBlkdevUnconfigured(u8),
-    RkBlkdevConfigured(u8),
-    RkBlkdevRunning(u8),
+    RkBlkdevInvalid,
+    RkBlkdevUnconfigured,
+    RkBlkdevConfigured,
+    RkBlkdevRunning,
 }
 
 ///用来配置Runikraft块设备的结构体
@@ -130,8 +135,7 @@ pub struct RkBlkdevQueue {}
 ///用于配置Runikraft块设备队列的结构体
 pub struct RkBlkdevQueueConf<'a> {
     ///用于设备描述符环的分配器
-    a: &'a dyn rkalloc::RKalloc,
-    ///TODO
+    a: &'a dyn rkalloc::RKalloc,                    ///TODO
     ///回调的参数指针
     callback_pointer: *mut u8,
     ///描述符的调度器
@@ -199,7 +203,7 @@ pub struct RkBlkdevCap {
 ///@内部
 ///
 ///事件处理程序配置
-struct RkBlkdevEventHandler<'a> {
+pub struct RkBlkdevEventHandler<'a> {
     //回调
     //使用静态方法实现
     ///回调的参数
@@ -243,7 +247,7 @@ pub struct RkBlkdev<'a> {
     ///配置请求的函数指针
     ///用特征实现
     ///内部应用程序接口状态数据的指针
-    _data: RkBlkdevData<'a>,
+    _data: &'a mut  RkBlkdevData<'a>,
     ///容量
     capabilities: RkBlkdevCap,
     ///驱动器回调函数
@@ -281,7 +285,6 @@ pub trait RkBlkdevT {
     /// - （-ENOMEM）：私有分配
     /// - （正值）：成功时的块设备的身份
     fn rk_blkdev_drv_register(&self, a: &dyn RKalloc, drv_name: &str) -> usize;
-    ///TODO
 
     /// 把一个队列事件向应用程序接口用户前移
     /// 可以（并且应该）在设备中断的上下文中调用
@@ -483,12 +486,104 @@ pub trait RkBlkdevT {
     fn rk_blkdev_unconfigure(&self)->isize;
 }
 
+pub unsafe fn _alloc_data<'a>(a:&dyn RKalloc, blkdev_id:u16, drv_name:&str) -> *mut RkBlkdevData<'a> {
+    let mut data: *mut RkBlkdevData = alloc_type::<RkBlkdevData>(a, RkBlkdevData);
+    data.drv_name=drv_name;
+    data.state=RkBlkdevState::RkBlkdevUnconfigured;
+    data.a=a;
+    //这仅仅会发生在我们设置设备身份的时候
+    //在设备生命的剩余时间，这个身份是只读的
+    data
+}
+
+impl RkBlkdevT for RkBlkdev {
+    fn submit_one(&self, queue: *mut RkBlkdevQueue, req: *mut RkBlkreq) -> isize {
+        todo!()
+    }
+
+    fn finish_reqs(&self, queue: RkBlkdevQueue) -> isize {
+        todo!()
+    }
+
+    unsafe fn rk_blkdev_drv_register(&mut self, a: &dyn RKalloc, drv_name: &str) -> usize {
+        assert!(self);
+
+        //数据必须被取消分配
+        assert!()
+        self._data= _alloc_data(a, BLKDEV_COUT.load(Ordering::SeqCst), drv_name).borrow_mut();
+
+        todo!()
+    }
+
+    fn rk_blkdev_drv_queue_event(&self, queue_id: i16) {
+        todo!()
+    }
+
+    fn rk_blkdev_drv_unregister(&self) {
+        todo!()
+    }
+
+    fn rk_blkdev_drv_name_get(&self) -> Option<&str> {
+        todo!()
+    }
+
+    fn rk_blkdev_state_get(&self) -> RkBlkdevState {
+        todo!()
+    }
+
+    fn rk_blkdev_get_info(&self, dev_info: &RkBlkdevInfo) -> isize {
+        todo!()
+    }
+
+    fn rk_blkdev_queue_configure(&self, queue_id: u16, nb_desc: u16, queue_conf: &RkBlkdevQueueConf) -> isize {
+        todo!()
+    }
+
+    fn rk_blkdev_start(&self) -> isize {
+        todo!()
+    }
+
+    fn rk_blkdev_cap(&self) -> &RkBlkdevCap {
+        todo!()
+    }
+
+    fn rk_blkdev_queue_intr_enable(&self, queue_id: u16) -> isize {
+        todo!()
+    }
+
+    fn rk_blkdev_queue_intr_disble(&self, queue_id: u16) -> isize {
+        todo!()
+    }
+
+    fn rk_blkdev_queue_submit_one(&self, queue_id: u16, req: &mut RkBlkreq) -> isize {
+        todo!()
+    }
+
+    fn rk_blkdev_queue_finish_reqs(&self, queue_id: u16) -> isize {
+        todo!()
+    }
+
+    fn rk_blkdev_stop(&self) -> isize {
+        todo!()
+    }
+
+    fn rk_blkdev_queue_unconfigure(&self, queue: u16) -> isize {
+        todo!()
+    }
+
+    fn rk_blkdev_unconfigure(&self) -> isize {
+        todo!()
+    }
+}
+
 /// 得到可得到的Runikraft块设备的数量
 ///
 /// @返回值
 ///    - （usize）：块设备的数量
 ///
-fn rk_blkdev_count() -> usize { 0 }          //TODO
+fn rk_blkdev_count() -> u16 {
+    BLKDEV_COUT.load(Ordering::SeqCst)
+}
 
 ///
 /// 得到一个Runikraft块设备的引用，基于它的身份
@@ -502,7 +597,10 @@ fn rk_blkdev_count() -> usize { 0 }          //TODO
 /// - None：在列表中没有找到设备
 /// - Some(&mut RkBlkdev)：将传递给应用程序接口的引用
 ///
-fn rk_blkdev_get(id: usize) -> Option<&'static mut RkBlkdev<'static>> { None } //TODO
+fn rk_blkdev_get(id: usize) -> Option<&'static mut RkBlkdev<'static>> {
+    let mut blkdev;
+        todo!()
+}
 
 ///
 /// 测试由`rk_blkdev_submit_one`返回的状态标记
