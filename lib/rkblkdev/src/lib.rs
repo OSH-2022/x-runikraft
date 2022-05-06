@@ -1,21 +1,80 @@
 #![no_std]
 
-
-use core::borrow::BorrowMut;
-use core::intrinsics::{ptr_guaranteed_ne, size_of};
 use core::sync::atomic::{AtomicU16, Ordering};
 use rkalloc::{alloc_type, RKalloc};
 use rksched::RKsched;
-use std::sync::atomic::AtomicU16;
-use std::sync::atomic::Ordering;
-use runikraft::list;
-
-static BLKDEV_COUT: AtomicU16 = AtomicU16::new(0);
-
-
+use runikraft::list::Tailq;
+use runikraft::list::{ListPos, ListPosMut};
 
 type Sector = usize;
 type Atomic = u32;
+
+static mut RK_BLKDEV_LIST: Option<Tailq<RkBlkdev>> = None;
+static mut BLKDEV_COUNT: Option<u16> = None;
+
+pub unsafe fn _alloc_data(a: &dyn RKalloc, blkdev_id: u16, drv_name: &str) -> *mut RkBlkdevData {
+    let mut data: *mut RkBlkdevData = alloc_type::<RkBlkdevData>(a, RkBlkdevData);
+    data.drv_name = drv_name;
+    data.state = RkBlkdevState::RkBlkdevUnconfigured;
+    data.a = a;
+    //这仅仅会发生在我们设置设备身份的时候
+    //在设备生命的剩余时间，这个身份是只读的
+    data
+}
+
+/// 向设备链表增加Runikraft块设备
+/// 一旦驱动增加了新找到的设备，这个函数就应该被调用
+///
+/// @参数 a
+///
+///    将被用于librkblkdev私有数据的分配器
+///
+/// @参数 drv_name
+///
+///    （可选）驱动名称
+///    给这个字符串分配的内存必须保持可用直到设备被登记
+///
+/// @返回值
+///
+/// - （-ENOMEM）：私有分配
+/// - （正值）：成功时的块设备的身份
+unsafe fn rk_blkdev_drv_register(mut dev: RkBlkdev, a: &dyn RKalloc, drv_name: &str) -> u16 {
+    assert!(dev);
+
+    //数据必须被取消分配
+    assert_ne!(dev._data);
+    //断言必要的配置
+    assert!(dev.dev_ops);
+    assert!(dev.dev_ops.dev_configure());
+    assert!(dev.dev_ops.dev_start());
+    assert!(dev.dev_ops.queue_configure());
+    assert!(dev.dev_ops.get_info());
+    assert!(dev.dev_ops.queue_get_info());
+    assert!(dev.submit_one());
+    assert!(dev.finish_reqs());
+    assert!(dev.dev_ops.queue_intr_enable() && dev.dev_ops.queue_intr_disable() || !dev.dev_ops.queue_intr_enable() && !dev.dev_ops.queue_intr_disable());
+    assert!(dev);
+    dev._data = _alloc_data(a, BLKDEV_COUNT.load(Ordering::SeqCst), drv_name);
+    if !dev._data.is_null() {
+        return -12;
+    }
+
+    dev._data.state=RkBlkdevState::RkBlkdevUnconfigured;
+    if let Some(mut x) = &RK_BLKDEV_LIST {
+        x.push_back(dev);
+    }
+    println!("Registered blkdev%{}:{} {}\n",BLKDEV_COUNT,dev,drv_name);
+    todo!();
+
+    BLKDEV_COUNT = match BLKDEV_COUNT {
+        None => Some(1),
+        Some(x) => Some(x + 1)
+    };
+    return match BLKDEV_COUNT {
+        None => 0,
+        Some(y) => y
+    };
+}
 
 
 pub fn ptriseer(ptr: u64) -> bool {
@@ -25,7 +84,6 @@ pub fn ptriseer(ptr: u64) -> bool {
         false
     }
 }
-
 
 
 ///支持的操作
@@ -169,7 +227,7 @@ impl RkBlkdevQueueConf<'static> {
     ///
     ///注意：为了处理接收到的响应，应该调用dev的finish_reqs方法
     ///
-    pub fn callback(dev: &mut RkBlkdev, queue_id: u16, argp: *mut u8) {todo!()}
+    pub fn callback(dev: &mut RkBlkdev, queue_id: u16, argp: *mut u8) { todo!() }
 }
 
 pub trait RkBlkdevOps {
@@ -195,7 +253,7 @@ pub trait RkBlkdevOps {
     fn dev_unconfigure(&self) -> isize;
 }
 
-impl RkBlkdevOps for RkBlkreqOp{
+impl RkBlkdevOps for RkBlkreqOp {
     fn get_info(&self, dev_info: *mut RkBlkdevInfo) {
         todo!()
     }
@@ -274,7 +332,7 @@ pub struct RkBlkdevEventHandler<'a> {
 }
 
 impl RkBlkdevEventHandler<'static> {
-    pub fn callback(dev: &mut RkBlkdev, queue_id: u16, argp: *mut u8) {todo!()}
+    pub fn callback(dev: &mut RkBlkdev, queue_id: u16, argp: *mut u8) { todo!() }
 }
 
 ///@内部
@@ -298,7 +356,7 @@ pub struct RkBlkdev<'a> {
     ///配置请求的函数指针
     ///用特征实现
     ///内部应用程序接口状态数据的指针
-    _data: &'a mut RkBlkdevData<'a>,
+    _data: *mut RkBlkdevData<'a>,
     ///容量
     capabilities: RkBlkdevCap,
     ///驱动器回调函数
@@ -316,23 +374,8 @@ pub trait RkBlkdevT {
     ///完成一串Runikraft快设备 请求的驱动程序回调类型
     fn finish_reqs(&self, queue: RkBlkdevQueue) -> isize;
 
-    /// 向设备链表增加Runikraft块设备
-    /// 一旦驱动增加了新找到的设备，这个函数就应该被调用
-    ///
-    /// @参数 a
-    ///
-    ///    将被用于librkblkdev私有数据的分配器
-    ///
-    /// @参数 drv_name
-    ///
-    ///    （可选）驱动名称
-    ///    给这个字符串分配的内存必须保持可用直到设备被登记
-    ///
-    /// @返回值
-    ///
-    /// - （-ENOMEM）：私有分配
-    /// - （正值）：成功时的块设备的身份
-    fn rk_blkdev_drv_register(&self, a: &dyn RKalloc, drv_name: &str) -> usize;
+
+    //fn rk_blkdev_drv_register(&self, a: &dyn RKalloc, drv_name: &str) -> usize;
 
     /// 把一个队列事件向应用程序接口用户前移
     /// 可以（并且应该）在设备中断的上下文中调用
@@ -536,15 +579,6 @@ pub trait RkBlkdevT {
     fn rk_blkdev_id_get(&self) -> u16;
 }
 
-pub unsafe fn _alloc_data<'a>(a: &dyn RKalloc, blkdev_id: u16, drv_name: &str) -> *mut RkBlkdevData<'a> {
-    let mut data: *mut RkBlkdevData = alloc_type::<RkBlkdevData>(a, RkBlkdevData);
-    data.drv_name = drv_name;
-    data.state = RkBlkdevState::RkBlkdevUnconfigured;
-    data.a = a;
-    //这仅仅会发生在我们设置设备身份的时候
-    //在设备生命的剩余时间，这个身份是只读的
-    data
-}
 
 impl RkBlkdevT for RkBlkdev {
     fn submit_one(&self, queue: *mut RkBlkdevQueue, req: *mut RkBlkreq) -> isize {
@@ -555,26 +589,6 @@ impl RkBlkdevT for RkBlkdev {
         todo!()
     }
 
-    unsafe fn rk_blkdev_drv_register(&mut self, a: &dyn RKalloc, drv_name: &str) -> usize {
-        assert!(self);
-
-        //数据必须被取消分配
-        assert_ne!(self._data);
-        //断言必要的配置
-        assert!(self.dev_ops);
-        assert!(self.dev_ops.dev_configure());
-        assert!(self.dev_ops.dev_start());
-        assert!(self.dev_ops.queue_configure());
-        assert!(self.dev_ops.get_info());
-        assert!(self.dev_ops.queue_get_info());
-        assert!(self.submit_one());
-        assert!(self.finish_reqs());
-        assert!(self.dev_ops.queue_intr_enable() && self.dev_ops.queue_intr_disable() || !self.dev_ops.queue_intr_enable() && !self.dev_ops.queue_intr_disable());
-        assert!(self);
-        self._data = _alloc_data(a, BLKDEV_COUT.load(Ordering::SeqCst), drv_name).borrow_mut();
-
-        todo!()
-    }
 
     fn rk_blkdev_drv_queue_event(&self, queue_id: i16) {
         todo!()
@@ -597,6 +611,13 @@ impl RkBlkdevT for RkBlkdev {
     }
 
     fn rk_blkdev_get_info(&self, dev_info: &RkBlkdevInfo) -> isize {
+        let rc=0;
+        assert!(self);
+        assert!(self.dev_ops);
+        assert!(self.dev_ops.get_info());
+        assert!(dev_info);
+
+
         todo!()
     }
 
@@ -652,8 +673,11 @@ impl RkBlkdevT for RkBlkdev {
 /// @返回值
 ///    - （usize）：块设备的数量
 ///
-fn rk_blkdev_count() -> u16 {
-    BLKDEV_COUT.load(Ordering::SeqCst)
+unsafe fn rk_blkdev_count() -> u16 {
+    match BLKDEV_COUNT {
+        None => 0,
+        Some(x) => x
+    }
 }
 
 ///
@@ -662,16 +686,22 @@ fn rk_blkdev_count() -> u16 {
 ///
 /// @参数 id
 ///
-///     要配置的Runikraft块设备的识别符
+/// 要配置的Runikraft块设备的识别符
 ///
 /// @返回值
 /// - None：在列表中没有找到设备
 /// - Some(&mut RkBlkdev)：将传递给应用程序接口的引用
 ///
-fn rk_blkdev_get(id: usize) -> Option<&'static mut RkBlkdev<'static>> {
-    let mut blkdev;
-
-    todo!()
+unsafe fn rk_blkdev_get(id: u16) -> Option<&RkBlkdev> {
+    if let Some(x) = &RK_BLKDEV_LIST {
+        let iter = x.iter();
+        for x in iter{
+            if x._data.id==id{
+                return Some(x);
+            }
+        }
+    }
+    None
 }
 
 ///
@@ -734,7 +764,7 @@ fn rk_blkdev_status_successful(status: isize) -> bool { todo!() }
 /// - true：操作应该被重试
 /// - false：操作是成功的或者发生了错误
 ///
-fn rk_blkdev_status_notready(status: isize) -> bool {todo!()}
+fn rk_blkdev_status_notready(status: isize) -> bool { todo!() }
 
 /// 测试`rk_blkdev_submut_one`返回的状态是否表明了上一个操作可以被再一次成功重复
 ///
