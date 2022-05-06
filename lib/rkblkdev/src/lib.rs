@@ -2,11 +2,11 @@
 
 use core::cmp::min;
 use core::intrinsics::size_of;
-use core::sync::atomic::{AtomicU16, Ordering};
+use core::sync::atomic::{Ordering};
 use rkalloc::{alloc_type, RKalloc};
-use rksched::RKsched;
+
 use runikraft::list::Tailq;
-use runikraft::list::{ListPos, ListPosMut};
+
 
 type Sector = usize;
 type Atomic = u32;
@@ -94,11 +94,8 @@ pub struct RkBlkdevQueueConf<'a> {
 static mut RK_BLKDEV_LIST: Option<Tailq<RkBlkdev>> = None;
 static mut BLKDEV_COUNT: Option<u16> = None;
 
-pub unsafe fn _alloc_data(a: &dyn RKalloc, blkdev_id: u16, drv_name: &str) -> *mut RkBlkdevData {
-    let mut data: *mut RkBlkdevData = alloc_type::<RkBlkdevData>(a, RkBlkdevData);
-    data.drv_name = drv_name;
-    data.state = RkBlkdevState::RkBlkdevUnconfigured;
-    data.a = a;
+pub unsafe fn _alloc_data<'a>(a: &'a (dyn RKalloc + 'a), blkdev_id: u16, drv_name: &'a str) -> *mut RkBlkdevData<'a> {
+    let mut data: *mut RkBlkdevData = alloc_type::<RkBlkdevData>(a, RkBlkdevData { id: 0, state: RkBlkdevState::RkBlkdevConfigured, queue_handler: [], drv_name: drv_name, a: a });
     //这仅仅会发生在我们设置设备身份的时候
     //在设备生命的剩余时间，这个身份是只读的
     data
@@ -140,7 +137,7 @@ pub unsafe fn rk_blkdev_drv_register(mut dev: RkBlkdev, a: &dyn RKalloc, drv_nam
         return -12;
     }
 
-    dev._data.state = RkBlkdevState::RkBlkdevUnconfigured;
+    (*dev._data).state = RkBlkdevState::RkBlkdevUnconfigured;
     if let Some(mut x) = &RK_BLKDEV_LIST {
         x.push_back(dev);
     }
@@ -177,7 +174,7 @@ pub unsafe fn rk_blkdev_count() -> u16 {
 /// - None：在列表中没有找到设备
 /// - Some(&mut RkBlkdev)：将传递给应用程序接口的引用
 ///
-pub unsafe fn rk_blkdev_get(id: u16) -> Option<&RkBlkdev> {
+pub unsafe fn rk_blkdev_get(id: u16) -> Option<&'static RkBlkdev<'static>> {
     if let Some(x) = &RK_BLKDEV_LIST {
         let iter = x.iter();
         for x in iter {
@@ -272,7 +269,7 @@ unsafe fn rk_blkdev_configure(dev:RkBlkdev, conf: &RkBlkdevConf) ->isize{
     todo!()
 }
 
-pub fn ptriseer(ptr: u64) -> bool {
+pub fn ptriseer(ptr: i64) -> bool {
     if ptr <= 0 && ptr >= -512 {
         true
     } else {
@@ -458,7 +455,7 @@ pub struct RkBlkdevData<'a> {
     ///设备状态
     state: RkBlkdevState,
     ///每个队列的事件处理器
-    queue_handler: [RkBlkdevEventHandler<'a>; CONFIG_LIBUKBLKDEV_MAXNBQUEUES],
+    queue_handler: [RkBlkdevEventHandler<'a>; 16],
     ///设备名称
     drv_name: &'a str,
     ///分配器
@@ -477,7 +474,7 @@ pub struct RkBlkdev<'a> {
     ///驱动器回调函数
     dev_ops: &'a dyn RkBlkdevOps,
     ///队列指针（私有应用程序接口）
-    _queue: [RkBlkdevQueue; CONFIG_LIBUKBLKDEV_MAXNBQUEUES],
+    _queue: [RkBlkdevQueue; 16],
     ///块设备队列入口
     _list_tqe_next: &'a mut RkBlkdev<'a>,
     _list_tqe_prev: &'a mut *mut RkBlkdev<'a>,
@@ -680,7 +677,7 @@ pub trait RkBlkdevT {
 }
 
 
-impl RkBlkdevT for RkBlkdev {
+impl RkBlkdevT for RkBlkdev<'static> {
     fn submit_one(&self, queue: *mut RkBlkdevQueue, req: *mut RkBlkreq) -> isize {
         todo!()
     }
