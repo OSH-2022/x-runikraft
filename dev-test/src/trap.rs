@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 
-extern crate rkplat;
+extern crate rkboot;
 
 #[no_mangle]
 unsafe fn main() {

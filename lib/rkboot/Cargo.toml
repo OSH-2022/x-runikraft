@@ -1,0 +1,13 @@
+[package]
+name = "rkboot"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+    default = ["alloc_buddy"]
+    alloc_buddy = ["rkalloc_buddy"]
+
+[dependencies]
+    rkalloc = {path = "../rkalloc"}
+    rkalloc_buddy = {path = "../rkalloc_buddy", optional = true}
+    rkplat = {path = "../rkplat"}

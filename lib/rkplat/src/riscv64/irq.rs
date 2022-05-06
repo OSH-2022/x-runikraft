@@ -1,8 +1,7 @@
 use rkalloc::RKalloc;
 use runikraft::list::SList;
 use super::constants::*;
-use super::lcpu;
-use super::intctrl;
+use super::{lcpu,intctrl,reg};
 //use runikraft::list::SList;
 
 static mut ALLOCATOR: Option<*const dyn RKalloc> = None;
@@ -68,7 +67,8 @@ pub unsafe fn register(irq: usize, func: IRQHandlerFunc, arg: *mut u8) -> Result
 
 //TODO: 
 #[no_mangle]
-unsafe extern "C" fn __rkplat_irq_handle(irq: usize) {
+unsafe extern "C" fn __rkplat_irq_handle(irq: usize, regs: &reg::RegGen) {
+    println!("regs={:?}",regs);
     for i in IRQ_HANDLERS[irq].as_ref().unwrap().iter() {
         if (i.func)(i.arg) {
             intctrl::ack_irq(irq);

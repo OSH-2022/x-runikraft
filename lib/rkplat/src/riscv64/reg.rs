@@ -1,5 +1,6 @@
 /// 所有的通用寄存器
 #[repr(C)]
+#[derive(Debug)]
 pub struct RegGen {
     pub t0: usize,
     pub t1: usize,
@@ -34,7 +35,7 @@ pub struct RegGen {
     pub ra: usize,
     pub sp: usize,
     pub tp: usize,
-    pub sepc: usize,
+    pub pc: usize,
     pub sstatus: usize,
 }
 

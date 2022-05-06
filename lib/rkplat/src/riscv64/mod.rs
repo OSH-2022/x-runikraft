@@ -20,3 +20,10 @@ mod sbi;
 mod reg;
 //mod mcause;
 //mod mstauts;
+
+// 导入所有的汇编代码
+use core::arch::global_asm;
+
+global_asm!(include_str!("entry.asm"));
+global_asm!(include_str!("int_entry.asm"));
+global_asm!(include_str!("new_stack.asm"));
