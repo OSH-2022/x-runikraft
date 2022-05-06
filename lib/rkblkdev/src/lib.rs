@@ -2,12 +2,9 @@
 
 
 use core::borrow::BorrowMut;
-use core::intrinsics::{ptr_guaranteed_ne, size_of};
 use core::sync::atomic::{AtomicU16, Ordering};
 use rkalloc::{alloc_type, RKalloc};
 use rksched::RKsched;
-use std::sync::atomic::AtomicU16;
-use std::sync::atomic::Ordering;
 use runikraft::list;
 
 static BLKDEV_COUT: AtomicU16 = AtomicU16::new(0);

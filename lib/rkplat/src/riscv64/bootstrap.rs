@@ -17,12 +17,16 @@ extern "C" {
     fn main();
 }
 
+static mut BOOT_HEAP:[u8;4096] = [0;4096];
+
 /// 系统的入口，由引导程序调用
 ///
 #[no_mangle]
-pub fn __runikraft_entry_point() -> ! {
+pub unsafe fn __runikraft_entry_point() -> ! {
+    let a = rkalloc_buddy::RKallocBuddy::new(BOOT_HEAP.as_mut_ptr(), BOOT_HEAP.len());
+    irq::init(&a).unwrap();
     time::init();
-    unsafe { main(); }
+    main();
     halt();
 }
 

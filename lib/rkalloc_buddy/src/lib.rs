@@ -117,17 +117,10 @@ impl Bitset<'_> {
     }
 }
 
-#[inline(always)]
-fn lchild(i: usize) -> usize { i * 2 + 1 }
-
-#[inline(always)]
-fn rchild(i: usize) -> usize { i * 2 + 2 }
-
-#[inline(always)]
-fn parent(i: usize) -> usize { (i - 1) / 2 }
-
-#[inline(always)]
-fn sibling(i: usize) -> usize { ((i - 1) ^ 1) + 1 }
+#[inline(always)] fn lchild(i: usize) -> usize {i*2+1}
+#[inline(always)] fn rchild(i: usize) -> usize {i*2+2}
+#[inline(always)] fn parent(i: usize) -> usize {(i-1)/2}
+#[inline(always)] fn sibling(i: usize) -> usize {((i-1)^1)+1}
 
 #[derive(Clone, Copy)]
 struct Node {
