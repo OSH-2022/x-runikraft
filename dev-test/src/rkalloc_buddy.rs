@@ -3,17 +3,19 @@
 
 #[macro_use]
 extern crate rkplat;
+extern crate rkboot;
 
 use rkalloc::{RKalloc, RKallocExt, RKallocState};
 use rkalloc_buddy::RKallocBuddy;
+use runikraft::align_as;
 
-static mut HEAP_SPACE: [u8;1024] = [0;1024];
+static mut HEAP_SPACE: align_as::A4096<[u8;1024]> = align_as::A4096::new([0;1024]);
 
 #[no_mangle]
-unsafe fn main() {
+unsafe fn main(_args: &mut [&str])->i32 {
     let alloc;
-    alloc = RKallocBuddy::new(HEAP_SPACE.as_mut_ptr(),1024);
-    println!("base = {:?}",HEAP_SPACE.as_mut_ptr());
+    alloc = RKallocBuddy::new(HEAP_SPACE.data.as_mut_ptr(),1024);
+    println!("base = {:?}",HEAP_SPACE.data.as_mut_ptr());
     println!("total size={}, free size={}",alloc.total_size(),alloc.free_size());
     println!("\x1b[38;2;0;240;0m{}: \x1b[38;2;240;0;0m{:?}\x1b[0m","After new",alloc);
     let mut ptr = [0 as *mut u8;64];
@@ -48,6 +50,8 @@ unsafe fn main() {
     ptr[0]=alloc.alloc(256, 1);
     println!("ptr[0]={:?}, free size={}",ptr[0],alloc.free_size());
     println!("\x1b[38;2;0;240;0m{}: \x1b[38;2;240;0;0m{:?}\x1b[0m","After alloc 256",alloc);
+
+    0
 
 //     rk::println!("sleep for 10s");
 //     let start = time::get_ticks();
