@@ -1,6 +1,7 @@
 #[cfg(feature = "has_smp")]
 mod inner {
     use core::arch;
+    use core::ptr::addr_of;
 
     /// 自旋锁
     pub struct SpinLock {
@@ -23,12 +24,12 @@ mod inner {
                         amoswap.w.aq t1, t0, ({lock})   #尝试获取锁
                         bnez t1, 2b   #获取失败
                 "#,
-                    lock = in(reg) &self.lock,
+                    lock = in(reg) addr_of!(self.lock),
                 );
             }
         }
         /// 尝试上锁
-        pub fn trylock(&self) -> bool {
+        pub fn try_lock(&self) -> bool {
             let mut ret = 0;
             unsafe {
                 arch::asm!(
@@ -40,7 +41,7 @@ mod inner {
                         li {ret}, 1
                     3:  
                 "#,
-                    lock = in(reg) &self.lock,
+                    lock = in(reg) addr_of!(self.lock),
                     ret = inout(reg) ret
                 );
             }
@@ -52,13 +53,21 @@ mod inner {
             unsafe {
                 arch::asm!(
                 " amoswap.w.rl zero,zero,({lock})",
-                lock = in(reg) &self.lock)
+                lock = in(reg) addr_of!(self.lock))
             }
         }
         /// 已上锁时返回true
         pub fn is_locked(&self) -> bool {
             unsafe { arch::asm!("fence w,r"); }
             self.lock != 0
+        }
+    }
+
+    unsafe impl Sync for SpinLock{}
+
+    impl Drop for SpinLock {
+        fn drop(&mut self) {
+            self.unlock();
         }
     }
 }
@@ -82,4 +91,42 @@ mod inner {
     }
 }
 
-pub use inner::*;
+pub struct SpinLockGuard<'a> {
+    lock: &'a inner::SpinLock,
+}
+
+pub struct SpinLock {
+    lock: inner::SpinLock,
+}
+
+impl SpinLock {
+    pub fn new() -> SpinLock {
+        SpinLock { lock: inner::SpinLock::new() }
+    }
+
+    pub fn lock<'a>(&'a self) -> SpinLockGuard<'a> {
+        self.lock.lock();
+        SpinLockGuard { lock: &self.lock }
+    }
+
+    pub fn try_lock<'a>(&'a self) -> Option<SpinLockGuard<'a>> {
+        if self.lock.try_lock() {
+            Some(SpinLockGuard{lock: &self.lock})
+        }
+        else {
+            None
+        }
+    }
+}
+
+impl SpinLockGuard<'_> {
+    pub fn is_locked(&self) -> bool {
+        self.lock.is_locked()
+    }
+}
+
+impl Drop for SpinLockGuard<'_> {
+    fn drop(&mut self) {
+        self.lock.unlock();
+    }
+}
