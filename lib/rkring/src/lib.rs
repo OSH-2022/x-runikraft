@@ -4,7 +4,8 @@
 
 use rkalloc::*;
 use core::sync::atomic::{AtomicU32, Ordering};
-use core::ptr::null_mut;
+use core::ptr::{null_mut, drop_in_place};
+use core::mem::size_of;
 
 #[repr(align(64))]
 struct CacheLineAligned<T> {
@@ -27,8 +28,25 @@ pub struct Ring {
 impl Ring {
     /// `count`: 容量
     /// `alloc`: 分配器
-    pub fn new(count: i32, a: &dyn RKalloc) -> Ring {
-        panic!("");
+    pub fn new(count: i32, a: &dyn RKalloc) -> *mut Ring {
+        let br: *mut Ring;
+        unsafe {
+            br = a.alloc(size_of::<Ring>(), count as usize * size_of::<*mut u8>()) as *mut Ring;
+        }
+        if br == null_mut() {
+            return null_mut();
+        }
+        unsafe {
+            (*br).br_prod_size = count as u32;
+            (*br).br_cons_size = count as u32;
+            (*br).br_prod_mask = (count - 1) as u32;
+            (*br).br_cons_mask = (count - 1) as u32;
+            (*br).br_prod_head = 0;
+            (*br).br_cons_head.data = 0;
+            (*br).br_prod_tail = 0;
+            (*br).br_cons_tail = 0;
+        }
+        return br;
     }
     pub fn enqueue(&mut self, buf: *mut u8) -> Result<(), i32> {
         let mut prod_head: u32;
@@ -239,5 +257,9 @@ impl Ring {
 }
 
 impl Drop for Ring {
-    fn drop(&mut self) {}
+    fn drop(&mut self) {
+        unsafe {
+            drop_in_place(self);
+        }
+    }
 }
