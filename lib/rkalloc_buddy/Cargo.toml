@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
     rkalloc = {path = "../rkalloc"}
+    rkplat = {path = "../rkplat"}

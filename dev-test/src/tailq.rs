@@ -3,12 +3,14 @@
 
 #[macro_use]
 extern crate rkplat;
+extern crate rkboot;
 
 use rkalloc::RKallocState;
 use rkalloc_buddy::RKallocBuddy;
 use runikraft::list;
+use runikraft::align_as;
 
-static mut HEAP_SPACE: [u8;1024] = [0;1024];
+static mut HEAP_SPACE: align_as::A4096<[u8;1024]> = align_as::A4096::new([0;1024]);
 
 struct Struct {
     data: i32,
@@ -27,9 +29,9 @@ impl Drop for Struct {
 }
 
 #[no_mangle]
-unsafe fn main() {
+unsafe fn main(_args: &mut [&str])->i32 {
     let alloc;
-    alloc = RKallocBuddy::new(HEAP_SPACE.as_mut_ptr(),1024);
+    alloc = RKallocBuddy::new(HEAP_SPACE.data.as_mut_ptr(),1024);
     let mut dlist = list::Tailq::<Struct>::new(&alloc);
     for i in 0..10 {
         dlist.push_front(Struct::new(i)).unwrap();
@@ -90,4 +92,6 @@ unsafe fn main() {
         let i = dlist.pop_back().unwrap();
         println!("after pop_back {}, free_size={}",i.data,alloc.free_size());
     }
+
+    0
 }
