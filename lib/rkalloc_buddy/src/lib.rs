@@ -62,6 +62,7 @@
 #![no_std]
 
 use rkalloc::{RKalloc, RKallocState, RKallocExt};
+use rkplat::spinlock;
 use core::cmp::max;
 use core::ptr::null_mut;
 
@@ -82,6 +83,7 @@ pub struct RKallocBuddy<'a> {
     root_order: usize,      //根区块的order，等于ceil(log2(total))
     meta_data: Bitset<'a>,
     base: *const u8,        //内存空间的基地址
+    lock: spinlock::SpinLock,
 
     //状态信息
     size_data: usize,    
@@ -273,6 +275,7 @@ impl RKallocBuddy<'_> {
             size_data: data_size,
             size_left: data_size,
             size_total: size,
+            lock: spinlock::SpinLock::new()
         }
     }
 
@@ -377,6 +380,8 @@ impl RKallocBuddy<'_> {
     }
 }
 
+unsafe impl Sync for RKallocBuddy<'_>{}
+
 unsafe impl RKalloc for RKallocBuddy<'_> {
     unsafe fn alloc(&self, size: usize, align: usize) -> *mut u8 {
         debug_assert!(align.is_power_of_two());
@@ -387,6 +392,7 @@ unsafe impl RKalloc for RKallocBuddy<'_> {
         if self.size_left < size {
             return null_mut();
         }
+        let _lock = self.lock.lock();
         let mut_self = &mut *(self as *const Self as *mut Self);
         return mut_self.alloc_mut(size);
     }
@@ -394,8 +400,9 @@ unsafe impl RKalloc for RKallocBuddy<'_> {
         if ptr.is_null() { return; }
         debug_assert!(align.is_power_of_two());
         debug_assert!(align <= PAGE_ALIGNMENT);
-        let mut_self = &mut *(self as *const Self as *mut Self);
         let size = min_power2(max(max(size, align), MIN_SIZE));
+        let _lock = self.lock.lock();
+        let mut_self = &mut *(self as *const Self as *mut Self);
         mut_self.dealloc_mut(ptr, size);
     }
 }
@@ -404,6 +411,7 @@ unsafe impl RKallocExt for RKallocBuddy<'_> {
     unsafe fn dealloc_ext(&self, ptr: *mut u8) {
         if ptr.is_null() { return; }
         let size = self.find_size_when_alloc(ptr);
+        let _lock = self.lock.lock();
         let mut_self = &mut *(self as *const Self as *mut Self);
         mut_self.dealloc_mut(ptr, size);
     }

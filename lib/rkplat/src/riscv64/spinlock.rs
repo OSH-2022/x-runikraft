@@ -67,7 +67,11 @@ mod inner {
 
     impl Drop for SpinLock {
         fn drop(&mut self) {
-            self.unlock();
+            if self.is_locked() {
+                #[cfg(debug_assertions)]
+                println!("\x1b[38;2;240;0;0mWARNING\x1b[0m: self({:?}) was locked when dropping.",addr_of!(self));
+                self.unlock();
+            }
         }
     }
 }

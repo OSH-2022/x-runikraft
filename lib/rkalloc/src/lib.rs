@@ -8,12 +8,15 @@ use core::mem::{align_of,size_of, ManuallyDrop};
 ///
 /// # 安全性
 ///
-/// `self`具有内部可变性，但是RKalloc是底层的分配器，不能在分配时加锁，所以
-/// 调用者必须保证，调用环境不能出现竞争
-pub unsafe trait RKalloc {
+/// `self`具有内部可变性，实现应该用自旋锁保证线程安全
+pub unsafe trait RKalloc: Sync {
     /// 分配大小为`size`，对齐要求为`align`(必须是2^n)的连续内存空间
     ///
     /// 成功时返回非空指针，失败时返回空指针
+    /// 
+    /// # 安全性
+    /// 
+    /// - 返回值可能是空指针
     unsafe fn alloc(&self, size: usize, align: usize) -> *mut u8;
 
     /// 解分配内存
