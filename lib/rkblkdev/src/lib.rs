@@ -2,15 +2,19 @@
 
 #[macro_use]
 extern crate rkplat;
+
 use core::cmp::min;
 use core::mem::size_of;
+use core::ptr::write_bytes;
 use rkalloc::{alloc_type, RKalloc};
 
 use runikraft::list::Tailq;
+use crate::RkBlkdevState::RkBlkdevConfigured;
 
 
 type Sector = usize;
 type Atomic = u32;
+
 
 ///支持的操作
 pub enum RkBlkreqOp {
@@ -79,7 +83,7 @@ pub struct RkBlkdevQueueInfo {
     nb_is_power_of_two: isize,
 }
 
-///用于配置Runikraft块设备队列的结构体
+
 pub struct RkBlkdevQueue {}
 
 ///用于配置Runikraft块设备队列的结构体
@@ -96,7 +100,7 @@ static mut RK_BLKDEV_LIST: Option<Tailq<RkBlkdev>> = None;
 static mut BLKDEV_COUNT: Option<i16> = None;
 
 pub unsafe fn _alloc_data<'a>(a: &'a (dyn RKalloc + 'a), blkdev_id: u16, drv_name: &'a str) -> *mut RkBlkdevData<'a> {
-    let mut data: *mut RkBlkdevData = alloc_type::<RkBlkdevData>(a, RkBlkdevData );
+    let mut data: *mut RkBlkdevData = alloc_type::<RkBlkdevData>(a, ());
     //这仅仅会发生在我们设置设备身份的时候
     //在设备生命的剩余时间，这个身份是只读的
     data
@@ -189,7 +193,7 @@ pub unsafe fn rk_blkdev_id_get(dev: RkBlkdev) -> u16 {
 /// 返回块设备的身份
 ///
 /// @参数 id
-///     要配置的Runikraft块设备的识别符
+/// 要配置的Runikraft块设备的识别符
 ///
 /// @返回值
 /// - None：如果没有定义名称
@@ -205,7 +209,7 @@ unsafe fn rk_blkdev_drv_name_get<'a>(dev: RkBlkdev) -> &str {
 /// @返回值
 /// - enum RkBlkdevState：当前设备状态
 ///
-unsafe fn rk_blkdev_state_get<'a>(dev: &RkBlkdev) -> &'a  RkBlkdevState {
+unsafe fn rk_blkdev_state_get<'a>(dev: &RkBlkdev) -> &'a RkBlkdevState {
     &(*(dev._data)).state
 }
 
@@ -225,7 +229,7 @@ unsafe fn rk_blkdev_state_get<'a>(dev: &RkBlkdev) -> &'a  RkBlkdevState {
 pub unsafe fn rk_blkdev_get_info(dev: &RkBlkdev, dev_info: &mut RkBlkdevInfo) -> isize {
     let rc = 0;
     //在向驱动程序询问容量之前清除值
-    memset(dev_info, 0, size_of::<* dev_info>());
+    write_bytes::<RkBlkdevInfo>(dev_info, 0, size_of::<RkBlkdevInfo>());
     dev.dev_ops.get_info(dev_info);
     //根据应用程序接口的配置，限制最大的队列数
     dev_info.max_queues = min(16, dev_info.max_queues);
@@ -246,23 +250,88 @@ unsafe fn rk_blkdev_configure(dev: &RkBlkdev, conf: &RkBlkdevConf) -> isize {
     let mut rc = 0;
     let mut dev_info: RkBlkdevInfo;
     rc = rk_blkdev_get_info(dev, &mut dev_info);
-    if rc!=0{
-        println!("blkdev{}:Failed to get initial info{}\n",(*dev._data).id,rc);
+    if rc != 0 {
+        println!("blkdev{}:Failed to get initial info{}\n", (*dev._data).id, rc);
         return rc;
     }
-    if conf.nb_queues>dev_info.max_queues{
+    if conf.nb_queues > dev_info.max_queues {
         return -12;
     }
-    rc=dev.dev_ops.dev_configure(conf);
+    rc = dev.dev_ops.dev_configure(conf);
     if rc != 0 {
-        println!("blkdev{}: Configured interface\n",(*dev._data).id);
-        (*dev._data).state=RkBlkdevState::RkBlkdevConfigured;
-    }else{
-        println!("blkdev{}:Failed to configure interface {}\n",(*dev._data).id,rc);
+        println!("blkdev{}: Configured interface\n", (*dev._data).id);
+        (*dev._data).state = RkBlkdevState::RkBlkdevConfigured;
+    } else {
+        println!("blkdev{}:Failed to configure interface {}\n", (*dev._data).id, rc);
     }
     rc
 }
 
+//TODO _dispacher
+//TODO _create_event_handler
+//TODO _destory_event_handler
+/// 询问设备队列容量
+///
+/// 信息对设备队列初始化有用（例如在队列中可支持的描述符的最大值
+///
+/// @参数 queue_id
+///
+///     将建立队列的索引
+///
+///     值必须位于过去应用于rk_blkdev_configure()的范围[0,nb_queue-1]内
+///
+/// @参数 q_info
+///
+/// 指向将被填写的RkBlkdevQueueInfo结构体的指针
+///
+/// @返回值
+/// - 0：成功，队列信息被填写
+/// - <0：驱动程序函数的错误码
+unsafe fn rk_blkdev_queue_get_info(dev: &RkBlkdev, queue_id: u16, q_info: *mut RkBlkdevQueueInfo) -> isize {
+    //在向驱动程序询问队列容量之前清除值
+    write_bytes::<RkBlkdevQueueInfo>(q_info, 0, size_of::<RkBlkdevQueueInfo>());
+    dev.dev_ops.queue_get_info(dev, queue_id, q_info)
+}
+
+///
+/// 为Runikraft块设备分配并建立一个队列
+/// 这个队列负责请求和响应
+///
+/// @参数 queue_id
+///
+///     将建立队列的索引
+///
+///     值必须位于过去应用于rk_blkdev_configure()的范围[0,nb_queue-1]内
+///
+/// @参数 nb_desc
+///
+///     队列中描述符的数量
+///
+///     检查rk_blkdev_queue_get_info()以取回限制
+///
+/// @参数 queue_conf
+///
+///     指向将用于队列配置的数据的指针
+///
+///     这个可以在多个队列配置之间共享
+///
+/// @返回值
+///
+/// - 0：成功，收到被正确建立的队列
+/// - <0：不能分配也不能建立环描述符
+///
+unsafe fn rk_blkdev_queue_configure(dev: &RkBlkdev, queue_id: u16, nb_desc: u16, queue_conf: &RkBlkdevQueueConf) -> isize {
+    let err = 0;
+    assert!(!dev._data.is_null());
+    if let RkBlkdevConfigured = (*dev._data).state {
+        return 22;
+    }
+    //确保我们没有第二次对这个队列进行初始化
+    if !ptriseer(dev._queue[queue_id as usize]){
+
+    }
+    todo!()
+}
 
 pub fn ptriseer(ptr: i64) -> bool {
     if ptr <= 0 && ptr >= -512 {
@@ -271,6 +340,7 @@ pub fn ptriseer(ptr: i64) -> bool {
         false
     }
 }
+
 pub trait RkBlkreqEvent {
     ///用于执行一个响应后的请求
     ///@参数 cookie_callback
@@ -341,7 +411,7 @@ pub trait RkBlkdevOps {
     ///配置块设备的驱动程序回调类型
     fn dev_configure(&self, conf: &RkBlkdevConf) -> isize;
     ///得到关于设备队列信息的驱动程序回调类型
-    fn queue_get_info(&self, queue_id: u16, q_info: *mut RkBlkdevQueueInfo) -> isize;
+    fn queue_get_info(&self, dev: &RkBlkdev, queue_id: u16, q_info: *mut RkBlkdevQueueInfo) -> isize;
     ///建立Runikraft块设备队列的驱动程序回调类型
     fn queue_configure(&self, queue_id: u16, nb_desc: u16, queue_conf: *mut RkBlkdevQueueConf) -> *mut RkBlkdevQueue;
     ///开启已配置的Runikraft块设备的驱动程序回调类型
@@ -363,11 +433,11 @@ impl RkBlkdevOps for RkBlkreqOp {
         todo!()
     }
 
-    fn dev_configure(&self, conf: *mut RkBlkdevConf) -> isize {
+    fn dev_configure(&self, conf: &RkBlkdevConf) -> isize {
         todo!()
     }
 
-    fn queue_get_info(&self, queue_id: u16, q_info: *mut RkBlkdevQueueInfo) -> isize {
+    fn queue_get_info(&self, dev: &RkBlkdev<'_>, queue_id: u16, q_info: *mut RkBlkdevQueueInfo) -> isize {
         todo!()
     }
 
@@ -423,13 +493,13 @@ pub struct RkBlkdevEventHandler<'a> {
     ///回调的参数
     cookie: *mut u8,
     ///触发器事件的信号量
-    events: rk_semaphore,
-    //TODO
+    //TODO events: rk_semaphore,
+
     ///块设备的引用
     dev: &'a mut RkBlkdev<'a>,
     ///分配器线程
-    dispatcher: *mut rk_thread,
-    //TODO
+    //TODO dispatcher: *mut rk_thread,
+
     ///线程名称的引用
     dispatcher_name: *mut char,
     ///分配器的调度器
@@ -494,54 +564,6 @@ pub trait RkBlkdevT {
     /// 把设备从列表中移除
     fn rk_blkdev_drv_unregister(&self);
 
-
-    /// 询问设备队列容量
-    ///
-    /// 信息对设备队列初始化有用（例如在队列中可支持的描述符的最大值
-    ///
-    /// @参数 queue_id
-    ///
-    ///     将建立队列的索引
-    ///
-    ///     值必须位于过去应用于rk_blkdev_configure()的范围[0,nb_queue-1]内
-    ///
-    /// @参数 q_info
-    ///
-    /// 指向将被填写的RkBlkdevQueueInfo结构体的指针
-    ///
-    /// @返回值
-    /// - 0：成功，队列信息被填写
-    /// - <0：驱动程序函数的错误码
-    fn rk_blkdev_queue_get_info(&self, queue_id: u16, q_info: &RkBlkdevQueueInfo);
-
-    ///
-    /// 为Runikraft块设备分配并建立一个队列
-    /// 这个队列负责请求和响应
-    ///
-    /// @参数 queue_id
-    ///
-    ///     将建立队列的索引
-    ///
-    ///     值必须位于过去应用于rk_blkdev_configure()的范围[0,nb_queue-1]内
-    ///
-    /// @参数 nb_desc
-    ///
-    ///     队列中描述符的数量
-    ///
-    ///     检查rk_blkdev_queue_get_info()以取回限制
-    ///
-    /// @参数 queue_conf
-    ///
-    ///     指向将用于队列配置的数据的指针
-    ///
-    ///     这个可以在多个队列配置之间共享
-    ///
-    /// @返回值
-    ///
-    /// - 0：成功，收到被正确建立的队列
-    /// - <0：不能分配也不能建立环描述符
-    ///
-    fn rk_blkdev_queue_configure(&self, queue_id: u16, nb_desc: u16, queue_conf: &RkBlkdevQueueConf) -> isize;
 
     ///
     /// 开启块设备
@@ -683,14 +705,6 @@ impl RkBlkdevT for RkBlkdev<'static> {
     }
 
     fn rk_blkdev_drv_unregister(&self) {
-        todo!()
-    }
-
-    fn rk_blkdev_queue_get_info(&self, queue_id: u16, q_info: &RkBlkdevQueueInfo) {
-        todo!()
-    }
-
-    fn rk_blkdev_queue_configure(&self, queue_id: u16, nb_desc: u16, queue_conf: &RkBlkdevQueueConf) -> isize {
         todo!()
     }
 
