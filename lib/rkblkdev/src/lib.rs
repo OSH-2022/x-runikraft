@@ -125,10 +125,10 @@ static mut RK_BLKDEV_LIST: Option<Tailq<RkBlkdev>> = None;
 static mut BLKDEV_COUNT: Option<i16> = None;
 
 pub unsafe fn _alloc_data<'a>(a: &'a (dyn RKalloc + 'a), blkdev_id: u16, drv_name: &'a str) -> *mut RkBlkdevData<'a> {
-    let mut data: *mut RkBlkdevData = alloc_type::<RkBlkdevData>(a, ());
+    //TODO let mut data: *mut RkBlkdevData = alloc_type::<RkBlkdevData>(a, ());
     //这仅仅会发生在我们设置设备身份的时候
     //在设备生命的剩余时间，这个身份是只读的
-    data
+    todo!()
 }
 
 /// 向设备链表增加Runikraft块设备
@@ -423,9 +423,8 @@ unsafe fn rk_blkdev_queue_configure(dev: &RkBlkdev, queue_id: u16, nb_desc: u16,
     if let RkBlkdevConfigured = (*dev._data).state {
         return 22;
     }
-    //TODO 确保我们没有第二次对这个队列进行初始化
     #[cfg(feature = "dispatcherthreads")]
-    assert!(queue_conf.callback);
+    //TODO 确保我们没有第二次对这个队列进行初始化
     todo!()
 }
 
@@ -590,7 +589,7 @@ pub struct RkBlkdevCap {
 ///@内部
 ///
 ///事件处理程序配置
-pub struct RkBlkdevEventHandler {
+pub struct RkBlkdevEventHandler<'a> {
     //回调
     //使用静态方法实现
     ///回调的参数
@@ -600,7 +599,7 @@ pub struct RkBlkdevEventHandler {
     //TODO events: rk_semaphore,
     #[cfg(feature = "dispatcherthreads")]
     ///块设备的引用
-    dev: *mut RkBlkdev,
+    dev: *mut RkBlkdev<'a>,
     #[cfg(feature = "dispatcherthreads")]
     ///分配器线程
     //TODO dispatcher: *mut rk_thread,
@@ -609,10 +608,10 @@ pub struct RkBlkdevEventHandler {
     dispatcher_name: *mut char,
     #[cfg(feature = "dispatcherthreads")]
     ///分配器的调度器
-    dispatcher_s: *mut rksched::RKsched<Self>,
+    dispatcher_s: *mut rksched::RKsched<'a,Self>,
 }
 
-impl RkBlkdevEventHandler {
+impl <'a>RkBlkdevEventHandler<'a> {
     pub fn callback(dev: &mut RkBlkdev, queue_id: u16, argp: *mut u8) { todo!() }
 }
 
@@ -624,7 +623,7 @@ pub struct RkBlkdevData<'a> {
     ///设备状态
     state: RkBlkdevState,
     ///每个队列的事件处理器
-    queue_handler: [RkBlkdevEventHandler; 16],
+    queue_handler: [RkBlkdevEventHandler<'a>; 16],
     ///设备名称
     drv_name: &'a str,
     ///分配器
