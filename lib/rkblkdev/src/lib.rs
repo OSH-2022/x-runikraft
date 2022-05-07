@@ -91,9 +91,34 @@ pub struct RkBlkdevQueueConf<'a> {
     ///用于设备描述符环的分配器
     a: &'a dyn rkalloc::RKalloc,
     ///回调的参数指针
-    callback_pointer: *mut u8,
+    callback_cookie: *mut u8,
+    #[cfg(feature = "dispatcherthreads")]
     ///描述符的调度器
     s: &'a rksched::RKsched<'a, Self>,
+}
+
+trait RkBlkdevQueueConfT {
+    fn callback(&self, dev: &mut RkBlkdev, queue_id: u16, argp: *mut u8);
+}
+
+impl RkBlkdevQueueConfT for RkBlkdevQueueConf<'static> {
+    ///用于队列事件回调的函数类型
+    ///
+    ///@参数 dev
+    ///
+    ///	Runikraft块设备
+    ///
+    ///@参数 queue
+    ///
+    ///	事件发生的Runikraft块设备的队列
+    ///
+    ///@参数 argp
+    ///
+    ///	可以在回调登记被定义的额外参数
+    ///
+    ///注意：为了处理接收到的响应，应该调用dev的finish_reqs方法
+    ///
+    fn callback(&self, dev: &mut RkBlkdev, queue_id: u16, argp: *mut u8) { todo!() }
 }
 
 static mut RK_BLKDEV_LIST: Option<Tailq<RkBlkdev>> = None;
@@ -108,6 +133,10 @@ pub unsafe fn _alloc_data<'a>(a: &'a (dyn RKalloc + 'a), blkdev_id: u16, drv_nam
 
 /// 向设备链表增加Runikraft块设备
 /// 一旦驱动增加了新找到的设备，这个函数就应该被调用
+///
+/// @参数 dev
+///
+///     Runikraft块设备
 ///
 /// @参数 a
 ///
@@ -150,6 +179,31 @@ pub unsafe fn rk_blkdev_drv_register(mut dev: RkBlkdev, a: &dyn RKalloc, drv_nam
     };
 }
 
+/// 把一个队列事件向应用程序接口用户前移
+/// 可以（并且应该）在设备中断的上下文中调用
+///
+/// @参数 dev
+///
+///     Runikraft块设备
+///
+/// @参数 queue_id
+///
+///    接收事件相应的队列身份
+fn rk_blkdev_drv_queue_event(dev: &RkBlkdev, queue_id: i16) {
+    todo!()
+}
+
+/// 释放给Runikraft块设备的数据
+/// 把设备从列表中移除
+///
+/// @参数 dev
+///
+///     Runikraft块设备
+///
+fn rk_blkdev_drv_unregister(dev: &RkBlkdev) {
+    todo!()
+}
+
 /// 得到可得到的Runikraft块设备的数量
 ///
 /// @返回值
@@ -185,26 +239,40 @@ pub unsafe fn rk_blkdev_get(id: u16) -> Option<&'static RkBlkdev<'static>> {
     }
     None
 }
-
-pub unsafe fn rk_blkdev_id_get(dev: RkBlkdev) -> u16 {
-    (*dev._data).id
-}
-
 /// 返回块设备的身份
 ///
-/// @参数 id
-/// 要配置的Runikraft块设备的识别符
+/// @参数 dev
+///
+///     Runikraft块设备
 ///
 /// @返回值
 /// - None：如果没有定义名称
 /// - &str：如果名称可得到，返回字符串的引用
 ///
+pub unsafe fn rk_blkdev_id_get(dev: RkBlkdev) -> u16 {
+    (*dev._data).id
+}
+
+/// Returns the driver name of a blkdev device.
+/// The name might be set to NULL.
+///
+/// @param dev
+///
+/// The Unikraft Block Device.
+///
+/// @return
+/// - (NULL): if no name is defined.
+/// - (const char *): Reference to string if name is available.
 unsafe fn rk_blkdev_drv_name_get<'a>(dev: RkBlkdev) -> &str {
     (*(dev._data)).drv_name
 }
 
 ///
 /// 返回一个块设备的当前状态
+///
+/// @参数 dev
+///
+///     Runikraft块设备
 ///
 /// @返回值
 /// - enum RkBlkdevState：当前设备状态
@@ -216,6 +284,10 @@ unsafe fn rk_blkdev_state_get<'a>(dev: &RkBlkdev) -> &'a RkBlkdevState {
 ///
 /// 询问设备容量
 /// 信息对设备初始化有用（例如可支持队列得的最大值）
+///
+/// @参数 dev
+///
+///     Runikraft块设备
 ///
 /// @参数 dev_info
 ///
@@ -236,12 +308,15 @@ pub unsafe fn rk_blkdev_get_info(dev: &RkBlkdev, dev_info: &mut RkBlkdevInfo) ->
     rc
 }
 
-
 /// 配置一个Runikraft块设备
 ///
 /// 这个函数必须在其他任何块应用程序接口被调用前被调用。
 ///
 /// 当设备处于停止状态时，这个函数也可以被再次调用
+///
+/// @参数 dev
+///
+///     Runikraft块设备
 ///
 /// @返回值
 /// - 0：成功，设备被配置
@@ -267,12 +342,28 @@ unsafe fn rk_blkdev_configure(dev: &RkBlkdev, conf: &RkBlkdevConf) -> isize {
     rc
 }
 
-//TODO _dispacher
-//TODO _create_event_handler
-//TODO _destory_event_handler
+#[cfg(feature = "dispatcherthreads")]
+pub fn _dispatcher() {
+    todo!()
+}
+
+#[cfg(feature = "dispatcherthreads")]
+pub fn _create_event_handler() {
+    todo!()
+}
+
+#[cfg(feature = "dispatcherthreads")]
+pub fn _destory_event_handler() {
+    todo!()
+}
+
 /// 询问设备队列容量
 ///
 /// 信息对设备队列初始化有用（例如在队列中可支持的描述符的最大值
+///
+/// @参数 dev
+///
+///     Runikraft块设备
 ///
 /// @参数 queue_id
 ///
@@ -297,6 +388,10 @@ unsafe fn rk_blkdev_queue_get_info(dev: &RkBlkdev, queue_id: u16, q_info: *mut R
 /// 为Runikraft块设备分配并建立一个队列
 /// 这个队列负责请求和响应
 ///
+/// @参数 dev
+///
+///     Runikraft块设备
+///
 /// @参数 queue_id
 ///
 ///     将建立队列的索引
@@ -320,18 +415,46 @@ unsafe fn rk_blkdev_queue_get_info(dev: &RkBlkdev, queue_id: u16, q_info: *mut R
 /// - 0：成功，收到被正确建立的队列
 /// - <0：不能分配也不能建立环描述符
 ///
+
 unsafe fn rk_blkdev_queue_configure(dev: &RkBlkdev, queue_id: u16, nb_desc: u16, queue_conf: &RkBlkdevQueueConf) -> isize {
     let err = 0;
     assert!(!dev._data.is_null());
+
     if let RkBlkdevConfigured = (*dev._data).state {
         return 22;
     }
-    //确保我们没有第二次对这个队列进行初始化
-    if !ptriseer(dev._queue[queue_id as usize]){
-
-    }
+    //TODO 确保我们没有第二次对这个队列进行初始化
+    #[cfg(feature = "dispatcherthreads")]
+    assert!(queue_conf.callback);
     todo!()
 }
+
+#[cfg(feature = "sync_io_blocked_waiting")]
+/**
+ * Make a sync io request on a specific queue.
+ * `uk_blkdev_queue_finish_reqs()` must be called in queue interrupt context
+ * or another thread context in order to avoid blocking of the thread forever.
+ *
+ * @param dev
+ *	The Unikraft Block Device
+ * @param queue_id
+ *	queue_id
+ * @param op
+ *	Type of operation
+ * @param sector
+ *	Start Sector
+ * @param nb_sectors
+ *	Number of sectors
+ * @param buf
+ *	Buffer where data is found
+ * @return
+ *	- 0: Success
+ *	- (<0): on error returned by driver
+ */
+fn rk_blkdev_sync_io(dev:&RkBlkdev,queue_id:u16,op:RkBlkreqOp,sector:Sector,nb_sectors:Sector,buf:*mut u8){
+    todo!()
+}
+
 
 pub fn ptriseer(ptr: i64) -> bool {
     if ptr <= 0 && ptr >= -512 {
@@ -384,26 +507,6 @@ pub trait RkBlkreqEvent {
     fn rk_blkreq_finished(&self);
 }
 
-
-impl RkBlkdevQueueConf<'static> {
-    ///用于队列事件回调的函数类型
-    ///
-    ///@参数 dev
-    ///
-    ///	Runikraft块设备
-    ///
-    ///@参数 queue
-    ///
-    ///	事件发生的Runikraft块设备的队列
-    ///
-    ///@参数 argp
-    ///
-    ///	可以在回调登记被定义的额外参数
-    ///
-    ///注意：为了处理接收到的响应，应该调用dev的finish_reqs方法
-    ///
-    pub fn callback(dev: &mut RkBlkdev, queue_id: u16, argp: *mut u8) { todo!() }
-}
 
 pub trait RkBlkdevOps {
     ///得到初始设备容量的驱动程序回调类型
@@ -487,26 +590,29 @@ pub struct RkBlkdevCap {
 ///@内部
 ///
 ///事件处理程序配置
-pub struct RkBlkdevEventHandler<'a> {
+pub struct RkBlkdevEventHandler {
     //回调
     //使用静态方法实现
     ///回调的参数
     cookie: *mut u8,
+    #[cfg(feature = "dispatcherthreads")]
     ///触发器事件的信号量
     //TODO events: rk_semaphore,
-
+    #[cfg(feature = "dispatcherthreads")]
     ///块设备的引用
-    dev: &'a mut RkBlkdev<'a>,
+    dev: *mut RkBlkdev,
+    #[cfg(feature = "dispatcherthreads")]
     ///分配器线程
     //TODO dispatcher: *mut rk_thread,
-
+    #[cfg(feature = "dispatcherthreads")]
     ///线程名称的引用
     dispatcher_name: *mut char,
+    #[cfg(feature = "dispatcherthreads")]
     ///分配器的调度器
-    dispatcher_s: &'a mut rksched::RKsched<'a, Self>,
+    dispatcher_s: *mut rksched::RKsched<Self>,
 }
 
-impl RkBlkdevEventHandler<'static> {
+impl RkBlkdevEventHandler {
     pub fn callback(dev: &mut RkBlkdev, queue_id: u16, argp: *mut u8) { todo!() }
 }
 
@@ -518,7 +624,7 @@ pub struct RkBlkdevData<'a> {
     ///设备状态
     state: RkBlkdevState,
     ///每个队列的事件处理器
-    queue_handler: [RkBlkdevEventHandler<'a>; 16],
+    queue_handler: [RkBlkdevEventHandler; 16],
     ///设备名称
     drv_name: &'a str,
     ///分配器
@@ -548,21 +654,6 @@ pub trait RkBlkdevT {
     fn submit_one(&self, queue: *mut RkBlkdevQueue, req: *mut RkBlkreq) -> isize;
     ///完成一串Runikraft快设备 请求的驱动程序回调类型
     fn finish_reqs(&self, queue: RkBlkdevQueue) -> isize;
-
-
-    //fn rk_blkdev_drv_register(&self, a: &dyn RKalloc, drv_name: &str) -> usize;
-
-    /// 把一个队列事件向应用程序接口用户前移
-    /// 可以（并且应该）在设备中断的上下文中调用
-    ///
-    /// @参数 queue_id
-    ///
-    ///    接收事件相应的队列身份
-    fn rk_blkdev_drv_queue_event(&self, queue_id: i16);
-
-    /// 释放给Runikraft块设备的数据
-    /// 把设备从列表中移除
-    fn rk_blkdev_drv_unregister(&self);
 
 
     ///
@@ -697,14 +788,6 @@ impl RkBlkdevT for RkBlkdev<'static> {
     }
 
     fn finish_reqs(&self, queue: RkBlkdevQueue) -> isize {
-        todo!()
-    }
-
-    fn rk_blkdev_drv_queue_event(&self, queue_id: i16) {
-        todo!()
-    }
-
-    fn rk_blkdev_drv_unregister(&self) {
         todo!()
     }
 
