@@ -8,6 +8,7 @@ version = "0.1.0"
 dependencies = [
  "rkalloc",
  "rkalloc_buddy",
+ "rkboot",
  "rkplat",
  "runikraft",
 ]
@@ -31,6 +32,15 @@ dependencies = [
  "rkplat",
  "rksched",
  "runikraft",
+]
+
+[[package]]
+name = "rkboot"
+version = "0.1.0"
+dependencies = [
+ "rkalloc",
+ "rkalloc_buddy",
+ "rkplat",
 ]
 
 [[package]]

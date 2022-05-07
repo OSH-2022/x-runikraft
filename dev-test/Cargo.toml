@@ -10,3 +10,4 @@
     rkalloc = {path = "../lib/rkalloc"}
     rkalloc_buddy = {path = "../lib/rkalloc_buddy"}
     runikraft = {path = "../core"}
+    rkboot = {path = "../lib/rkboot"}

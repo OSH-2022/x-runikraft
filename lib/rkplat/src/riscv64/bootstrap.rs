@@ -1,29 +1,46 @@
 //TODO: arg
 
+use core::ptr::null_mut;
+
 use super::sbi::*;
-use super::*;
-use core::arch;
-
-arch::global_asm!(include_str!("entry.asm"));
-
-// #[linkage = "weak"]
-// #[no_mangle]
-// fn main() {
-//     println!("Error: weak main was called!");
-//     panic!("no main");
-// }
 
 extern "C" {
-    fn main();
+    /// 在初始化时有平台层调用
+    /// 
+    /// 非平台层的库必须提供其实现
+    /// 
+    /// 在拥有已分析的参数的平台，这个函数会被直接调用；否则，平台层将调用
+    /// `rkplat_entry_argp`，并由它分析参数，然后调用`rkplat_entry`
+    /// - `argc`: 参数个数
+    /// - `argv`: 参数，每个参数是NTBS
+    pub fn rkplat_entry(argc: i32, argv: *mut *mut u8) -> !;
+
+    /// 在初始化时有平台层调用
+    /// 
+    /// 非平台层的库必须提供其实现
+    /// 
+    /// 在没有已分析的参数的平台，平台层将调用
+    /// `rkplat_entry_argp`，由它分析参数，然后调用`rkplat_entry`
+    /// - `arg0`: NTBS，参数0，即镜像的名称；可能为空，这时分析后的参数的argv[0]也需要留空
+    /// - `argb`: 剩余的参数
+    /// - `argb_len`: 剩余的参数的长度，`argb_len=0`表示`argb`是空终止的
+    pub fn rkplat_entry_argp(arg0: *mut u8, argb: *mut u8, argb_len: usize) -> !;
+
+    fn __rkplat_newstack(stack_top: *mut u8, tramp: extern fn(*mut u8)->!, arg: *mut u8)->!;
 }
 
-/// 系统的入口，由引导程序调用
-///
+#[no_mangle] extern "C" fn __runikraft_entry_point2(_arg: *mut u8) -> !{
+    unsafe{
+        rkplat_entry(0,0 as *mut *mut u8);
+    }
+}
+
+//TODO:找到真正的最大合法地址
+const MAX_MEM_ADDR: *mut u8 = 0x85000000 as *mut u8;
+
 #[no_mangle]
-pub fn __runikraft_entry_point() -> ! {
-    time::init();
-    unsafe { main(); }
-    halt();
+pub unsafe fn __runikraft_entry_point() -> !{
+    __rkplat_newstack(MAX_MEM_ADDR, __runikraft_entry_point2,null_mut());
 }
 
 /// 退出
@@ -46,7 +63,6 @@ pub fn crash() -> ! {
 }
 
 /// 挂起
-//TODO
 pub fn suspend() -> ! {
-    loop {}
+    todo!();
 }

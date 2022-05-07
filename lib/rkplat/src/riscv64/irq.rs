@@ -1,7 +1,7 @@
 use rkalloc::RKalloc;
 use runikraft::list::SList;
 use super::constants::*;
-use super::lcpu;
+use super::{lcpu,intctrl,reg};
 //use runikraft::list::SList;
 
 static mut ALLOCATOR: Option<*const dyn RKalloc> = None;
@@ -14,16 +14,18 @@ struct IRQHandler {
 }
 
 /// 直接[None;128]会报 E0277
-static mut IRQ_HANDLERS:[Option<SList::<IRQHandler>>;MAX_IRQ] = include!("128None.txt");
+static mut IRQ_HANDLERS:[Option<SList<IRQHandler>>;MAX_IRQ] = include!("128None.txt");
 
+#[inline(always)]
+const fn irq_7bits(irq: usize) -> usize {
+    irq&0x3F | irq>>57
+}
 
 fn allocator() -> &'static dyn RKalloc {
     unsafe {
         &*ALLOCATOR.unwrap()
     }
 }
-
-//pub type IRQHandlerFunc = fn(*mut u8) -> i32;
 
 /// 初始化平台的IRQ子系统
 /// - `a`: 内部使用的分配器
@@ -53,17 +55,26 @@ pub unsafe fn init(a: *const dyn RKalloc) -> Result<(), i32> {
 /// - `func`需要将`arg`转换成合适的类型
 // TODO: 尝试用泛型处理（但看起来很困难）
 pub unsafe fn register(irq: usize, func: IRQHandlerFunc, arg: *mut u8) -> Result<(), i32> 
-{
+{   
     let handler = IRQHandler{func,arg};
     let flags =lcpu::save_irqf(); 
-    IRQ_HANDLERS[irq].as_mut().unwrap().push_front(handler).unwrap();
+    //interruption
+    IRQ_HANDLERS[irq_7bits(irq)].as_mut().unwrap().push_front(handler).unwrap();
     lcpu::restore_irqf(flags);
-    //TODO
-    // intctrl_clear_irq(irq);
-    Err(-1)
+    if irq&1<<63 !=0 { intctrl::clear_irq(irq&0x3F); }
+    Ok(())
 }
 
 //TODO: 
-extern "C" fn __rkplat_irq_handle(irq: usize) {
-    
+#[no_mangle]
+unsafe extern "C" fn __rkplat_irq_handle(irq: usize, regs: &reg::RegGen) {
+    println!("regs={:?}",regs);
+    for i in IRQ_HANDLERS[irq].as_ref().unwrap().iter() {
+        if (i.func)(i.arg) {
+            intctrl::ack_irq(irq);
+            return;
+        }
+    }
+    println!("Unhandled irq={}",irq);
+    panic!();
 }
