@@ -1,3 +1,7 @@
+use crate::lcpu::enable_irq;
+
+use super::{lcpu,sbi};
+
 pub type Duration = core::time::Duration;
 
 pub const SEC: Duration = Duration::new(1, 0);
@@ -24,8 +28,10 @@ pub fn init() {
     unsafe { TICK_NANOSEC = 100 };
 }
 
-//TODO: 获取时钟中断号
-// pub fn get_irq()->u32;
+//获取时钟中断号
+pub const fn get_irq() -> usize {
+    0x8000_0000_0000_0005
+}
 
 fn get_time_counter() -> u64 {
     let time: u64;
@@ -49,4 +55,21 @@ pub fn monotonic_clock() -> Duration {
 /// 获取UNIX时间
 pub fn wall_clock() -> Duration {
     get_ticks() + unsafe { TIME_START }
+}
+
+fn block(until: Duration) {
+    assert!(lcpu::irqs_disabled());
+    let time_now = monotonic_clock();
+    if until <= time_now {return;}
+    let duration = (until.as_nanos() - time_now.as_nanos()) as u64;
+    sbi::sbi_call(0x54494D45, 0, (duration/unsafe{TICK_NANOSEC}) as usize, 0, 0).unwrap();
+    lcpu::halt_irq();
+}
+
+/// 暂停当前处理器核，直到`until`时刻 
+pub fn block_until(until: Duration) {
+    loop {
+        block(until);
+        if monotonic_clock() >= until {break;}
+    }
 }
