@@ -9,3 +9,8 @@ edition = "2021"
 rkalloc = { path = "../rkalloc" }
 rksched = { path = "../rksched" }
 runikraft = {path = "../../core"}
+rkplat = {path = "../rkplat"}
+
+[features]
+dispatcherthreads = []
+sync_io_blocked_waiting = []
