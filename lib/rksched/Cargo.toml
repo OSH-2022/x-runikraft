@@ -8,7 +8,3 @@ edition = "2021"
 [dependencies]
 rkalloc = { path = "../rkalloc" }
 runikraft = { path = "../../core" }
-
-[features]
-dispatcherthreads = []
-sync_io_blocked_waiting = []
