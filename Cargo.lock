@@ -22,6 +22,7 @@ name = "rkalloc_buddy"
 version = "0.1.0"
 dependencies = [
  "rkalloc",
+ "rkplat",
 ]
 
 [[package]]
@@ -29,6 +30,7 @@ name = "rkblkdev"
 version = "0.1.0"
 dependencies = [
  "rkalloc",
+ "rkplat",
  "rksched",
  "runikraft",
 ]
@@ -66,34 +68,6 @@ name = "rksched"
 version = "0.1.0"
 dependencies = [
  "rkalloc",
- "rkschedbasis",
- "rkschedcoop",
- "rkschedpreem",
-]
-
-[[package]]
-name = "rkschedbasis"
-version = "0.1.0"
-dependencies = [
- "rkalloc",
- "runikraft",
-]
-
-[[package]]
-name = "rkschedcoop"
-version = "0.1.0"
-dependencies = [
- "rkalloc",
- "rkschedbasis",
- "runikraft",
-]
-
-[[package]]
-name = "rkschedpreem"
-version = "0.1.0"
-dependencies = [
- "rkalloc",
- "rkschedbasis",
  "runikraft",
 ]
 

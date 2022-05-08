@@ -6,7 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-    rkalloc = {path = "../rkalloc"}
-    rkschedbasis = {path = "../rkschedbasis"}
-    rkschedcoop = {path = "../rkschedcoop"}
-    rkschedpreem = {path = "../rkschedpreem"}
+rkalloc = {path = "../rkalloc"}
+runikraft = {path = "../../core"}

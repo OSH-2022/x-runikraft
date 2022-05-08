@@ -1,15 +1,9 @@
 use core::time::Duration;
 use core::arch;
+use super::{bootstrap,time};
 
 /// 中断标志，具体格式由平台决定
-pub struct IRQFlag {
-    flag: usize,
-}
-
-impl IRQFlag {
-    // 将当前的 @flag 存储到 RISCV 中 
-    //fn set_flag
-}
+pub type IRQFlag = usize;
 
 /// 启用中断
 pub fn enable_irq() {
@@ -38,7 +32,7 @@ pub fn save_irqf() -> IRQFlag {
             flag=inout(reg)flag
         );
     }
-    IRQFlag{flag}
+    flag
 }
 
 /// 加载中断标志
@@ -46,7 +40,7 @@ pub fn restore_irqf(flag: IRQFlag) {
     unsafe {
         arch::asm!(
             "csrw sie,{flag}",
-            flag=in(reg)flag.flag
+            flag=in(reg)flag
         );
     }
 }
@@ -68,19 +62,26 @@ pub fn irqs_disabled() -> bool {
 
 /// 挂起当前的逻辑处理器
 pub fn halt() {
-    todo!();
+    disable_irq();
+    todo!("HART suspend");
 }
 
 /// 挂起当前处理器一段时间，
 /// 处理将在`deadline`到达(`get_ticks()>=deadline`)或中断/信号到来时重启
 pub fn halt_to(until: Duration) {
-    todo!();
+    let flag = save_irqf();
+    time::block_until(until);
+    restore_irqf(flag);
 }
 
 /// 挂起当前处理器，
 /// 处理将在中断/信号到来时重启
 pub fn halt_irq() {
-    todo!();
+    let flag = save_irqf();
+    restore_irqf(0xFFFF);//开启所有中断
+    enable_irq();
+    todo!("SBI: HART suspend");
+    disable_irq();
 }
 
 pub type ID = u32;
