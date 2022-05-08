@@ -68,6 +68,34 @@ name = "rksched"
 version = "0.1.0"
 dependencies = [
  "rkalloc",
+ "rkschedbasis",
+ "rkschedcoop",
+ "rkschedpreem",
+]
+
+[[package]]
+name = "rkschedbasis"
+version = "0.1.0"
+dependencies = [
+ "rkalloc",
+ "runikraft",
+]
+
+[[package]]
+name = "rkschedcoop"
+version = "0.1.0"
+dependencies = [
+ "rkalloc",
+ "rkschedbasis",
+ "runikraft",
+]
+
+[[package]]
+name = "rkschedpreem"
+version = "0.1.0"
+dependencies = [
+ "rkalloc",
+ "rkschedbasis",
  "runikraft",
 ]
 
