@@ -1,27 +1,27 @@
 #![no_std]
 
-use rkschedbasis::{SchedulerCoop, RKthread, RKthreadAttr};
+use rkschedbasis::{SchedulerCoop, SchedulerPreem, RKthread, RKthreadAttr, PrioT};
 use runikraft::list::Tailq;
 use rkalloc::RKalloc;
 use core::time::Duration;
 
-pub struct RKschedcoop<'a> {
+pub struct RKschedpreem<'a> {
     threads_started: bool,
     idle: RKthread<'a>,
     exited_threads: Tailq<'a, RKthread<'a>>,
     // plat_ctx_cbs: /* plat context callbacks 类型*/
     allocator: &'a dyn RKalloc,
-    next: &'a mut RKsched<'a>,
+    next: &'a mut RKschedpreem<'a>,
     prv: *mut u8,
 }
 
-impl<'a> RKschedcoop<'a> {
+impl<'a> RKschedpreem<'a> {
     pub fn new() -> Self {
         todo!()
     }
 }
 
-impl<'b> SchedulerCoop for RKschedcoop<'b> {
+impl<'b> SchedulerCoop for RKschedpreem<'b> {
     fn yield_sched(&mut self) {
         todo!()
     }
@@ -41,6 +41,21 @@ impl<'b> SchedulerCoop for RKschedcoop<'b> {
         todo!()
     }
     fn exit_thread(&self) {
+        todo!()
+    }
+}
+
+impl<'b> SchedulerPreem for RKschedpreem<'b> {
+    fn set_thread_prio<'a>(&mut self, t: &'a mut RKthread<'a>, prio: PrioT) {
+        todo!()
+    }
+    fn get_thread_prio<'a>(&self, t: &'a RKthread<'a>) -> PrioT {
+        todo!()
+    }
+    fn set_thread_timeslice<'a>(&mut self, t: &'a mut RKthread<'a>, tslice: Duration) {
+        todo!()
+    }
+    fn get_thread_timeslice<'a>(&self, t: &'a RKthread<'a>) -> Duration {
         todo!()
     }
 }
