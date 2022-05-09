@@ -15,13 +15,13 @@ pub struct RkBlkdev<'a> {
     ///驱动器回调函数
     pub(crate) dev_ops: &'a dyn RkBlkdevOps,
     ///队列指针（私有应用程序接口）
-    _queue: [RkBlkdevQueue; 16],
+    pub(crate) _queue: [RkBlkdevQueue; 16],
     ///块设备队列入口
     _list_tqe_next: &'a mut RkBlkdev<'a>,
     _list_tqe_prev: &'a mut *mut RkBlkdev<'a>,
 }
 
-impl  RkBlkdevT {
+impl RkBlkdevT {
     ///向Runikraft块设备提交请求的驱动程序回调类型
     pub fn submit_one(&self, queue: *mut RkBlkdevQueue, req: *mut RkBlkreq) -> isize{
         todo!()
@@ -114,7 +114,7 @@ static RK_BLKDEV_STATUS_SUCCESS: i32 = 0x1;
  */
 static RK_BLKDEV_STATUS_MORE: i32 = 0x2;
 
-impl RkBlkdevOps for RkBlkreqOp {
+impl RkBlkdevOps for RkBlkdev {
     fn get_info(&self, dev_info: &RkBlkdevInfo) {
         todo!()
     }
@@ -123,7 +123,7 @@ impl RkBlkdevOps for RkBlkreqOp {
         todo!()
     }
 
-    fn queue_get_info(&self, dev: &RkBlkdev<'_>, queue_id: u16, q_info: *mut RkBlkdevQueueInfo) -> isize {
+    fn queue_get_info(&self, queue_id: u16, q_info: *mut RkBlkdevQueueInfo) -> isize {
         todo!()
     }
 
@@ -162,7 +162,7 @@ pub trait RkBlkdevOps {
     ///配置块设备的驱动程序回调类型
     fn dev_configure(&self, conf: &RkBlkdevConf) -> isize;
     ///得到关于设备队列信息的驱动程序回调类型
-    fn queue_get_info(&self, dev: &RkBlkdev, queue_id: u16, q_info: *mut RkBlkdevQueueInfo) -> isize;
+    fn queue_get_info(&self, queue_id: u16, q_info: *mut RkBlkdevQueueInfo) -> isize;
     ///建立Runikraft块设备队列的驱动程序回调类型
     fn queue_configure(&self, queue_id: u16, nb_desc: u16, queue_conf: *mut RkBlkdevQueueConf) -> *mut RkBlkdevQueue;
     ///开启已配置的Runikraft块设备的驱动程序回调类型
@@ -174,7 +174,7 @@ pub trait RkBlkdevOps {
     ///为一个在Runikraft块设备的队列禁用中断的驱动程序回调类型
     fn queue_intr_disable(&self, queue: *mut RkBlkdevQueue) -> bool;
     ///释放Runikraft块设备队列的驱动程序回调类型
-    fn queue_unconfigure(&self, queue: *mut RkBlkdevQueue) -> isize;
+    fn queue_unconfigure(&self, queue: &RkBlkdevQueue) -> isize;
     ///取消配置块设备的驱动程序回调类型
     fn dev_unconfigure(&self) -> isize;
 }
@@ -230,7 +230,7 @@ pub struct RkBlkdevData<'a> {
     ///设备状态
     pub(crate) state: RkBlkdevState,
     ///每个队列的事件处理器
-    queue_handler: [RkBlkdevEventHandler<'a>; 16],
+    pub(crate) queue_handler: [RkBlkdevEventHandler<'a>; 16],
     ///设备名称
     pub(crate) drv_name: &'a str,
     ///分配器

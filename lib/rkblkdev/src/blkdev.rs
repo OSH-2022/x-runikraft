@@ -9,7 +9,8 @@ use core::ptr::write_bytes;
 use rkplat::println;
 
 use crate::blkdev_core::{RkBlkdev, RkBlkdevCap, RkBlkdevConf, RkBlkdevInfo, RkBlkdevQueueConf, RkBlkdevQueueInfo, RkBlkdevState};
-use crate::BLKDEV_COUNT;
+use crate::blkdev_core::RkBlkdevState::{RkBlkdevConfigured, RkBlkdevRunning};
+use crate::{BLKDEV_COUNT, ptriseer};
 use crate::blkreq::{RkBlkreq, RkBlkreqOp};
 use crate::RkBlkdevState::RkBlkdevConfigured;
 
@@ -172,7 +173,7 @@ unsafe fn rk_blkdev_configure(dev: &RkBlkdev, conf: &RkBlkdevConf) -> isize {
 unsafe fn rk_blkdev_queue_get_info(dev: &RkBlkdev, queue_id: u16, q_info: *mut RkBlkdevQueueInfo) -> isize {
     //在向驱动程序询问队列容量之前清除值
     write_bytes::<RkBlkdevQueueInfo>(q_info, 0, size_of::<RkBlkdevQueueInfo>());
-    dev.dev_ops.queue_get_info(dev, queue_id, q_info)
+    dev.dev_ops.queue_get_info( queue_id, q_info)
 }
 
 /// 为Runikraft块设备分配并建立一个队列
@@ -234,7 +235,17 @@ unsafe fn rk_blkdev_queue_configure(dev: &RkBlkdev, queue_id: u16, nb_desc: u16,
 /// - <0：驱动程序设备开启函数的错误码
 ///
 fn rk_blkdev_start(dev: &RkBlkdev) -> isize {
-    todo!()
+    let mut rc=0;
+    assert!(!dev._data.is_null());
+    assert!(dev._data.state==RkBlkdevConfigured);
+    rc=dev.dev_ops.dev_start();
+    if rc!=0{
+        println!("blkdev{}: Failed to start interface{}\n",dev._data.id,rc);
+    }else{
+        println!("blkdev{}: Start interface{}\n",dev._data.id);
+        dev._data.state=RkBlkdevRunning;
+    }
+    rc
 }
 
 ///得到存有关于设备信息的容量信息，例如nb_of_sectors、sector_size等等
@@ -315,7 +326,11 @@ fn rk_blkdev_queue_intr_disble(dev: RkBlkdev, queue_id: u16) -> isize {
 ///         这仅仅可能在RK_BLKDEV_STATUS_SUCCESS时被同时设置
 /// - <0：从驱动程序得到的错误码，没有发送任何请求
 fn rk_blkdev_queue_submit_one(dev: &RkBlkdev, queue_id: u16, req: &mut RkBlkreq) -> isize {
-    todo!()
+    assert!(!dev._data.is_null());
+    //TODO UK_ASSERT(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
+    assert!(dev._data.state==RkBlkdevRunning);
+    assert!(!ptriseer(dev._queue[queue_id]));
+    dev.submit_one(dev,dev._queue[queue_id],req)
 }
 
 ///
@@ -405,7 +420,11 @@ fn rk_blkdev_status_more(status: isize) -> bool { todo!() }
 /// - 0：成功
 /// - <0：当驱动程序返回错误的时候
 fn rk_blkdev_queue_finish_reqs(dev: &RkBlkdev, queue_id: u16) -> isize {
-    todo!()
+    assert!(!dev._data.is_null());
+    //TODO UK_ASSERT(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
+    assert!(dev._data.state==RkBlkdevRunning);
+    assert!(!ptriseer(dev._queue[queue_id]));
+    dev.finish_reqs(dev,dev._queue[queue_id])
 }
 /**
  * Used for sending a synchronous request.
@@ -479,7 +498,18 @@ pub fn rk_blkdev_sync_read(dev: &RkBlkdev, queue_id: u16, op: RkBlkreqOp, sector
 /// - 0：成功
 /// - <0：当驱动程序返回错误的时候
 fn rk_blkdev_stop(dev: &RkBlkdev) -> isize {
-    todo!()
+    let mut rc=0;
+    assert!(!dev._data.is_null());
+    assert!(dev._data.state==RkBlkdevRunning);
+    println!("Trying to stop blkdev {} device\n",dev._data.id);
+    rc=dev.dev_ops.dev_stop();
+    if rc!=0{
+        println!("Failed to stop blkdev {} device{}\n",dev._data.id,rc);
+    }else{
+        println!("Stopped blkdev{}\n",dev._data.id);
+        dev._data.state=RkBlkdevConfigured;
+    }
+    rc
 }
 
 ///清空一个队列和它的Runikraft设备描述符
@@ -497,8 +527,21 @@ fn rk_blkdev_stop(dev: &RkBlkdev) -> isize {
 /// @返回值
 /// - 0：成功
 /// - <0：当驱动程序返回错误的时候
-fn rk_blkdev_queue_unconfigure(dev: &RkBlkdev, queue: u16) -> isize {
-    todo!()
+fn rk_blkdev_queue_unconfigure(dev: &RkBlkdev, queue_id: u16) -> isize {
+    let mut rc=0;
+    assert!(!dev._data.is_null());
+    //TODO UK_ASSERT(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
+    assert!(dev._data.state==RkBlkdevConfigured);
+    assert!(!ptriseer(dev._queue[queue_id]));
+    rc=dev.dev_ops.queue_unconfigure(dev._queue[queue_id]);
+    if rc!=0{
+        println!("Failed to unconfigure blkdev{}-q{}: {}\n",dev._data.id,queue,rc);
+    }else{
+        //TODO #[cfg(feature = "dispatcherthreads")]if (dev->_data->queue_handler[queue_id].callback)_destroy_event_handler(&dev->_data->queue_handler[queue_id]);
+        println!("blkdev{}: Stopped blkdev{}\n",dev._data.id);
+        //TODO dev._queue[queue_id]=0;
+    }
+    rc
 }
 
 /// 关闭一个已经停止的Runikraft块设备
