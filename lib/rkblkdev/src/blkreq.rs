@@ -1,6 +1,7 @@
 #![no_std]
 
 type Sector = usize;
+type Atomic = u32;
 
 ///用于向设备发送请求
 pub struct RkBlkreq {

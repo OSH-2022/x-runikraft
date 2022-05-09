@@ -1,6 +1,8 @@
 #![no_std]
 
+use rkalloc::RKalloc;
 use crate::blkdev_core::{RkBlkdev, RkBlkdevState};
+use crate::{_alloc_data, BLKDEV_COUNT};
 use crate::blkreq::RkBlkreq;
 
 /// 向设备链表增加Runikraft块设备

@@ -6,16 +6,14 @@ extern crate rkplat;
 use core::cmp::min;
 use core::mem::size_of;
 use core::ptr::write_bytes;
-use rkalloc::{alloc_type, RKalloc};
 use rkplat::println;
 
-use runikraft::list::Tailq;
 use crate::blkdev_core::{RkBlkdev, RkBlkdevCap, RkBlkdevConf, RkBlkdevInfo, RkBlkdevQueueConf, RkBlkdevQueueInfo, RkBlkdevState};
 use crate::BLKDEV_COUNT;
 use crate::blkreq::{RkBlkreq, RkBlkreqOp};
 use crate::RkBlkdevState::RkBlkdevConfigured;
 
-type Atomic = u32;
+
 
 /// 得到可得到的Runikraft块设备的数量
 ///

@@ -10,6 +10,7 @@ mod blkreq;
 
 static mut BLKDEV_COUNT: Option<i16> = None;
 
+
 pub unsafe fn _alloc_data<'a>(a: &'a (dyn RKalloc + 'a), blkdev_id: u16, drv_name: &'a str) -> *mut RkBlkdevData<'a> {
     //TODO let mut data: *mut RkBlkdevData = alloc_type::<RkBlkdevData>(a, ());
     //这仅仅会发生在我们设置设备身份的时候
