@@ -24,7 +24,7 @@ pub struct RkBlkreq {
     cb_cookie: *mut u8,
     //输出成员
     ///请求的状态：完成/未完成
-    state: RkBlkreqState,
+    pub(crate) state: RkBlkreqState,
     ///操作状态的结果（错误返回负值）
     result: isize,
 }

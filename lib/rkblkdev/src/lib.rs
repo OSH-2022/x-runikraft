@@ -9,7 +9,7 @@ mod blkdev_driver;
 mod blkreq;
 
 static mut BLKDEV_COUNT: Option<i16> = None;
-
+const CONFIG_LIBUKBLKDEV_MAXNBQUEUES: u16 =  core::u16::from_str(env!("PATH"));
 
 pub unsafe fn _alloc_data<'a>(a: &'a (dyn RKalloc + 'a), blkdev_id: u16, drv_name: &'a str) -> *mut RkBlkdevData<'a> {
     //TODO let mut data: *mut RkBlkdevData = alloc_type::<RkBlkdevData>(a, ());

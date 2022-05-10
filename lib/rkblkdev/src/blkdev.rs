@@ -10,7 +10,7 @@ use rkplat::println;
 
 use crate::blkdev_core::{RkBlkdev, RkBlkdevCap, RkBlkdevConf, RkBlkdevInfo, RkBlkdevQueueConf, RkBlkdevQueueInfo, RkBlkdevState};
 use crate::blkdev_core::RkBlkdevState::{RkBlkdevConfigured, RkBlkdevRunning, RkBlkdevUnconfigured};
-use crate::{BLKDEV_COUNT, ptriseer};
+use crate::{BLKDEV_COUNT, CONFIG_LIBUKBLKDEV_MAXNBQUEUES, ptriseer};
 use crate::blkreq::{RkBlkreq, RkBlkreqOp};
 use crate::RkBlkdevState::RkBlkdevConfigured;
 
@@ -278,8 +278,8 @@ fn rk_blkdev_capbilities(blkdev: &RkBlkdev) -> &RkBlkdevCap {
 #[inline]
 fn rk_blkdev_queue_intr_enable(dev: &RkBlkdev, queue_id: u16) -> bool {
     assert!(!dev._data.is_null());
-    //TODO UK_ASSERT(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
-    //      UK_ASSERT(!PTRISERR(dev->_queue[queue_id]));
+    assert!(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
+    // TODO     UK_ASSERT(!PTRISERR(dev->_queue[queue_id]));
     dev.dev_ops.queue_intr_enable(dev._queue[queue_id])
 }
 
@@ -301,8 +301,8 @@ fn rk_blkdev_queue_intr_enable(dev: &RkBlkdev, queue_id: u16) -> bool {
 #[inline]
 fn rk_blkdev_queue_intr_disble(dev: RkBlkdev, queue_id: u16) -> bool {
     assert!(!dev._data.is_null());
-    //TODO UK_ASSERT(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
-    //      UK_ASSERT(!PTRISERR(dev->_queue[queue_id]));
+    assert!(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
+    // TODO     UK_ASSERT(!PTRISERR(dev->_queue[queue_id]));
     dev.dev_ops.queue_intr_disable(dev._queue[queue_id])
 }
 
@@ -333,7 +333,7 @@ fn rk_blkdev_queue_intr_disble(dev: RkBlkdev, queue_id: u16) -> bool {
 /// - <0：从驱动程序得到的错误码，没有发送任何请求
 fn rk_blkdev_queue_submit_one(dev: &RkBlkdev, queue_id: u16, req: &mut RkBlkreq) -> isize {
     assert!(!dev._data.is_null());
-    //TODO UK_ASSERT(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
+    assert!(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
     assert!(dev._data.state == RkBlkdevRunning);
     assert!(!ptriseer(dev._queue[queue_id]));
     dev.submit_one(dev, dev._queue[queue_id], req)
@@ -437,7 +437,7 @@ fn rk_blkdev_status_more(status: isize) -> bool {
 /// - <0：当驱动程序返回错误的时候
 fn rk_blkdev_queue_finish_reqs(dev: &RkBlkdev, queue_id: u16) -> isize {
     assert!(!dev._data.is_null());
-    //TODO UK_ASSERT(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
+    assert!(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
     assert!(dev._data.state == RkBlkdevRunning);
     assert!(!ptriseer(dev._queue[queue_id]));
     dev.finish_reqs(dev, dev._queue[queue_id])
@@ -549,7 +549,7 @@ fn rk_blkdev_stop(dev: &RkBlkdev) -> isize {
 fn rk_blkdev_queue_unconfigure(dev: &RkBlkdev, queue_id: u16) -> isize {
     let mut rc = 0;
     assert!(!dev._data.is_null());
-    //TODO UK_ASSERT(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
+    assert!(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
     assert!(dev._data.state == RkBlkdevConfigured);
     assert!(!ptriseer(dev._queue[queue_id]));
     rc = dev.dev_ops.queue_unconfigure(dev._queue[queue_id]);

@@ -3,6 +3,7 @@
 use rksched::RKsched;
 use runikraft::list::Tailq;
 use crate::blkreq::{RkBlkreq, RkBlkreqOp};
+use crate::CONFIG_LIBUKBLKDEV_MAXNBQUEUES;
 
 pub struct RkBlkdev<'a> {
     ///提交请求的函数指针
@@ -16,7 +17,7 @@ pub struct RkBlkdev<'a> {
     ///驱动器回调函数
     pub(crate) dev_ops: &'a dyn RkBlkdevOps,
     ///队列指针（私有应用程序接口）
-    pub(crate) _queue: [RkBlkdevQueue; 16],
+    pub(crate) _queue: [RkBlkdevQueue; CONFIG_LIBUKBLKDEV_MAXNBQUEUES as usize],
     ///块设备队列入口
     _list_tqe_next: &'a mut RkBlkdev<'a>,
     _list_tqe_prev: &'a mut *mut RkBlkdev<'a>,
@@ -159,7 +160,7 @@ pub struct RkBlkdevEventHandler<'a> {
     //回调
     //使用静态方法实现
     ///回调的参数
-    cookie: *mut u8,
+    pub(crate) cookie: *mut u8,
     #[cfg(feature = "dispatcherthreads")]
     ///触发器事件的信号量
     //TODO events: rk_semaphore,

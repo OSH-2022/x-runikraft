@@ -1,9 +1,11 @@
 #![no_std]
 
+use core::intrinsics::atomic_store_unordered;
 use rkalloc::RKalloc;
-use crate::blkdev_core::{RkBlkdev, RkBlkdevState};
-use crate::{_alloc_data, BLKDEV_COUNT};
+use crate::blkdev_core::{RkBlkdev, RkBlkdevEventHandler, RkBlkdevState};
+use crate::{_alloc_data, BLKDEV_COUNT, CONFIG_LIBUKBLKDEV_MAXNBQUEUES};
 use crate::blkreq::RkBlkreq;
+use crate::blkreq::RkBlkreqState::RkBlkreqFinished;
 
 /// 向设备链表增加Runikraft块设备
 /// 一旦驱动增加了新找到的设备，这个函数就应该被调用
@@ -62,8 +64,14 @@ pub unsafe fn rk_blkdev_drv_register(mut dev: RkBlkdev, a: &dyn RKalloc, drv_nam
 /// @参数 queue_id
 ///
 ///    接收事件相应的队列身份
-pub fn rk_blkdev_drv_queue_event(dev: &RkBlkdev, queue_id: i16) {
-    todo!()
+pub fn rk_blkdev_drv_queue_event(dev: &RkBlkdev, queue_id: u16) {
+    let queue_handler:RkBlkdevEventHandler;
+    assert!(!dev._data.is_null());
+    assert!(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
+    queue_handler=dev._data.queue_handler[queue_id];
+    //TODO #[cfg(feature = "dispatcherthreads")]
+    //TODO uk_semaphore_up(&queue_handler->events);
+        queue_handler.callback(dev,queue_id,queue_handler.cookie)
 }
 /**
  * Sets a request as finished.
@@ -71,7 +79,9 @@ pub fn rk_blkdev_drv_queue_event(dev: &RkBlkdev, queue_id: i16) {
  * @param req
  *	uk_blkreq structure
  */
-pub fn rk_blkdev_finished(req:RkBlkreq){todo!()}
+pub unsafe fn rk_blkdev_finished(req:RkBlkreq){
+    atomic_store_unordered(*(req.state),RkBlkreqFinished)
+}
 /// 释放给Runikraft块设备的数据
 /// 把设备从列表中移除
 ///
