@@ -17,7 +17,7 @@ pub struct RkBlkdev<'a> {
     ///驱动器回调函数
     pub(crate) dev_ops: &'a dyn RkBlkdevOps,
     ///队列指针（私有应用程序接口）
-    pub(crate) _queue: [RkBlkdevQueue; CONFIG_LIBUKBLKDEV_MAXNBQUEUES as usize],
+    pub(crate) _queue: [Option<RkBlkdevQueue>; CONFIG_LIBUKBLKDEV_MAXNBQUEUES as usize],
     ///块设备队列入口
     _list_tqe_next: &'a mut RkBlkdev<'a>,
     _list_tqe_prev: &'a mut *mut RkBlkdev<'a>,
@@ -103,7 +103,7 @@ pub struct RkBlkdevQueueConf<'a> {
 }
 
 #[cfg(feature = "dispatcherthreads")]
-//TODO static mut s:RKsched={};
+    static s:RKsched=RKsched;
 
 /**
  * Status code flags returned queue_submit_one function
@@ -169,7 +169,7 @@ pub struct RkBlkdevEventHandler<'a> {
     dev: *mut RkBlkdev<'a>,
     #[cfg(feature = "dispatcherthreads")]
     ///分配器线程
-    //TODO dispatcher: *mut rk_thread,
+    dispatcher: *mut RKThread,
     #[cfg(feature = "dispatcherthreads")]
     ///线程名称的引用
     dispatcher_name: *mut char,

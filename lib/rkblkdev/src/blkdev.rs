@@ -558,7 +558,7 @@ fn rk_blkdev_queue_unconfigure(dev: &RkBlkdev, queue_id: u16) -> isize {
     } else {
         //TODO #[cfg(feature = "dispatcherthreads")]if (dev->_data->queue_handler[queue_id].callback)_destroy_event_handler(&dev->_data->queue_handler[queue_id]);
         println!("blkdev{}: Stopped blkdev{}\n", dev._data.id);
-        //TODO dev._queue[queue_id]=0;
+        dev._queue[queue_id]=None;
     }
     rc
 }

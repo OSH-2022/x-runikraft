@@ -32,6 +32,7 @@ dependencies = [
  "rkalloc",
  "rkplat",
  "rksched",
+ "rkschedbasis",
  "runikraft",
 ]
 

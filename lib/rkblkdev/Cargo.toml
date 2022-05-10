@@ -10,6 +10,7 @@ rkalloc = { path = "../rkalloc" }
 rksched = { path = "../rksched" }
 runikraft = {path = "../../core"}
 rkplat = {path = "../rkplat"}
+rkschedbasis={path="../rkschedbasis"}
 
 [features]
 dispatcherthreads = []
