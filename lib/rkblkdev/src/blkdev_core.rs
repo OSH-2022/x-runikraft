@@ -1,17 +1,18 @@
 #![no_std]
 
+use rksched::RKsched;
 use runikraft::list::Tailq;
 use crate::blkreq::{RkBlkreq, RkBlkreqOp};
 
 pub struct RkBlkdev<'a> {
     ///提交请求的函数指针
-    ///用特征实现
+    submit_one: RkBlkdevQueueSubmitOneT,
     ///配置请求的函数指针
-    ///用特征实现
+    finish_reqs: RkBlkdevQueueFinishReqsT,
     ///内部应用程序接口状态数据的指针
     pub(crate) _data: *mut RkBlkdevData<'a>,
     ///容量
-    capabilities: RkBlkdevCap,
+    pub(crate) capabilities: RkBlkdevCap,
     ///驱动器回调函数
     pub(crate) dev_ops: &'a dyn RkBlkdevOps,
     ///队列指针（私有应用程序接口）
@@ -21,17 +22,13 @@ pub struct RkBlkdev<'a> {
     _list_tqe_prev: &'a mut *mut RkBlkdev<'a>,
 }
 
-impl RkBlkdevT {
-    ///向Runikraft块设备提交请求的驱动程序回调类型
-    pub fn submit_one(&self, queue: *mut RkBlkdevQueue, req: *mut RkBlkreq) -> isize{
-        todo!()
-    }
-    ///完成一串Runikraft快设备 请求的驱动程序回调类型
-    pub fn finish_reqs(&self, queue: RkBlkdevQueue) -> isize{
-        todo!()
-    }
+///向Runikraft块设备提交请求的驱动程序回调类型
+pub type RkBlkdevQueueSubmitOneT = fn(&RkBlkdev, *mut RkBlkdevQueue, *mut RkBlkreq) -> isize;
 
-}
+///完成一串Runikraft快设备 请求的驱动程序回调类型
+pub type RkBlkdevQueueFinishReqsT = fn(&RkBlkdev, RkBlkdevQueue) -> isize;
+
+
 static mut RK_BLKDEV_LIST: Option<Tailq<RkBlkdev>> = None;
 
 ///用来描述块设备的枚举类型
@@ -72,36 +69,40 @@ pub struct RkBlkdevQueueInfo {
  */
 pub struct RkBlkdevQueue {}
 
-impl RkBlkdevQueueConf {
-    ///用于队列事件回调的函数类型
-    ///
-    ///@参数 dev
-    ///
-    ///	Runikraft块设备
-    ///
-    ///@参数 queue
-    ///
-    ///	事件发生的Runikraft块设备的队列
-    ///
-    ///@参数 argp
-    ///
-    ///	可以在回调登记被定义的额外参数
-    ///
-    ///注意：为了处理接收到的响应，应该调用dev的finish_reqs方法
-    ///
-    pub fn callback(&self, dev: &mut RkBlkdev, queue_id: u16, argp: *mut u8) { todo!() }
-}
+
+///用于队列事件回调的函数类型
+///
+///@参数 dev
+///
+///	Runikraft块设备
+///
+///@参数 queue
+///
+///	事件发生的Runikraft块设备的队列
+///
+///@参数 argp
+///
+///	可以在回调登记被定义的额外参数
+///
+///注意：为了处理接收到的响应，应该调用dev的finish_reqs方法
+///
+type RkBlkdevQueueEventT = fn(&Blkdev, &mut RkBlkdev, u16, *mut u8);
 
 ///用于配置Runikraft块设备队列的结构体
 pub struct RkBlkdevQueueConf<'a> {
     ///用于设备描述符环的分配器
     a: &'a dyn rkalloc::RKalloc,
+    ///事件回调函数
+    callback: RkBlkdevQueueEventT,
     ///回调的参数指针
     callback_cookie: *mut u8,
     #[cfg(feature = "dispatcherthreads")]
     ///描述符的调度器
     s: &'a rksched::RKsched<'a>,
 }
+
+#[cfg(feature = "dispatcherthreads")]
+//TODO static mut s:RKsched={};
 
 /**
  * Status code flags returned queue_submit_one function
@@ -113,48 +114,6 @@ static RK_BLKDEV_STATUS_SUCCESS: i32 = 0x1;
  * a request.
  */
 static RK_BLKDEV_STATUS_MORE: i32 = 0x2;
-
-impl RkBlkdevOps for RkBlkdev {
-    fn get_info(&self, dev_info: &RkBlkdevInfo) {
-        todo!()
-    }
-
-    fn dev_configure(&self, conf: &RkBlkdevConf) -> isize {
-        todo!()
-    }
-
-    fn queue_get_info(&self, queue_id: u16, q_info: *mut RkBlkdevQueueInfo) -> isize {
-        todo!()
-    }
-
-    fn queue_configure(&self, queue_id: u16, nb_desc: u16, queue_conf: *mut RkBlkdevQueueConf) -> *mut RkBlkdevQueue {
-        todo!()
-    }
-
-    fn dev_start(&self) -> isize {
-        todo!()
-    }
-
-    fn dev_stop(&self) -> isize {
-        todo!()
-    }
-
-    fn queue_intr_enable(&self, queue: *mut RkBlkdevQueue) -> bool {
-        todo!()
-    }
-
-    fn queue_intr_disable(&self, queue: *mut RkBlkdevQueue) -> bool {
-        todo!()
-    }
-
-    fn queue_unconfigure(&self, queue: *mut RkBlkdevQueue) -> isize {
-        todo!()
-    }
-
-    fn dev_unconfigure(&self) -> isize {
-        todo!()
-    }
-}
 
 pub trait RkBlkdevOps {
     ///得到初始设备容量的驱动程序回调类型
@@ -193,7 +152,7 @@ pub struct RkBlkdevCap {
     ioalign: u16,
 }
 
-///@内部
+///@内部使用
 ///
 ///事件处理程序配置
 pub struct RkBlkdevEventHandler<'a> {

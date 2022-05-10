@@ -1,7 +1,13 @@
 #![no_std]
 
+use core::intrinsics::{atomic_load_unordered, atomic_store_unordered};
+use core::sync::atomic::AtomicU32;
+use crate::blkdev_core::{RkBlkdevQueueFinishReqsT, RkBlkdevState};
+use crate::blkdev_core::RkBlkdevState::RkBlkdevConfigured;
+use crate::blkreq::RkBlkreqState::RkBlkreqFinished;
+
 type Sector = usize;
-type Atomic = u32;
+
 
 ///用于向设备发送请求
 pub struct RkBlkreq {
@@ -18,7 +24,7 @@ pub struct RkBlkreq {
     cb_cookie: *mut u8,
     //输出成员
     ///请求的状态：完成/未完成
-    state: Atomic,
+    state: RkBlkreqState,
     ///操作状态的结果（错误返回负值）
     result: isize,
 }
@@ -48,10 +54,7 @@ pub enum RkBlkreqOp {
 ///
 ///	由用户在递交请求时设定的可选参数
 ///
-fn rk_blkreq_ent_t(req: &RkBlkreq, cb_cookie: *mut u8) {
-    todo!()
-}
-
+pub type RkBlkreqEventT = fn(&RkBlkreq, *mut u8);
 ///初始化一个请求结构体
 ///
 ///@参数 req
@@ -79,14 +82,20 @@ fn rk_blkreq_ent_t(req: &RkBlkreq, cb_cookie: *mut u8) {
 ///	请求回复的参数
 ///
 #[inline]
-fn rk_blkreq_init(req: &RkBlkreq, op: RkBlkreqOp, start: Sector, nb_sectors: Sector, aio_buf: *mut u8, cb_cookie: *mut u8) {
-    todo!()
+unsafe fn rk_blkreq_init(req: &mut RkBlkreq, op: RkBlkreqOp, start: Sector, nb_sectors: Sector, aio_buf: *mut u8, cb_cookie: *mut u8) {
+    req.operation=op;
+    req.start_sector=start;
+    req.nb_sectors=nb_sectors;
+    req.aio_buf=aio_buf;
+    atomic_store_unordered::<RkBlkdevState>(*req.state,*RkBlkreqFinished);
+    req.cb=cb;
+    req.cb_cookie=cb_cookie;
 }
 
 /// 检查请求是否结束
 /// @参数 req
 ///
 /// RkBlkreq结构体
-fn rk_blkreg_is_done(req: &RkBlkreq) -> bool {
-    todo!()
+unsafe fn rk_blkreg_is_done(req: &RkBlkreq) -> bool {
+    atomic_load_unordered::<bool>(*(req.state == RkBlkreqFinished))
 }

@@ -9,11 +9,10 @@ use core::ptr::write_bytes;
 use rkplat::println;
 
 use crate::blkdev_core::{RkBlkdev, RkBlkdevCap, RkBlkdevConf, RkBlkdevInfo, RkBlkdevQueueConf, RkBlkdevQueueInfo, RkBlkdevState};
-use crate::blkdev_core::RkBlkdevState::{RkBlkdevConfigured, RkBlkdevRunning};
+use crate::blkdev_core::RkBlkdevState::{RkBlkdevConfigured, RkBlkdevRunning, RkBlkdevUnconfigured};
 use crate::{BLKDEV_COUNT, ptriseer};
 use crate::blkreq::{RkBlkreq, RkBlkreqOp};
 use crate::RkBlkdevState::RkBlkdevConfigured;
-
 
 
 /// 得到可得到的Runikraft块设备的数量
@@ -173,7 +172,7 @@ unsafe fn rk_blkdev_configure(dev: &RkBlkdev, conf: &RkBlkdevConf) -> isize {
 unsafe fn rk_blkdev_queue_get_info(dev: &RkBlkdev, queue_id: u16, q_info: *mut RkBlkdevQueueInfo) -> isize {
     //在向驱动程序询问队列容量之前清除值
     write_bytes::<RkBlkdevQueueInfo>(q_info, 0, size_of::<RkBlkdevQueueInfo>());
-    dev.dev_ops.queue_get_info( queue_id, q_info)
+    dev.dev_ops.queue_get_info(queue_id, q_info)
 }
 
 /// 为Runikraft块设备分配并建立一个队列
@@ -235,15 +234,15 @@ unsafe fn rk_blkdev_queue_configure(dev: &RkBlkdev, queue_id: u16, nb_desc: u16,
 /// - <0：驱动程序设备开启函数的错误码
 ///
 fn rk_blkdev_start(dev: &RkBlkdev) -> isize {
-    let mut rc=0;
+    let mut rc = 0;
     assert!(!dev._data.is_null());
-    assert!(dev._data.state==RkBlkdevConfigured);
-    rc=dev.dev_ops.dev_start();
-    if rc!=0{
-        println!("blkdev{}: Failed to start interface{}\n",dev._data.id,rc);
-    }else{
-        println!("blkdev{}: Start interface{}\n",dev._data.id);
-        dev._data.state=RkBlkdevRunning;
+    assert!(dev._data.state == RkBlkdevConfigured);
+    rc = dev.dev_ops.dev_start();
+    if rc != 0 {
+        println!("blkdev{}: Failed to start interface{}\n", dev._data.id, rc);
+    } else {
+        println!("blkdev{}: Start interface{}\n", dev._data.id);
+        dev._data.state = RkBlkdevRunning;
     }
     rc
 }
@@ -255,8 +254,9 @@ fn rk_blkdev_start(dev: &RkBlkdev) -> isize {
 ///     一个指向类型*RkBlkdevCapabilities*的指针
 ///
 #[inline]
-fn rk_blkdev_capbilities(dev: &RkBlkdev) -> &RkBlkdevCap {
-    todo!()
+fn rk_blkdev_capbilities(blkdev: &RkBlkdev) -> &RkBlkdevCap {
+    assert!(blkdev._data.state >= RkBlkdevRunning);
+    &blkdev.capabilities
 }
 
 ///允许队列中断
@@ -276,8 +276,11 @@ fn rk_blkdev_capbilities(dev: &RkBlkdev) -> &RkBlkdevCap {
 /// - -ENOTSUP：驱动设备不支持中断
 ///
 #[inline]
-fn rk_blkdev_queue_intr_enable(dev: &RkBlkdev, queue_id: u16) -> isize {
-    todo!()
+fn rk_blkdev_queue_intr_enable(dev: &RkBlkdev, queue_id: u16) -> bool {
+    assert!(!dev._data.is_null());
+    //TODO UK_ASSERT(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
+    //      UK_ASSERT(!PTRISERR(dev->_queue[queue_id]));
+    dev.dev_ops.queue_intr_enable(dev._queue[queue_id])
 }
 
 /// 禁止队列中断
@@ -296,8 +299,11 @@ fn rk_blkdev_queue_intr_enable(dev: &RkBlkdev, queue_id: u16) -> isize {
 /// - 0：成功，中断被禁止
 /// - -ENOTSUP：驱动设备不支持中断
 #[inline]
-fn rk_blkdev_queue_intr_disble(dev: RkBlkdev, queue_id: u16) -> isize {
-    todo!()
+fn rk_blkdev_queue_intr_disble(dev: RkBlkdev, queue_id: u16) -> bool {
+    assert!(!dev._data.is_null());
+    //TODO UK_ASSERT(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
+    //      UK_ASSERT(!PTRISERR(dev->_queue[queue_id]));
+    dev.dev_ops.queue_intr_disable(dev._queue[queue_id])
 }
 
 /// 向设备发送一个异步非阻塞模式请求
@@ -328,9 +334,9 @@ fn rk_blkdev_queue_intr_disble(dev: RkBlkdev, queue_id: u16) -> isize {
 fn rk_blkdev_queue_submit_one(dev: &RkBlkdev, queue_id: u16, req: &mut RkBlkreq) -> isize {
     assert!(!dev._data.is_null());
     //TODO UK_ASSERT(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
-    assert!(dev._data.state==RkBlkdevRunning);
+    assert!(dev._data.state == RkBlkdevRunning);
     assert!(!ptriseer(dev._queue[queue_id]));
-    dev.submit_one(dev,dev._queue[queue_id],req)
+    dev.submit_one(dev, dev._queue[queue_id], req)
 }
 
 ///
@@ -350,7 +356,9 @@ fn rk_blkdev_queue_submit_one(dev: &RkBlkdev, queue_id: u16, req: &mut RkBlkreq)
 /// - true：所有标记被设定并且没有负值
 /// - false：至少一个标记没有被设定或状态是负值
 #[inline]
-fn rk_blkdev_status_test_set(status: isize, flag: isize) -> bool { todo!() }
+fn rk_blkdev_status_test_set(status: isize, flag: isize) -> bool {
+    (status & (flag | -2_147_483_648i32)) == flag
+}
 
 ///
 /// 测试由`rk_blkdev_submit_one`返回的未设置标记
@@ -369,7 +377,9 @@ fn rk_blkdev_status_test_set(status: isize, flag: isize) -> bool { todo!() }
 /// - true：标记没有被设定并且没有负值
 /// - false：至少一个标记被设定或状态是负值
 #[inline]
-fn rk_blkdev_status_test_unset(status: isize, flag: isize) -> bool { todo!() }
+fn rk_blkdev_status_test_unset(status: isize, flag: isize) -> bool {
+    (status & (flag | -2_147_483_648i32)) == 0x0
+}
 
 /// 测试`rk_blkdev_submut_one`返回的状态是否表明了一个成功的操作
 ///
@@ -381,7 +391,9 @@ fn rk_blkdev_status_test_unset(status: isize, flag: isize) -> bool { todo!() }
 /// - true：操作是成功的
 /// - false：操作是不成功的或者发生了错误
 #[inline]
-fn rk_blkdev_status_successful(status: isize) -> bool { todo!() }
+fn rk_blkdev_status_successful(status: isize) -> bool {
+    rk_blkdev_status_test_set(status,0x1)
+}
 
 /// 测试`rk_blkdev_submut_one`返回的状态是否表明操作需要被重试
 /// @参数 status
@@ -392,7 +404,9 @@ fn rk_blkdev_status_successful(status: isize) -> bool { todo!() }
 /// - true：操作应该被重试
 /// - false：操作是成功的或者发生了错误
 #[inline]
-fn rk_blkdev_status_notready(status: isize) -> bool { todo!() }
+fn rk_blkdev_status_notready(status: isize) -> bool {
+    rk_blkdev_status_test_unset(status,0x1)
+}
 
 /// 测试`rk_blkdev_submut_one`返回的状态是否表明了上一个操作可以被再一次成功重复
 ///
@@ -404,7 +418,9 @@ fn rk_blkdev_status_notready(status: isize) -> bool { todo!() }
 /// - true：状态RK_BLKDEV_STATUS_MORE被设置
 /// - false：操作是成功的或者发生了错误
 #[inline]
-fn rk_blkdev_status_more(status: isize) -> bool { todo!() }
+fn rk_blkdev_status_more(status: isize) -> bool {
+    rk_blkdev_status_test_set(status,0x1|0x2)
+}
 
 /// 在队列和在目标队列上重新被许可的中断被重新许可之前，从它们那里得到回应
 ///
@@ -422,24 +438,27 @@ fn rk_blkdev_status_more(status: isize) -> bool { todo!() }
 fn rk_blkdev_queue_finish_reqs(dev: &RkBlkdev, queue_id: u16) -> isize {
     assert!(!dev._data.is_null());
     //TODO UK_ASSERT(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
-    assert!(dev._data.state==RkBlkdevRunning);
+    assert!(dev._data.state == RkBlkdevRunning);
     assert!(!ptriseer(dev._queue[queue_id]));
-    dev.finish_reqs(dev,dev._queue[queue_id])
+    dev.finish_reqs(dev, dev._queue[queue_id])
 }
+
 /**
  * Used for sending a synchronous request.
  */
 #[cfg(feature = "sync_io_blocked_waiting")]
-pub struct RkBlkdevSyncIORequest{
+pub struct RkBlkdevSyncIORequest {
     /* Request structure. */
-    req:RkBlkreq,
+    req: RkBlkreq,
     /* Semaphore used for waiting after the response is done. */
-    s:RkSemaphore,
+    s: RkSemaphore,
 }
+
 #[cfg(feature = "sync_io_blocked_waiting")]
-pub fn __sync_io_callback(req:&RkBlkreq,cookie_callback:*mut u8){
+pub fn __sync_io_callback(req: &RkBlkreq, cookie_callback: *mut u8) {
     todo!()
 }
+
 /**
  * Make a sync io request on a specific queue.
  * `uk_blkdev_queue_finish_reqs()` must be called in queue interrupt context
@@ -498,16 +517,16 @@ pub fn rk_blkdev_sync_read(dev: &RkBlkdev, queue_id: u16, op: RkBlkreqOp, sector
 /// - 0：成功
 /// - <0：当驱动程序返回错误的时候
 fn rk_blkdev_stop(dev: &RkBlkdev) -> isize {
-    let mut rc=0;
+    let mut rc = 0;
     assert!(!dev._data.is_null());
-    assert!(dev._data.state==RkBlkdevRunning);
-    println!("Trying to stop blkdev {} device\n",dev._data.id);
-    rc=dev.dev_ops.dev_stop();
-    if rc!=0{
-        println!("Failed to stop blkdev {} device{}\n",dev._data.id,rc);
-    }else{
-        println!("Stopped blkdev{}\n",dev._data.id);
-        dev._data.state=RkBlkdevConfigured;
+    assert!(dev._data.state == RkBlkdevRunning);
+    println!("Trying to stop blkdev {} device\n", dev._data.id);
+    rc = dev.dev_ops.dev_stop();
+    if rc != 0 {
+        println!("Failed to stop blkdev {} device{}\n", dev._data.id, rc);
+    } else {
+        println!("Stopped blkdev{}\n", dev._data.id);
+        dev._data.state = RkBlkdevConfigured;
     }
     rc
 }
@@ -528,17 +547,17 @@ fn rk_blkdev_stop(dev: &RkBlkdev) -> isize {
 /// - 0：成功
 /// - <0：当驱动程序返回错误的时候
 fn rk_blkdev_queue_unconfigure(dev: &RkBlkdev, queue_id: u16) -> isize {
-    let mut rc=0;
+    let mut rc = 0;
     assert!(!dev._data.is_null());
     //TODO UK_ASSERT(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
-    assert!(dev._data.state==RkBlkdevConfigured);
+    assert!(dev._data.state == RkBlkdevConfigured);
     assert!(!ptriseer(dev._queue[queue_id]));
-    rc=dev.dev_ops.queue_unconfigure(dev._queue[queue_id]);
-    if rc!=0{
-        println!("Failed to unconfigure blkdev{}-q{}: {}\n",dev._data.id,queue,rc);
-    }else{
+    rc = dev.dev_ops.queue_unconfigure(dev._queue[queue_id]);
+    if rc != 0 {
+        println!("Failed to unconfigure blkdev{}-q{}: {}\n", dev._data.id, queue, rc);
+    } else {
         //TODO #[cfg(feature = "dispatcherthreads")]if (dev->_data->queue_handler[queue_id].callback)_destroy_event_handler(&dev->_data->queue_handler[queue_id]);
-        println!("blkdev{}: Stopped blkdev{}\n",dev._data.id);
+        println!("blkdev{}: Stopped blkdev{}\n", dev._data.id);
         //TODO dev._queue[queue_id]=0;
     }
     rc
@@ -558,7 +577,20 @@ fn rk_blkdev_queue_unconfigure(dev: &RkBlkdev, queue_id: u16) -> isize {
 /// - 0：成功
 /// - <0：当驱动程序返回错误的时候
 fn rk_blkdev_unconfigure(dev: &RkBlkdev) -> isize {
-    todo!()
+    let q_id: u16;
+    let rc: isize;
+    assert!(!dev._data.is_null());
+    assert!(dev._data.state == RkBlkdevConfigured);
+    //TODO for (q_id = 0; q_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES; ++q_id)
+    // 		UK_ASSERT(PTRISERR(dev->_queue[q_id]));
+    rc = dev.dev_ops.dev_unconfigure();
+    if rc != 0 {
+        println!("Failed to unconfigure blkdev{}-q{}: {}\n", dev._data.id, queue, rc);
+    } else {
+        println!("Unconfigured blkdev{}\n", dev._data.id);
+        dev._data.state = RkBlkdevUnconfigured;
+    }
+    rc
 }
 
 
