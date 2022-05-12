@@ -1,13 +1,17 @@
 #![no_std]
 
+extern crate alloc;
+
 use rkalloc::RKalloc;
-use crate::blkdev_core::RkBlkdevData;
+use runikraft::list::Tailq;
+use crate::blkdev_core::{RkBlkdev, RkBlkdevData, RkBlkdevEventHandler};
 
 mod blkdev;
 mod blkdev_core;
 mod blkdev_driver;
 mod blkreq;
 
+static mut RK_BLKDEV_LIST:Tailq<RkBlkdev>=Tailq;
 static mut BLKDEV_COUNT: Option<i16> = None;
 const CONFIG_LIBUKBLKDEV_MAXNBQUEUES: u16 =  core::u16::from_str(env!("PATH"));
 
@@ -19,8 +23,13 @@ pub unsafe fn _alloc_data<'a>(a: &'a (dyn RKalloc + 'a), blkdev_id: u16, drv_nam
 }
 
 #[cfg(feature = "dispatcherthreads")]
-pub fn _dispatcher() {
-    todo!()
+pub fn _dispatcher(args:*mut u8) {
+    let handler=RkBlkdevEventHandler;
+    loop{
+        //TODO uk_semaphore_down(&handler->events);
+        handler.callback(handler.dev,handler.queue_id,handler,cookie);
+    }
+
 }
 
 #[cfg(feature = "dispatcherthreads")]

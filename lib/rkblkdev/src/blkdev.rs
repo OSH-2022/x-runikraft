@@ -10,7 +10,7 @@ use rkplat::println;
 
 use crate::blkdev_core::{RkBlkdev, RkBlkdevCap, RkBlkdevConf, RkBlkdevInfo, RkBlkdevQueueConf, RkBlkdevQueueInfo, RkBlkdevState};
 use crate::blkdev_core::RkBlkdevState::{RkBlkdevConfigured, RkBlkdevRunning, RkBlkdevUnconfigured};
-use crate::{BLKDEV_COUNT, CONFIG_LIBUKBLKDEV_MAXNBQUEUES, ptriseer};
+use crate::{BLKDEV_COUNT, CONFIG_LIBUKBLKDEV_MAXNBQUEUES, ptriseer, RK_BLKDEV_LIST};
 use crate::blkreq::{RkBlkreq, RkBlkreqOp};
 use crate::RkBlkdevState::RkBlkdevConfigured;
 
@@ -141,7 +141,7 @@ unsafe fn rk_blkdev_configure(dev: &RkBlkdev, conf: &RkBlkdevConf) -> isize {
     rc = dev.dev_ops.dev_configure(conf);
     if rc != 0 {
         println!("blkdev{}: Configured interface\n", (*dev._data).id);
-        (*dev._data).state = RkBlkdevState::RkBlkdevConfigured;
+        (*dev._data).state = RkBlkdevConfigured;
     } else {
         println!("blkdev{}:Failed to configure interface {}\n", (*dev._data).id, rc);
     }
@@ -279,7 +279,7 @@ fn rk_blkdev_capbilities(blkdev: &RkBlkdev) -> &RkBlkdevCap {
 fn rk_blkdev_queue_intr_enable(dev: &RkBlkdev, queue_id: u16) -> bool {
     assert!(!dev._data.is_null());
     assert!(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
-    // TODO     UK_ASSERT(!PTRISERR(dev->_queue[queue_id]));
+    assert!(!ptriseer(dev._queue[queue_id]));
     dev.dev_ops.queue_intr_enable(dev._queue[queue_id])
 }
 
@@ -302,7 +302,7 @@ fn rk_blkdev_queue_intr_enable(dev: &RkBlkdev, queue_id: u16) -> bool {
 fn rk_blkdev_queue_intr_disble(dev: RkBlkdev, queue_id: u16) -> bool {
     assert!(!dev._data.is_null());
     assert!(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
-    // TODO     UK_ASSERT(!PTRISERR(dev->_queue[queue_id]));
+    assert!(!ptriseer(dev._queue[queue_id]));
     dev.dev_ops.queue_intr_disable(dev._queue[queue_id])
 }
 

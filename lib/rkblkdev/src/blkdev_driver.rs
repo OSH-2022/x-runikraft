@@ -1,9 +1,10 @@
 #![no_std]
 
 use core::intrinsics::atomic_store_unordered;
-use rkalloc::RKalloc;
+use rkalloc::{dealloc_type, RKalloc, RKallocExt};
 use crate::blkdev_core::{RkBlkdev, RkBlkdevEventHandler, RkBlkdevState};
-use crate::{_alloc_data, BLKDEV_COUNT, CONFIG_LIBUKBLKDEV_MAXNBQUEUES};
+use crate::{_alloc_data, BLKDEV_COUNT, CONFIG_LIBUKBLKDEV_MAXNBQUEUES, RK_BLKDEV_LIST, RkBlkdevData};
+use crate::blkdev_core::RkBlkdevState::{RkBlkdevConfigured, RkBlkdevUnconfigured};
 use crate::blkreq::RkBlkreq;
 use crate::blkreq::RkBlkreqState::RkBlkreqFinished;
 
@@ -40,11 +41,11 @@ pub unsafe fn rk_blkdev_drv_register(mut dev: RkBlkdev, a: &dyn RKalloc, drv_nam
         return -12;
     }
 
-    (*dev._data).state = RkBlkdevState::RkBlkdevUnconfigured;
+    (*dev._data).state = RkBlkdevUnconfigured;
     if let Some(mut x) = &RK_BLKDEV_LIST {
         x.push_back(dev);
     }
-    //TODO println!("Registered blkdev%{:?}:{:?} {:?}\n", BLKDEV_COUNT, dev, drv_name);
+    println!("Registered blkdev%{:?}:{:?} {:?}\n", BLKDEV_COUNT, dev, drv_name);
     BLKDEV_COUNT = match BLKDEV_COUNT {
         None => Some(1),
         Some(x) => Some(x + 1)
@@ -70,8 +71,9 @@ pub fn rk_blkdev_drv_queue_event(dev: &RkBlkdev, queue_id: u16) {
     assert!(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
     queue_handler=dev._data.queue_handler[queue_id];
     //TODO #[cfg(feature = "dispatcherthreads")]
-    //TODO uk_semaphore_up(&queue_handler->events);
-        queue_handler.callback(dev,queue_id,queue_handler.cookie)
+    // uk_semaphore_up(&queue_handler->events);
+    #[cfg!(feature = "dispatcherthreads")]
+        queue_handler.callback(dev,queue_id,queue_handler.cookie);
 }
 /**
  * Sets a request as finished.
@@ -89,6 +91,14 @@ pub unsafe fn rk_blkdev_finished(req:RkBlkreq){
 ///
 ///     Runikraft块设备
 ///
-pub fn rk_blkdev_drv_unregister(dev: &RkBlkdev) {
-    todo!()
+pub unsafe fn rk_blkdev_drv_unregister(dev: &RkBlkdev) {
+    let mut id:u16;
+    assert!(!dev._data.is_null());
+    assert!(dev._data.state==RkBlkdevUnconfigured);
+    id=dev._data.id;
+    dealloc_type::<RkBlkdevData>(dev._data.a,dev._data);
+    if let Some(x)=BLKDEV_COUNT{
+        BLKDEV_COUNT=Some(x-1);
+    }
+    println!("Unregistered blkdev{}: {:?}\n",id,dev);
 }

@@ -157,8 +157,8 @@ pub struct RkBlkdevCap {
 ///
 ///事件处理程序配置
 pub struct RkBlkdevEventHandler<'a> {
-    //回调
-    //使用静态方法实现
+    ///回调
+    pub(crate) callback:RkBlkdevQueueEventT,
     ///回调的参数
     pub(crate) cookie: *mut u8,
     #[cfg(feature = "dispatcherthreads")]
@@ -178,10 +178,6 @@ pub struct RkBlkdevEventHandler<'a> {
     dispatcher_s: *mut rksched::RKsched<'a>,
 }
 
-impl<'a> RkBlkdevEventHandler<'a> {
-    pub fn callback(dev: &mut RkBlkdev, queue_id: u16, argp: *mut u8) { todo!() }
-}
-
 ///@内部
 ///librkblkdev中的和每个块设备相关的内部数据
 pub struct RkBlkdevData<'a> {
@@ -190,9 +186,9 @@ pub struct RkBlkdevData<'a> {
     ///设备状态
     pub(crate) state: RkBlkdevState,
     ///每个队列的事件处理器
-    pub(crate) queue_handler: [RkBlkdevEventHandler<'a>; 16],
+    pub(crate) queue_handler: [RkBlkdevEventHandler<'a>; CONFIG_LIBUKBLKDEV_MAXNBQUEUES as usize],
     ///设备名称
     pub(crate) drv_name: &'a str,
     ///分配器
-    a: &'a dyn rkalloc::RKalloc,
+    pub(crate) a: &'a dyn rkalloc::RKalloc,
 }
