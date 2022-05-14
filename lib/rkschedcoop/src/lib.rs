@@ -32,18 +32,23 @@ impl<'b> SchedulerCoop for RKschedcoop<'b> {
     fn yield_sched(&mut self) {
         self.schedcoop_schedule();
     }
-    fn add_thread<'a>(&mut self, t: &'a mut RKthread<'a>, attr: &'a mut RKthreadAttr) -> Result<(), &'static str> {
-        let mut flags: usize = 0;
-        let prv = self.prv;
-        t.set_runnable();
-        //flags = rkplat_lcpu_save_irqf();
-        let new_t = t.clone();
-        self.prv.sleeping_threads.push_back(new_t);
 
-        //rkplat_lcpu_restore_irqf(flags);
-
-        Ok(())
+    fn add_thread<'a>(&mut self, t: *mut RKthread, attr: &'a mut RKthreadAttr) -> Result<(), &'static str> {
+        
     }
+    
+    // fn add_thread<'a>(&mut self, t: &'a mut RKthread<'a>, attr: &'a mut RKthreadAttr) -> Result<(), &'static str> {
+    //     let mut flags: usize = 0;
+    //     let prv = self.prv;
+    //     t.set_runnable();
+    //     //flags = rkplat_lcpu_save_irqf();
+    //     let new_t = t.clone();
+    //     self.prv.sleeping_threads.push_back(new_t);
+    // 
+    //     //rkplat_lcpu_restore_irqf(flags);
+    // 
+    //     Ok(())
+    // }
     unsafe fn remove_thread<'a>(&mut self, t: &'a mut RKthread<'a>) -> Result<(), &'static str> {
         let mut flags: usize = 0;
         let prv = self.prv;
