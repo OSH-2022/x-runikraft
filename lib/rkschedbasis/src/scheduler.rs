@@ -1,5 +1,7 @@
 use super::thread::{RKthread, RKthreadAttr, PrioT, RKthreadList};
+use runikraft::list::{TailqPosMut};
 use core::time::Duration;
+use core::result::Result;
 
 /// Cooperative scheduler trait
 /// The non-preemptive (cooperative) scheduler schedules according to Round Robin algorithm.
@@ -7,9 +9,9 @@ pub trait SchedulerCoop {
     /// yield scheduler
     fn yield_sched(&mut self);
     /// add thread
-    fn add_thread<'a>(&mut self, t: &'a mut RKthread<'a>, attr: &'a mut RKthreadAttr);
+    fn add_thread<'a>(&mut self, t: &'a mut RKthread<'a>, attr: &'a mut RKthreadAttr) -> Result<(), &'static str>;
     /// remove thread
-    fn remove_thread<'a>(&mut self, t: &'a mut RKthread<'a>);
+    fn remove_thread<'a>(&mut self, t: &'a mut RKthread<'a>) -> Result<(), &'static str>;
     /// block thread
     fn block_thread<'a>(&mut self, t: &'a mut RKthread<'a>);
     /// wake thread
@@ -32,6 +34,6 @@ pub trait SchedulerPreem {
 }
 
 pub struct SchedPrivate<'a> {
-    thread_list: RKthreadList<'a>,
-    sleeping_threads: RKthreadList<'a>,
+    pub thread_list: RKthreadList<'a>,
+    pub sleeping_threads: RKthreadList<'a>,
 }

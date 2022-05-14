@@ -4,10 +4,11 @@ use core::ptr::null_mut;
 use core::marker::PhantomData;
 use core::iter::{Iterator,ExactSizeIterator};
 
+#[repr(C)]
 struct Node<T> {
+    element: Option<T>,     //为了pop_front方法能获取element
     prev: *mut Node<T>,
     next: *mut Node<T>,
-    element: Option<T>,     //为了pop_front方法能获取element
 }
 
 impl<T> Node<T> {
@@ -437,6 +438,16 @@ impl<T> ListIterMut<'_,T> {
 }
 
 impl<T> ListPos<T> {
+    /// 由元素的引用创建
+    pub unsafe fn from_ref(elem: &T) -> Self {
+        Self { pos: elem as *const T as *const Node<T> }
+    }
+
+    /// 由元素的指针创建
+    pub unsafe fn from_ptr(elem: *const T) -> Self {
+        Self { pos: elem as *const Node<T> }
+    }
+
     /// 移动到下一个位置
     pub fn next(&mut self)->Result<(),()>{
         if self.pos.is_null() {return Err(());}
@@ -489,6 +500,16 @@ impl<T> Deref for ListPos<T> {
 }
 
 impl<T> ListPosMut<T> {
+    /// 由元素的引用创建
+    pub unsafe fn from_ref(elem: &mut T) -> Self {
+        Self { pos: elem as *mut T as *mut Node<T> }
+    }
+
+    /// 由元素的指针创建
+    pub unsafe fn from_ptr(elem: *mut T) -> Self {
+        Self { pos: elem as *mut Node<T> }
+    }
+
     /// 移动到下一个位置
     pub fn next(&mut self)->Result<(),()>{
         if self.pos.is_null() {return Err(());}

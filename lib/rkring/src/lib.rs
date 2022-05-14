@@ -7,6 +7,20 @@ use core::sync::atomic::{AtomicU32, Ordering};
 use core::ptr::{null_mut, drop_in_place};
 use core::mem::size_of;
 
+#[inline(always)]
+pub fn critical_enter() { rkplat::lcpu::barrier(); }
+#[inline(always)]
+pub fn critical_exit()  { rkplat::lcpu::barrier(); }
+#[inline(always)]
+pub fn rmb() { rkplat::lcpu::rmb(); }
+#[inline(always)]
+pub fn mb() { rkplat::lcpu::mb(); }
+#[inline(always)]
+pub fn wmb() {rkplat::lcpu::wmb(); }
+#[inline(always)]
+pub fn spinwait() { rkplat::lcpu::spinwait(); }
+
+
 #[repr(align(64))]
 struct CacheLineAligned<T> {
     data: T,
@@ -60,12 +74,14 @@ impl Ring {
                     break;
                 }
                 if self.br_ring.data[i as usize] == buf {
+                    panic!("buf already enqueue at {} prod={} cons={}", i, self.br_prod_tail, self.br_cons_tail);
                     // UK_CRASH("buf=%p already enqueue at %d prod=%d cons=%d",
 					//buf, i, br->br_prod_tail, br->br_cons_tail);
                 }
                 i = (i + 1) & self.br_cons_mask;
             }
         }
+        critical_enter();
         // critical_enter()
         //__asm__ __volatile__("" : : : "memory")
         loop {
@@ -74,10 +90,12 @@ impl Ring {
             cons_tail = self.br_cons_tail;
             
             if prod_next == cons_tail {
+                rmb();
                 //rmb()
                 //__asm__ __volatile__ ("lfence" : : : "memory")
                 if prod_head == self.br_prod_head && cons_tail == self.br_cons_tail {
                     self.br_drops = self.br_drops + 1;
+                    critical_exit();
                     //critical_exit()
                     //__asm__ __volatile__("" : : : "memory")
                     return Err(-105);
@@ -93,6 +111,7 @@ impl Ring {
 
         if cfg!(DEBUG_BUFRING) {
             if self.br_ring.data[prod_head as usize] != null_mut() {
+                panic!("dangling value in enqueue");
                 //UK_CRASH("dangling value in enqueue");
             }
         }
@@ -100,6 +119,7 @@ impl Ring {
         self.br_ring.data[prod_head as usize] = buf;
         loop {
             if self.br_prod_tail != prod_head {
+                spinwait();
                 //ukarch_spinwait();
                 //__asm__ __volatile__("pause" : : : "memory");         //lcpu.rs
             }
@@ -108,6 +128,7 @@ impl Ring {
             }
         }
         AtomicU32::new(self.br_prod_tail).store(prod_next, Ordering::SeqCst);
+        critical_exit();
         //critical_exit()
         //__asm__ __volatile__("" : : : "memory")
         return Ok(());
@@ -117,12 +138,14 @@ impl Ring {
         let mut cons_next: u32;
         let buf: *mut u8;
 
+        critical_enter();
         // critical_enter()
         //__asm__ __volatile__("" : : : "memory")
         loop {
             cons_head = self.br_cons_head.data;
             cons_next = (cons_head + 1) & self.br_cons_mask;
             if cons_head == self.br_prod_tail {
+                critical_exit();
                 // critical_exit()
                 return None;
             }
@@ -139,6 +162,7 @@ impl Ring {
 
         loop {
             if self.br_cons_tail != cons_next {
+                spinwait();
                 //ukarch_spinwait();
                 //__asm__ __volatile__("pause" : : : "memory");         //lcpu.rs
             }
@@ -147,6 +171,7 @@ impl Ring {
             }
         }
         AtomicU32::new(self.br_cons_tail).store(cons_next, Ordering::SeqCst);
+        critical_exit();
         //critical_exit()
         //__asm__ __volatile__("" : : : "memory")
         return Some(buf);
@@ -184,6 +209,7 @@ impl Ring {
             //if (!uk_mutex_is_locked(br->br_lock))
 		        //UK_CRASH("lock not held on single consumer dequeue: %d", br->br_lock->lock_count);
             if self.br_cons_tail != cons_head {
+                panic!("inconsistent list cons_tail={} cons_head={}", self.br_cons_tail, cons_head);
                 //UK_CRASH("inconsistent list cons_tail=%d cons_head=%d",
 				//br->br_cons_tail, cons_head);
             }
