@@ -62,6 +62,7 @@ name = "rkring"
 version = "0.1.0"
 dependencies = [
  "rkalloc",
+ "rkplat",
 ]
 
 [[package]]

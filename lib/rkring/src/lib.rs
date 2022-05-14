@@ -7,6 +7,20 @@ use core::sync::atomic::{AtomicU32, Ordering};
 use core::ptr::{null_mut, drop_in_place};
 use core::mem::size_of;
 
+#[inline(always)]
+pub fn critical_enter() { rkplat::lcpu::barrier(); }
+#[inline(always)]
+pub fn critical_exit()  { rkplat::lcpu::barrier(); }
+#[inline(always)]
+pub fn rmb() { rkplat::lcpu::rmb(); }
+#[inline(always)]
+pub fn mb() { rkplat::lcpu::mb(); }
+#[inline(always)]
+pub fn wmb() {rkplat::lcpu::wmb(); }
+#[inline(always)]
+pub fn spinwait() { rkplat::lcpu::spinwait(); }
+
+
 #[repr(align(64))]
 struct CacheLineAligned<T> {
     data: T,
@@ -26,6 +40,7 @@ pub struct Ring {
 }
 
 impl Ring {
+    /// 为 Ring 分配内存
     /// `count`: 容量
     /// `alloc`: 分配器
     pub fn new(count: i32, a: &dyn RKalloc) -> *mut Ring {
@@ -48,6 +63,8 @@ impl Ring {
         }
         return br;
     }
+
+    /// 安全的多生产者环形缓冲队列入队
     pub fn enqueue(&mut self, buf: *mut u8) -> Result<(), i32> {
         let mut prod_head: u32;
         let mut prod_next: u32;
@@ -60,24 +77,29 @@ impl Ring {
                     break;
                 }
                 if self.br_ring.data[i as usize] == buf {
+                    panic!("buf already enqueue at {} prod={} cons={}", i, self.br_prod_tail, self.br_cons_tail);
                     // UK_CRASH("buf=%p already enqueue at %d prod=%d cons=%d",
 					//buf, i, br->br_prod_tail, br->br_cons_tail);
                 }
                 i = (i + 1) & self.br_cons_mask;
             }
         }
+        critical_enter();
         // critical_enter()
         //__asm__ __volatile__("" : : : "memory")
+
         loop {
             prod_head = self.br_prod_head;
             prod_next = (prod_head + 1) & self.br_prod_mask;
             cons_tail = self.br_cons_tail;
             
             if prod_next == cons_tail {
+                rmb();
                 //rmb()
                 //__asm__ __volatile__ ("lfence" : : : "memory")
                 if prod_head == self.br_prod_head && cons_tail == self.br_cons_tail {
                     self.br_drops = self.br_drops + 1;
+                    critical_exit();
                     //critical_exit()
                     //__asm__ __volatile__("" : : : "memory")
                     return Err(-105);
@@ -93,13 +115,19 @@ impl Ring {
 
         if cfg!(DEBUG_BUFRING) {
             if self.br_ring.data[prod_head as usize] != null_mut() {
+                panic!("dangling value in enqueue");
                 //UK_CRASH("dangling value in enqueue");
             }
         }
 
         self.br_ring.data[prod_head as usize] = buf;
+        
+        /*
+        如果有其他入队操作在进程中更早发生, 需要等待它们完成操作
+        */
         loop {
             if self.br_prod_tail != prod_head {
+                spinwait();
                 //ukarch_spinwait();
                 //__asm__ __volatile__("pause" : : : "memory");         //lcpu.rs
             }
@@ -108,21 +136,26 @@ impl Ring {
             }
         }
         AtomicU32::new(self.br_prod_tail).store(prod_next, Ordering::SeqCst);
+        critical_exit();
         //critical_exit()
         //__asm__ __volatile__("" : : : "memory")
         return Ok(());
     }
+
+    /// 安全的多消费者队列出队
     pub fn dequeue_mc(&mut self) -> Option<*mut u8>{
         let mut cons_head: u32;
         let mut cons_next: u32;
         let buf: *mut u8;
 
+        critical_enter();
         // critical_enter()
         //__asm__ __volatile__("" : : : "memory")
         loop {
             cons_head = self.br_cons_head.data;
             cons_next = (cons_head + 1) & self.br_cons_mask;
             if cons_head == self.br_prod_tail {
+                critical_exit();
                 // critical_exit()
                 return None;
             }
@@ -136,9 +169,13 @@ impl Ring {
         if cfg!(DEBUG_BUFRING) {
             self.br_ring.data[cons_head as usize] = null_mut();
         }
-
+        
+        /*
+        如果有其他入队操作在进程中更早发生, 需要等待它们完成操作
+        */
         loop {
             if self.br_cons_tail != cons_next {
+                spinwait();
                 //ukarch_spinwait();
                 //__asm__ __volatile__("pause" : : : "memory");         //lcpu.rs
             }
@@ -147,10 +184,15 @@ impl Ring {
             }
         }
         AtomicU32::new(self.br_cons_tail).store(cons_next, Ordering::SeqCst);
+        critical_exit();
         //critical_exit()
         //__asm__ __volatile__("" : : : "memory")
         return Some(buf);
     }
+
+    /// 单消费者队列出队
+    /// 
+    /// 出队使用时是被锁保护的
     pub fn dequeue_sc(&mut self) -> Option<*mut u8> {
         let cons_head: u32;
         let cons_next: u32;
@@ -184,6 +226,7 @@ impl Ring {
             //if (!uk_mutex_is_locked(br->br_lock))
 		        //UK_CRASH("lock not held on single consumer dequeue: %d", br->br_lock->lock_count);
             if self.br_cons_tail != cons_head {
+                panic!("inconsistent list cons_tail={} cons_head={}", self.br_cons_tail, cons_head);
                 //UK_CRASH("inconsistent list cons_tail=%d cons_head=%d",
 				//br->br_cons_tail, cons_head);
             }
@@ -192,6 +235,8 @@ impl Ring {
         self.br_cons_tail = cons_next;
         return Some(buf);
     }
+
+    /// 在 `peek()` 之后将单个消费者提前
     pub fn advance_sc(&mut self) {
         let cons_head: u32 = self.br_cons_head.data;
         let cons_next: u32 = (self.br_cons_head.data + 1) & self.br_cons_mask;
@@ -208,9 +253,15 @@ impl Ring {
 
         self.br_cons_tail = cons_next;
     }
+
+    /// 将消费者队首的值修改为 `new`
     pub fn putback_sc(&mut self, new: *mut u8) {
         self.br_ring.data[self.br_cons_head.data as usize] = new;
     }
+
+    /// 在没有修改的情况下返回环形队列的第一个条目的指针
+    /// 
+    /// 如果环形队列为空时返回空指针
     pub fn peek(&self) -> Option<*mut u8> {
         if cfg!(DEBUG_BUFRING) {
             //if (!uk_mutex_is_locked(br->br_lock))
@@ -223,6 +274,8 @@ impl Ring {
             Some(self.br_ring.data[self.br_cons_head.data as usize])
         }
     }
+    
+    /// 
     pub fn peek_clear_sc(&mut self) -> Option<*mut u8> {
         if cfg!(DEBUG_BUFRING) {
             //if (!uk_mutex_is_locked(br->br_lock))
@@ -245,12 +298,18 @@ impl Ring {
 
         return Some(self.br_ring.data[self.br_cons_head.data as usize])
     }
+
+    /// 判断缓冲队列是否为满
     pub fn full(&self) -> bool {
         (self.br_prod_head + 1) & self.br_prod_mask == self.br_cons_tail
     }
+
+    /// 判断缓冲队列是否为空
     pub fn empty(&self) -> bool {
         self.br_cons_head.data == self.br_prod_tail
     }
+
+    /// 返回缓冲队列里剩余的生产者数量
     pub fn count(&self) -> i32 {
         ((self.br_prod_size + self.br_prod_tail - self.br_cons_tail) & self.br_prod_mask) as i32
     }

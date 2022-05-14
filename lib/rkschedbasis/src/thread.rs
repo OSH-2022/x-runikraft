@@ -3,6 +3,8 @@ use runikraft::list::Tailq;
 use core::{debug_assert, panic};
 use rkalloc::RKalloc;
 use core::time::Duration;
+use core::clone;
+pub use clone::Clone;
 
 ////////////////////////////////////////////////////////////////////////
 /// 线程属性 thread_attr 的结构体定义
@@ -32,6 +34,16 @@ pub struct RKthreadAttr {
     prio: PrioT,
     //Time slice in nanoseconds
     timeslice: Duration,
+}
+
+impl Default for RKthreadAttr {
+    fn default() -> Self {
+        Self {
+            detached: false,
+            prio: -1,
+            timeslice: Duration::default(),
+        }
+    }
 }
 
 impl RKthreadAttr {
@@ -80,6 +92,16 @@ impl RKthreadAttr {
     }
 }
 
+impl Clone for RKthreadAttr {
+    fn clone(&self) -> Self {
+        Self {
+            detached: self.detached,
+            prio: self.prio,
+            timeslice: self.timeslice.clone(),
+        }
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////
 /// 线程 thread 的结构体定义
 ////////////////////////////////////////////////////////////////////////
@@ -93,7 +115,7 @@ pub struct RKthread<'a> {
     ctx: *mut u8,
     thread_list: RKthreadList<'a>,
     flags: u32,
-    wakeup_time: Duration,
+    pub wakeup_time: Duration,
     detached: bool,
     waiting_threads: RKwaitQ<'a>,
     coop_sched: &'a dyn SchedulerCoop,
@@ -164,33 +186,33 @@ impl<'a> RKthread<'a> {
             _ => true,
         }
     }
-    fn set_runnable(&mut self) {
+    pub fn set_runnable(&mut self) {
         self.flags |= RUNNABLE_FLAG;
     }
-    fn clear_runnable(&mut self) {
+    pub fn clear_runnable(&mut self) {
         self.flags &= !RUNNABLE_FLAG;
     }
 
-    fn is_exited(&self) -> bool {
+    pub fn is_exited(&self) -> bool {
         match self.flags & EXITED_FLAG {
             0 => false,
             _ => true,
         }
     }
-    fn set_exited(&mut self) {
+    pub fn set_exited(&mut self) {
         self.flags |= EXITED_FLAG;
     }
 
-    fn is_queueable(&self) -> bool {
+    pub fn is_queueable(&self) -> bool {
         match self.flags & QUEUEABLE_FLAG {
             0 => false,
             _ => true,
         }
     }
-    fn set_queueable(&mut self) {
+    pub fn set_queueable(&mut self) {
         self.flags |= QUEUEABLE_FLAG;
     }
-    fn clear_queueable(&mut self) {
+    pub fn clear_queueable(&mut self) {
         self.flags &= !QUEUEABLE_FLAG;
     }
 
@@ -219,8 +241,29 @@ impl<'a> RKthread<'a> {
     //后面还有一些仿函数宏未完成(thread.h 145~167)
 }
 
+impl<'a> Clone for RKthread<'a> {
+    fn clone(&self) -> Self {
+        Self {
+            name: self.name,
+            attr: self.attr.clone(),
+            stack: self.stack,
+            tls: self.tls,
+            ctx: self.ctx,
+            thread_list: self.thread_list,  //here needs a Clone trait in Tailq
+            flags: self.flags,
+            wakeup_time: self.wakeup_time,
+            detached: self.detached,
+            waiting_threads: self.waiting_threads,  //here also needs a Clone trait in Stailq
+            coop_sched: self.coop_sched,
+            preem_sched: self.preem_sched,
+            entry: self.entry,
+            arg: self.arg,
+            prv: self.prv,
+        }
+    }
+}
+
 //返回当前线程的函数
 pub fn thread_current<'a, T>() -> &'a mut RKthread<'a> {
-    // TODO
-    panic!();
+    todo!()//needs the function about stack(operations related to the bottom layer)
 }

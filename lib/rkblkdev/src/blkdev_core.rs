@@ -1,6 +1,6 @@
 #![no_std]
 
-use rksched::RKsched;
+use rksched::{RKsched, RKthread};
 use runikraft::list::Tailq;
 use crate::blkreq::{RkBlkreq, RkBlkreqOp};
 use crate::CONFIG_LIBUKBLKDEV_MAXNBQUEUES;
@@ -87,7 +87,7 @@ pub struct RkBlkdevQueue {}
 ///
 ///注意：为了处理接收到的响应，应该调用dev的finish_reqs方法
 ///
-type RkBlkdevQueueEventT = fn(&Blkdev, &mut RkBlkdev, u16, *mut u8);
+pub type RkBlkdevQueueEventT = fn(&Blkdev, &mut RkBlkdev, u16, *mut u8);
 
 ///用于配置Runikraft块设备队列的结构体
 pub struct RkBlkdevQueueConf<'a> {
@@ -103,7 +103,7 @@ pub struct RkBlkdevQueueConf<'a> {
 }
 
 #[cfg(feature = "dispatcherthreads")]
-    static s:RKsched=RKsched;
+static s: RKsched = RKsched;
 
 /**
  * Status code flags returned queue_submit_one function
@@ -157,8 +157,8 @@ pub struct RkBlkdevCap {
 ///
 ///事件处理程序配置
 pub struct RkBlkdevEventHandler<'a> {
-    //回调
-    //使用静态方法实现
+    ///回调
+    pub(crate) callback: RkBlkdevQueueEventT,
     ///回调的参数
     pub(crate) cookie: *mut u8,
     #[cfg(feature = "dispatcherthreads")]
@@ -166,20 +166,17 @@ pub struct RkBlkdevEventHandler<'a> {
     //TODO events: rk_semaphore,
     #[cfg(feature = "dispatcherthreads")]
     ///块设备的引用
-    dev: *mut RkBlkdev<'a>,
+    pub(crate) dev: * RkBlkdev<'a>,
     #[cfg(feature = "dispatcherthreads")]
+    pub(crate) queue_id: u16,
     ///分配器线程
-    dispatcher: *mut RKThread,
+    pub(crate) dispatcher: *mut RKthread<'a>,
     #[cfg(feature = "dispatcherthreads")]
     ///线程名称的引用
-    dispatcher_name: *mut char,
+    pub(crate) dispatcher_name: *mut char,
     #[cfg(feature = "dispatcherthreads")]
     ///分配器的调度器
-    dispatcher_s: *mut rksched::RKsched<'a>,
-}
-
-impl<'a> RkBlkdevEventHandler<'a> {
-    pub fn callback(dev: &mut RkBlkdev, queue_id: u16, argp: *mut u8) { todo!() }
+    pub(crate) dispatcher_s: *mut rksched::RKsched<'a>,
 }
 
 ///@内部
@@ -190,9 +187,9 @@ pub struct RkBlkdevData<'a> {
     ///设备状态
     pub(crate) state: RkBlkdevState,
     ///每个队列的事件处理器
-    pub(crate) queue_handler: [RkBlkdevEventHandler<'a>; 16],
+    pub(crate) queue_handler: [RkBlkdevEventHandler<'a>; CONFIG_LIBUKBLKDEV_MAXNBQUEUES as usize],
     ///设备名称
     pub(crate) drv_name: &'a str,
     ///分配器
-    a: &'a dyn rkalloc::RKalloc,
+    pub(crate) a: &'a dyn rkalloc::RKalloc,
 }
