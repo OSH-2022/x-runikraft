@@ -28,7 +28,7 @@ use crate::blkreq::RkBlkreqState::RkBlkreqFinished;
 ///
 /// - （-ENOMEM）：私有分配
 /// - （正值）：成功时的块设备的身份
-pub unsafe fn rk_blkdev_drv_register(mut dev: RkBlkdev, a: &dyn RKalloc, drv_name: &str) -> i16 {
+pub  fn rk_blkdev_drv_register(mut dev: RkBlkdev, a: &dyn RKalloc, drv_name: &str) -> i16 {
 
     //数据必须被取消分配
     assert_ne!(dev._data);
@@ -41,7 +41,7 @@ pub unsafe fn rk_blkdev_drv_register(mut dev: RkBlkdev, a: &dyn RKalloc, drv_nam
         return -12;
     }
 
-    (*dev._data).state = RkBlkdevUnconfigured;
+    unsafe{(*dev._data).state = RkBlkdevUnconfigured;
     if let Some(mut x) = &RK_BLKDEV_LIST {
         x.push_back(dev);
     }
@@ -53,7 +53,7 @@ pub unsafe fn rk_blkdev_drv_register(mut dev: RkBlkdev, a: &dyn RKalloc, drv_nam
     return match BLKDEV_COUNT {
         None => 0,
         Some(y) => y
-    };
+    };}
 }
 /// 把一个队列事件向应用程序接口用户前移
 /// 可以（并且应该）在设备中断的上下文中调用
@@ -81,8 +81,8 @@ pub fn rk_blkdev_drv_queue_event(dev: &RkBlkdev, queue_id: u16) {
  * @param req
  *	uk_blkreq structure
  */
-pub unsafe fn rk_blkdev_finished(req:RkBlkreq){
-    atomic_store_unordered(*(req.state),RkBlkreqFinished)
+pub  fn rk_blkdev_finished(req:RkBlkreq){
+    unsafe{atomic_store_unordered(*(req.state),RkBlkreqFinished)}
 }
 /// 释放给Runikraft块设备的数据
 /// 把设备从列表中移除
@@ -91,14 +91,14 @@ pub unsafe fn rk_blkdev_finished(req:RkBlkreq){
 ///
 ///     Runikraft块设备
 ///
-pub unsafe fn rk_blkdev_drv_unregister(dev: &RkBlkdev) {
+pub fn rk_blkdev_drv_unregister(dev: &RkBlkdev) {
     let mut id:u16;
     assert!(!dev._data.is_null());
     assert!(dev._data.state==RkBlkdevUnconfigured);
     id=dev._data.id;
-    dealloc_type::<RkBlkdevData>(dev._data.a,dev._data);
+    unsafe {dealloc_type::<RkBlkdevData>(dev._data.a,dev._data);
     if let Some(x)=BLKDEV_COUNT{
         BLKDEV_COUNT=Some(x-1);
-    }
+    }}
     println!("Unregistered blkdev{}: {:?}\n",id,dev);
 }

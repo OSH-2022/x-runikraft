@@ -1,6 +1,6 @@
 #![no_std]
 
-use rksched::RKsched;
+use rksched::{RKsched,RKthread};
 use runikraft::list::Tailq;
 use crate::blkreq::{RkBlkreq, RkBlkreqOp};
 use crate::CONFIG_LIBUKBLKDEV_MAXNBQUEUES;
@@ -87,7 +87,7 @@ pub struct RkBlkdevQueue {}
 ///
 ///注意：为了处理接收到的响应，应该调用dev的finish_reqs方法
 ///
-type RkBlkdevQueueEventT = fn(&Blkdev, &mut RkBlkdev, u16, *mut u8);
+pub type RkBlkdevQueueEventT = fn(&Blkdev, &mut RkBlkdev, u16, *mut u8);
 
 ///用于配置Runikraft块设备队列的结构体
 pub struct RkBlkdevQueueConf<'a> {
@@ -166,16 +166,17 @@ pub struct RkBlkdevEventHandler<'a> {
     //TODO events: rk_semaphore,
     #[cfg(feature = "dispatcherthreads")]
     ///块设备的引用
-    dev: *mut RkBlkdev<'a>,
+    pub(crate) dev: *RkBlkdev<'a>,
     #[cfg(feature = "dispatcherthreads")]
+    pub(crate) queue_id:u16,
     ///分配器线程
-    dispatcher: *mut RKThread,
+    pub(crate) dispatcher: *mut RKthread<'a>,
     #[cfg(feature = "dispatcherthreads")]
     ///线程名称的引用
-    dispatcher_name: *mut char,
+    pub(crate) dispatcher_name: *mut char,
     #[cfg(feature = "dispatcherthreads")]
     ///分配器的调度器
-    dispatcher_s: *mut rksched::RKsched<'a>,
+    pub(crate) dispatcher_s: *mut rksched::RKsched<'a>,
 }
 
 ///@内部

@@ -20,11 +20,11 @@ use crate::RkBlkdevState::RkBlkdevConfigured;
 /// @返回值
 ///    - （usize）：块设备的数量
 ///
-pub unsafe fn rk_blkdev_count() -> i16 {
-    match BLKDEV_COUNT {
+pub  fn rk_blkdev_count() -> i16 {
+    unsafe{match BLKDEV_COUNT {
         None => 0,
         Some(x) => x
-    }
+    }}
 }
 
 /// 得到一个Runikraft块设备的引用，基于它的身份
@@ -37,12 +37,14 @@ pub unsafe fn rk_blkdev_count() -> i16 {
 /// @返回值
 /// - None：在列表中没有找到设备
 /// - Some(&mut RkBlkdev)：将传递给应用程序接口的引用
-pub unsafe fn rk_blkdev_get(id: u16) -> Option<&'static RkBlkdev<'static>> {
-    if let Some(x) = &RK_BLKDEV_LIST {
-        let iter = x.iter();
-        for x in iter {
-            if (*x._data).id == id {
-                return Some(x);
+pub fn rk_blkdev_get(id: u16) -> Option<&'static RkBlkdev<'static>> {
+    unsafe {
+        if let Some(x) = &RK_BLKDEV_LIST {
+            let iter = x.iter();
+            for x in iter {
+                if (*x._data).id == id {
+                    return Some(x);
+                }
             }
         }
     }
@@ -59,8 +61,8 @@ pub unsafe fn rk_blkdev_get(id: u16) -> Option<&'static RkBlkdev<'static>> {
 /// - None：如果没有定义名称
 /// - &str：如果名称可得到，返回字符串的引用
 ///
-pub unsafe fn rk_blkdev_id_get(dev: RkBlkdev) -> u16 {
-    (*dev._data).id
+pub fn rk_blkdev_id_get(dev: RkBlkdev) -> u16 {
+    unsafe {(*dev._data).id}
 }
 
 /// Returns the driver name of a blkdev device.
@@ -73,8 +75,8 @@ pub unsafe fn rk_blkdev_id_get(dev: RkBlkdev) -> u16 {
 /// @return
 /// - (NULL): if no name is defined.
 /// - (const char *): Reference to string if name is available.
-unsafe fn rk_blkdev_drv_name_get<'a>(dev: RkBlkdev) -> &str {
-    (*(dev._data)).drv_name
+fn rk_blkdev_drv_name_get<'a>(dev: RkBlkdev) -> &str {
+    unsafe {(*(dev._data)).drv_name}
 }
 
 /// 返回一个块设备的当前状态
@@ -85,8 +87,8 @@ unsafe fn rk_blkdev_drv_name_get<'a>(dev: RkBlkdev) -> &str {
 ///
 /// @返回值
 /// - enum RkBlkdevState：当前设备状态
-unsafe fn rk_blkdev_state_get<'a>(dev: &RkBlkdev) -> &'a RkBlkdevState {
-    &(*(dev._data)).state
+fn rk_blkdev_state_get<'a>(dev: &RkBlkdev) -> &'a RkBlkdevState {
+    unsafe {&(*(dev._data)).state}
 }
 
 /// 询问设备容量
@@ -104,10 +106,10 @@ unsafe fn rk_blkdev_state_get<'a>(dev: &RkBlkdev) -> &'a RkBlkdevState {
 ///
 /// - 0：成功
 /// - <0：驱动器错误
-pub unsafe fn rk_blkdev_get_info(dev: &RkBlkdev, dev_info: &mut RkBlkdevInfo) -> isize {
+pub fn rk_blkdev_get_info(dev: &RkBlkdev, dev_info: &mut RkBlkdevInfo) -> isize {
     let rc = 0;
     //在向驱动程序询问容量之前清除值
-    write_bytes::<RkBlkdevInfo>(dev_info, 0, size_of::<RkBlkdevInfo>());
+    unsafe {write_bytes::<RkBlkdevInfo>(dev_info, 0, size_of::<RkBlkdevInfo>());}
     dev.dev_ops.get_info(dev_info);
     //根据应用程序接口的配置，限制最大的队列数
     dev_info.max_queues = min(16, dev_info.max_queues);
@@ -127,12 +129,12 @@ pub unsafe fn rk_blkdev_get_info(dev: &RkBlkdev, dev_info: &mut RkBlkdevInfo) ->
 /// @返回值
 /// - 0：成功，设备被配置
 /// - <0：被设备配置函数返回的错误码
-unsafe fn rk_blkdev_configure(dev: &RkBlkdev, conf: &RkBlkdevConf) -> isize {
+fn rk_blkdev_configure(dev: &RkBlkdev, conf: &RkBlkdevConf) -> isize {
     let mut rc = 0;
     let mut dev_info: RkBlkdevInfo;
     rc = rk_blkdev_get_info(dev, &mut dev_info);
     if rc != 0 {
-        println!("blkdev{}:Failed to get initial info{}\n", (*dev._data).id, rc);
+        unsafe {println!("blkdev{}:Failed to get initial info{}\n", (*dev._data).id, rc);}
         return rc;
     }
     if conf.nb_queues > dev_info.max_queues {
@@ -140,10 +142,10 @@ unsafe fn rk_blkdev_configure(dev: &RkBlkdev, conf: &RkBlkdevConf) -> isize {
     }
     rc = dev.dev_ops.dev_configure(conf);
     if rc != 0 {
-        println!("blkdev{}: Configured interface\n", (*dev._data).id);
-        (*dev._data).state = RkBlkdevConfigured;
+        unsafe {println!("blkdev{}: Configured interface\n", (*dev._data).id);
+        (*dev._data).state = RkBlkdevConfigured;}
     } else {
-        println!("blkdev{}:Failed to configure interface {}\n", (*dev._data).id, rc);
+        unsafe {println!("blkdev{}:Failed to configure interface {}\n", (*dev._data).id, rc);}
     }
     rc
 }
@@ -169,9 +171,9 @@ unsafe fn rk_blkdev_configure(dev: &RkBlkdev, conf: &RkBlkdevConf) -> isize {
 /// @返回值
 /// - 0：成功，队列信息被填写
 /// - <0：驱动程序函数的错误码
-unsafe fn rk_blkdev_queue_get_info(dev: &RkBlkdev, queue_id: u16, q_info: *mut RkBlkdevQueueInfo) -> isize {
+fn rk_blkdev_queue_get_info(dev: &RkBlkdev, queue_id: u16, q_info: *mut RkBlkdevQueueInfo) -> isize {
     //在向驱动程序询问队列容量之前清除值
-    write_bytes::<RkBlkdevQueueInfo>(q_info, 0, size_of::<RkBlkdevQueueInfo>());
+    unsafe {write_bytes::<RkBlkdevQueueInfo>(q_info, 0, size_of::<RkBlkdevQueueInfo>());}
     dev.dev_ops.queue_get_info(queue_id, q_info)
 }
 
@@ -206,13 +208,13 @@ unsafe fn rk_blkdev_queue_get_info(dev: &RkBlkdev, queue_id: u16, q_info: *mut R
 /// - <0：不能分配也不能建立环描述符
 ///
 
-unsafe fn rk_blkdev_queue_configure(dev: &RkBlkdev, queue_id: u16, nb_desc: u16, queue_conf: &RkBlkdevQueueConf) -> isize {
+fn rk_blkdev_queue_configure(dev: &RkBlkdev, queue_id: u16, nb_desc: u16, queue_conf: &RkBlkdevQueueConf) -> isize {
     let err = 0;
     assert!(!dev._data.is_null());
 
-    if let RkBlkdevConfigured = &(*dev._data).state {
+    unsafe {if let RkBlkdevConfigured = &(*dev._data).state {
         return 22;
-    }
+    }}
     #[cfg(feature = "dispatcherthreads")]
     //TODO 确保我们没有第二次对这个队列进行初始化
     todo!()
