@@ -83,13 +83,15 @@ impl RKthreadAttr {
 ////////////////////////////////////////////////////////////////////////
 /// 线程 thread 的结构体定义
 ////////////////////////////////////////////////////////////////////////
+pub type RKthreadList<'a> = Tailq<'a, RKthread<'a>>;
+
 pub struct RKthread<'a> {
     name: &'a str,
     attr: RKthreadAttr,
     stack: *mut u8,
     tls: *mut u8,
     ctx: *mut u8,
-    thread_list: Tailq<'a, RKthread<'a>>,
+    thread_list: RKthreadList<'a>,
     flags: u32,
     wakeup_time: Duration,
     detached: bool,

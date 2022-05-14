@@ -30,7 +30,7 @@ impl<'a> RKsched<'a> {
     }
     /// sched started
     pub fn sched_started(&self) -> bool {
-        self.threads_started
+        todo!()
     }
 
     /// RKsched 非API 部分

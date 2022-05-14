@@ -1,4 +1,4 @@
-use super::thread::{RKthread, RKthreadAttr, PrioT};
+use super::thread::{RKthread, RKthreadAttr, PrioT, RKthreadList};
 use core::time::Duration;
 
 /// Cooperative scheduler trait
@@ -29,4 +29,9 @@ pub trait SchedulerPreem {
     fn set_thread_timeslice<'a>(&mut self, t: &'a mut RKthread<'a>, tslice: Duration);
     /// get thread time slice
     fn get_thread_timeslice<'a>(&self, t: &'a RKthread<'a>) -> Duration;
+}
+
+pub struct SchedPrivate<'a> {
+    thread_list: RKthreadList<'a>,
+    sleeping_threads: RKthreadList<'a>,
 }
