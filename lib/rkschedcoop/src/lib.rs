@@ -45,13 +45,11 @@ impl<'b> SchedulerCoop for RKschedcoop<'b> {
         Ok(())
     }
     unsafe fn remove_thread<'a>(&mut self, t: &'a mut RKthread<'a>) -> Result<(), &'static str> {
-        //TODO: transform the type [RKthread<'a>] to the type [TailqPOsMut<RKthread>]
-        //TODO: then get the `t_pos`, which can be used in `thread_list.remove(t_pos)`
         let mut flags: usize = 0;
         let prv = self.prv;
 
         //flags = rkplat_lcpu_save_irqf();
-
+        let t_pos = TailqPosMut::from_ref(t);
         /* Remove from the thread list */
         //TODO: here need judge if t_pos.pos != rk_thread_current(), then
         let mut t = prv.thread_list.remove(t_pos).0;
