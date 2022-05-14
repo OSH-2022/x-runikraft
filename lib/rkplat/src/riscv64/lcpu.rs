@@ -1,6 +1,7 @@
 use core::time::Duration;
 use core::arch;
 use super::{bootstrap,time};
+use core::sync::atomic;
 
 /// 中断标志，具体格式由平台决定
 pub type IRQFlag = usize;
@@ -140,3 +141,37 @@ fn id() -> ID { 0 }
 #[cfg(not(feature = "has_smp"))]
 #[inline(always)]
 fn count() -> ID { 1 }
+
+//来自ukarch
+#[inline(always)]
+pub fn barrier() {atomic::compiler_fence(atomic::Ordering::SeqCst);}
+
+#[inline(always)]
+pub fn mb() {atomic::fence(atomic::Ordering::AcqRel);}
+
+#[inline(always)]
+pub fn rmb() {atomic::fence(atomic::Ordering::Acquire);}
+
+#[inline(always)]
+pub fn wmb() {atomic::fence(atomic::Ordering::Release);}
+
+#[inline(always)]
+pub fn spinwait() {
+    unsafe {
+        arch::asm!(
+            ".insn i 0x0F,0,x0,x0,0x010  #arch::pause的实现"
+        );
+    }
+}
+
+#[inline(always)]
+pub fn read_sp() -> usize{
+    let sp: usize;
+    unsafe{
+        arch::asm!(
+            "mv {sp},sp",
+            sp=out(reg)sp
+        );
+    }
+    sp
+}
