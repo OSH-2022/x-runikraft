@@ -36,6 +36,16 @@ pub struct RKthreadAttr {
     timeslice: Duration,
 }
 
+impl Default for RKthreadAttr {
+    fn default() -> Self {
+        Self {
+            detached: false,
+            prio: -1,
+            timeslice: Duration::default(),
+        }
+    }
+}
+
 impl RKthreadAttr {
     pub fn new(&mut self) -> Self {
         Self {
