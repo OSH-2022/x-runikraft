@@ -1,6 +1,7 @@
 #![no_std]
 use core::{slice,str};
 use core::mem::{align_of, size_of};
+use core::ptr::addr_of;
 use rkalloc::RKalloc;
 use rkplat::{irq,time,bootstrap};
 
@@ -14,6 +15,8 @@ extern "Rust" {
 pub unsafe extern "C" fn rkplat_entry(argc: i32, argv: *mut *mut u8) -> ! {
     #[cfg(feature="alloc_buddy")]
     let a = rkalloc_buddy::RKallocBuddy::new(HEAP.as_mut_ptr(), HEAP.len());
+
+    rkalloc::register(addr_of!(a));
     
     // 把C风格的arguments转换成Rust风格的arguments
     let args_heap = a.alloc(argc as usize*size_of::<usize>(), align_of::<usize>());
