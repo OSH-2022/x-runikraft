@@ -28,33 +28,38 @@ use crate::blkreq::RkBlkreqState::RkBlkreqFinished;
 ///
 /// - （-ENOMEM）：私有分配
 /// - （正值）：成功时的块设备的身份
-pub  fn rk_blkdev_drv_register(mut dev: RkBlkdev, a: &dyn RKalloc, drv_name: &str) -> i16 {
+pub fn rk_blkdev_drv_register(mut dev: RkBlkdev, a: &dyn RKalloc, drv_name: &str) -> i16 {
 
     //数据必须被取消分配
     assert_ne!(dev._data);
     //断言必要的配置
-    if let Some(x) = BLKDEV_COUNT {
-        dev._data = _alloc_data(a, x as u16, drv_name);
+    unsafe {
+        if let Some(x) = BLKDEV_COUNT {
+            dev._data = _alloc_data(a, x as u16, drv_name);
+        }
     }
 
     if !dev._data.is_null() {
         return -12;
     }
 
-    unsafe{(*dev._data).state = RkBlkdevUnconfigured;
-    if let Some(mut x) = &RK_BLKDEV_LIST {
-        x.push_back(dev);
+    unsafe {
+        (*dev._data).state = RkBlkdevUnconfigured;
+        if let Some(mut x) = &RK_BLKDEV_LIST {
+            x.push_back(dev);
+        }
+        println!("Registered blkdev%{:?}:{:?} {:?}\n", BLKDEV_COUNT, dev, drv_name);
+        BLKDEV_COUNT = match BLKDEV_COUNT {
+            None => Some(1),
+            Some(x) => Some(x + 1)
+        };
+        return match BLKDEV_COUNT {
+            None => 0,
+            Some(y) => y
+        };
     }
-    println!("Registered blkdev%{:?}:{:?} {:?}\n", BLKDEV_COUNT, dev, drv_name);
-    BLKDEV_COUNT = match BLKDEV_COUNT {
-        None => Some(1),
-        Some(x) => Some(x + 1)
-    };
-    return match BLKDEV_COUNT {
-        None => 0,
-        Some(y) => y
-    };}
 }
+
 /// 把一个队列事件向应用程序接口用户前移
 /// 可以（并且应该）在设备中断的上下文中调用
 ///
@@ -66,24 +71,26 @@ pub  fn rk_blkdev_drv_register(mut dev: RkBlkdev, a: &dyn RKalloc, drv_name: &st
 ///
 ///    接收事件相应的队列身份
 pub fn rk_blkdev_drv_queue_event(dev: &RkBlkdev, queue_id: u16) {
-    let queue_handler:RkBlkdevEventHandler;
+    let queue_handler: RkBlkdevEventHandler;
     assert!(!dev._data.is_null());
     assert!(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
-    queue_handler=dev._data.queue_handler[queue_id];
+    queue_handler = dev._data.queue_handler[queue_id];
     //TODO #[cfg(feature = "dispatcherthreads")]
     // uk_semaphore_up(&queue_handler->events);
-    #[cfg!(feature = "dispatcherthreads")]
-        queue_handler.callback(dev,queue_id,queue_handler.cookie);
+    #[cfg ! (feature = "dispatcherthreads")]
+    queue_handler.callback(dev, queue_id, queue_handler.cookie);
 }
+
 /**
  * Sets a request as finished.
  *
  * @param req
- *	uk_blkreq structure
+ *    uk_blkreq structure
  */
-pub  fn rk_blkdev_finished(req:RkBlkreq){
-    unsafe{atomic_store_unordered(*(req.state),RkBlkreqFinished)}
+pub fn rk_blkdev_finished(req: RkBlkreq) {
+    unsafe { atomic_store_unordered(*(req.state), RkBlkreqFinished) }
 }
+
 /// 释放给Runikraft块设备的数据
 /// 把设备从列表中移除
 ///
@@ -92,13 +99,15 @@ pub  fn rk_blkdev_finished(req:RkBlkreq){
 ///     Runikraft块设备
 ///
 pub fn rk_blkdev_drv_unregister(dev: &RkBlkdev) {
-    let mut id:u16;
+    let mut id: u16;
     assert!(!dev._data.is_null());
-    assert!(dev._data.state==RkBlkdevUnconfigured);
-    id=dev._data.id;
-    unsafe {dealloc_type::<RkBlkdevData>(dev._data.a,dev._data);
-    if let Some(x)=BLKDEV_COUNT{
-        BLKDEV_COUNT=Some(x-1);
-    }}
-    println!("Unregistered blkdev{}: {:?}\n",id,dev);
+    assert!(dev._data.state == RkBlkdevUnconfigured);
+    id = dev._data.id;
+    unsafe {
+        dealloc_type::<RkBlkdevData>(dev._data.a, dev._data);
+        if let Some(x) = BLKDEV_COUNT {
+            BLKDEV_COUNT = Some(x - 1);
+        }
+    }
+    println!("Unregistered blkdev{}: {:?}\n", id, dev);
 }

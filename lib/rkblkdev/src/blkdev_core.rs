@@ -1,6 +1,6 @@
 #![no_std]
 
-use rksched::{RKsched,RKthread};
+use rksched::{RKsched, RKthread};
 use runikraft::list::Tailq;
 use crate::blkreq::{RkBlkreq, RkBlkreqOp};
 use crate::CONFIG_LIBUKBLKDEV_MAXNBQUEUES;
@@ -103,7 +103,7 @@ pub struct RkBlkdevQueueConf<'a> {
 }
 
 #[cfg(feature = "dispatcherthreads")]
-    static s:RKsched=RKsched;
+static s: RKsched = RKsched;
 
 /**
  * Status code flags returned queue_submit_one function
@@ -158,7 +158,7 @@ pub struct RkBlkdevCap {
 ///事件处理程序配置
 pub struct RkBlkdevEventHandler<'a> {
     ///回调
-    pub(crate) callback:RkBlkdevQueueEventT,
+    pub(crate) callback: RkBlkdevQueueEventT,
     ///回调的参数
     pub(crate) cookie: *mut u8,
     #[cfg(feature = "dispatcherthreads")]
@@ -166,9 +166,9 @@ pub struct RkBlkdevEventHandler<'a> {
     //TODO events: rk_semaphore,
     #[cfg(feature = "dispatcherthreads")]
     ///块设备的引用
-    pub(crate) dev: *RkBlkdev<'a>,
+    pub(crate) dev: * RkBlkdev<'a>,
     #[cfg(feature = "dispatcherthreads")]
-    pub(crate) queue_id:u16,
+    pub(crate) queue_id: u16,
     ///分配器线程
     pub(crate) dispatcher: *mut RKthread<'a>,
     #[cfg(feature = "dispatcherthreads")]
