@@ -41,7 +41,8 @@ __rkplat_irq_handle_entry:
     sd s11,208(sp)
 1:
     sd ra,216(sp)
-    csrr t3,sscratch#原本的sp
+    addi t3,sp,256  #t3是原本的引导栈指针
+    csrrw t3,sscratch,t3 #原本的sp
     csrr t2,sepc    #原本的pc
     csrr t1,sstatus
     sd t3,224(sp)   #sp

@@ -6,8 +6,7 @@ pub mod lcpu;
 pub mod irq;
 pub mod spinlock;
 //pub mod memory;
-//
-//pub mod thread;
+pub mod thread;
 
 mod intctrl;
 

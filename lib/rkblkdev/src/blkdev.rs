@@ -10,9 +10,9 @@ use rkplat::println;
 
 use crate::blkdev_core::{RkBlkdev, RkBlkdevCap, RkBlkdevConf, RkBlkdevInfo, RkBlkdevQueueConf, RkBlkdevQueueInfo, RkBlkdevState};
 use crate::blkdev_core::RkBlkdevState::{RkBlkdevConfigured, RkBlkdevRunning, RkBlkdevUnconfigured};
-use crate::{BLKDEV_COUNT, CONFIG_LIBUKBLKDEV_MAXNBQUEUES, ptriseer};
+use crate::{BLKDEV_COUNT, CONFIG_LIBUKBLKDEV_MAXNBQUEUES, ptriseer, RK_BLKDEV_LIST};
 use crate::blkreq::{RkBlkreq, RkBlkreqOp};
-use crate::RkBlkdevState::RkBlkdevConfigured;
+
 
 
 /// 得到可得到的Runikraft块设备的数量
@@ -20,10 +20,12 @@ use crate::RkBlkdevState::RkBlkdevConfigured;
 /// @返回值
 ///    - （usize）：块设备的数量
 ///
-pub unsafe fn rk_blkdev_count() -> i16 {
-    match BLKDEV_COUNT {
-        None => 0,
-        Some(x) => x
+pub fn rk_blkdev_count() -> i16 {
+    unsafe {
+        match BLKDEV_COUNT {
+            None => 0,
+            Some(x) => x
+        }
     }
 }
 
@@ -37,12 +39,14 @@ pub unsafe fn rk_blkdev_count() -> i16 {
 /// @返回值
 /// - None：在列表中没有找到设备
 /// - Some(&mut RkBlkdev)：将传递给应用程序接口的引用
-pub unsafe fn rk_blkdev_get(id: u16) -> Option<&'static RkBlkdev<'static>> {
-    if let Some(x) = &RK_BLKDEV_LIST {
-        let iter = x.iter();
-        for x in iter {
-            if (*x._data).id == id {
-                return Some(x);
+pub fn rk_blkdev_get(id: u16) -> Option<&'static RkBlkdev<'static>> {
+    unsafe {
+        if let Some(x) = &RK_BLKDEV_LIST {
+            let iter = x.iter();
+            for x in iter {
+                if (*x._data).id == id {
+                    return Some(x);
+                }
             }
         }
     }
@@ -59,8 +63,8 @@ pub unsafe fn rk_blkdev_get(id: u16) -> Option<&'static RkBlkdev<'static>> {
 /// - None：如果没有定义名称
 /// - &str：如果名称可得到，返回字符串的引用
 ///
-pub unsafe fn rk_blkdev_id_get(dev: RkBlkdev) -> u16 {
-    (*dev._data).id
+pub fn rk_blkdev_id_get(dev: RkBlkdev) -> u16 {
+    unsafe { (*dev._data).id }
 }
 
 /// Returns the driver name of a blkdev device.
@@ -73,8 +77,8 @@ pub unsafe fn rk_blkdev_id_get(dev: RkBlkdev) -> u16 {
 /// @return
 /// - (NULL): if no name is defined.
 /// - (const char *): Reference to string if name is available.
-unsafe fn rk_blkdev_drv_name_get<'a>(dev: RkBlkdev) -> &str {
-    (*(dev._data)).drv_name
+fn rk_blkdev_drv_name_get<'a>(dev: RkBlkdev) -> &str {
+    unsafe { (*(dev._data)).drv_name }
 }
 
 /// 返回一个块设备的当前状态
@@ -85,8 +89,8 @@ unsafe fn rk_blkdev_drv_name_get<'a>(dev: RkBlkdev) -> &str {
 ///
 /// @返回值
 /// - enum RkBlkdevState：当前设备状态
-unsafe fn rk_blkdev_state_get<'a>(dev: &RkBlkdev) -> &'a RkBlkdevState {
-    &(*(dev._data)).state
+fn rk_blkdev_state_get<'a>(dev: &RkBlkdev) -> &'a RkBlkdevState {
+    unsafe { &(*(dev._data)).state }
 }
 
 /// 询问设备容量
@@ -104,10 +108,10 @@ unsafe fn rk_blkdev_state_get<'a>(dev: &RkBlkdev) -> &'a RkBlkdevState {
 ///
 /// - 0：成功
 /// - <0：驱动器错误
-pub unsafe fn rk_blkdev_get_info(dev: &RkBlkdev, dev_info: &mut RkBlkdevInfo) -> isize {
+pub fn rk_blkdev_get_info(dev: &RkBlkdev, dev_info: &mut RkBlkdevInfo) -> isize {
     let rc = 0;
     //在向驱动程序询问容量之前清除值
-    write_bytes::<RkBlkdevInfo>(dev_info, 0, size_of::<RkBlkdevInfo>());
+    unsafe { write_bytes::<RkBlkdevInfo>(dev_info, 0, size_of::<RkBlkdevInfo>()); }
     dev.dev_ops.get_info(dev_info);
     //根据应用程序接口的配置，限制最大的队列数
     dev_info.max_queues = min(16, dev_info.max_queues);
@@ -127,12 +131,12 @@ pub unsafe fn rk_blkdev_get_info(dev: &RkBlkdev, dev_info: &mut RkBlkdevInfo) ->
 /// @返回值
 /// - 0：成功，设备被配置
 /// - <0：被设备配置函数返回的错误码
-unsafe fn rk_blkdev_configure(dev: &RkBlkdev, conf: &RkBlkdevConf) -> isize {
+fn rk_blkdev_configure(dev: &RkBlkdev, conf: &RkBlkdevConf) -> isize {
     let mut rc = 0;
     let mut dev_info: RkBlkdevInfo;
     rc = rk_blkdev_get_info(dev, &mut dev_info);
     if rc != 0 {
-        println!("blkdev{}:Failed to get initial info{}\n", (*dev._data).id, rc);
+        unsafe { println!("blkdev{}:Failed to get initial info{}\n", (*dev._data).id, rc); }
         return rc;
     }
     if conf.nb_queues > dev_info.max_queues {
@@ -140,10 +144,12 @@ unsafe fn rk_blkdev_configure(dev: &RkBlkdev, conf: &RkBlkdevConf) -> isize {
     }
     rc = dev.dev_ops.dev_configure(conf);
     if rc != 0 {
-        println!("blkdev{}: Configured interface\n", (*dev._data).id);
-        (*dev._data).state = RkBlkdevState::RkBlkdevConfigured;
+        unsafe {
+            println!("blkdev{}: Configured interface\n", (*dev._data).id);
+            (*dev._data).state = RkBlkdevConfigured;
+        }
     } else {
-        println!("blkdev{}:Failed to configure interface {}\n", (*dev._data).id, rc);
+        unsafe { println!("blkdev{}:Failed to configure interface {}\n", (*dev._data).id, rc); }
     }
     rc
 }
@@ -169,9 +175,9 @@ unsafe fn rk_blkdev_configure(dev: &RkBlkdev, conf: &RkBlkdevConf) -> isize {
 /// @返回值
 /// - 0：成功，队列信息被填写
 /// - <0：驱动程序函数的错误码
-unsafe fn rk_blkdev_queue_get_info(dev: &RkBlkdev, queue_id: u16, q_info: *mut RkBlkdevQueueInfo) -> isize {
+fn rk_blkdev_queue_get_info(dev: &RkBlkdev, queue_id: u16, q_info: *mut RkBlkdevQueueInfo) -> isize {
     //在向驱动程序询问队列容量之前清除值
-    write_bytes::<RkBlkdevQueueInfo>(q_info, 0, size_of::<RkBlkdevQueueInfo>());
+    unsafe { write_bytes::<RkBlkdevQueueInfo>(q_info, 0, size_of::<RkBlkdevQueueInfo>()); }
     dev.dev_ops.queue_get_info(queue_id, q_info)
 }
 
@@ -206,12 +212,14 @@ unsafe fn rk_blkdev_queue_get_info(dev: &RkBlkdev, queue_id: u16, q_info: *mut R
 /// - <0：不能分配也不能建立环描述符
 ///
 
-unsafe fn rk_blkdev_queue_configure(dev: &RkBlkdev, queue_id: u16, nb_desc: u16, queue_conf: &RkBlkdevQueueConf) -> isize {
+fn rk_blkdev_queue_configure(dev: &RkBlkdev, queue_id: u16, nb_desc: u16, queue_conf: &RkBlkdevQueueConf) -> isize {
     let err = 0;
     assert!(!dev._data.is_null());
 
-    if let RkBlkdevConfigured = &(*dev._data).state {
-        return 22;
+    unsafe {
+        if let RkBlkdevConfigured = &(*dev._data).state {
+            return 22;
+        }
     }
     #[cfg(feature = "dispatcherthreads")]
     //TODO 确保我们没有第二次对这个队列进行初始化
@@ -279,7 +287,7 @@ fn rk_blkdev_capbilities(blkdev: &RkBlkdev) -> &RkBlkdevCap {
 fn rk_blkdev_queue_intr_enable(dev: &RkBlkdev, queue_id: u16) -> bool {
     assert!(!dev._data.is_null());
     assert!(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
-    // TODO     UK_ASSERT(!PTRISERR(dev->_queue[queue_id]));
+    assert!(!ptriseer(dev._queue[queue_id]));
     dev.dev_ops.queue_intr_enable(dev._queue[queue_id])
 }
 
@@ -302,7 +310,7 @@ fn rk_blkdev_queue_intr_enable(dev: &RkBlkdev, queue_id: u16) -> bool {
 fn rk_blkdev_queue_intr_disble(dev: RkBlkdev, queue_id: u16) -> bool {
     assert!(!dev._data.is_null());
     assert!(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
-    // TODO     UK_ASSERT(!PTRISERR(dev->_queue[queue_id]));
+    assert!(!ptriseer(dev._queue[queue_id]));
     dev.dev_ops.queue_intr_disable(dev._queue[queue_id])
 }
 
@@ -392,7 +400,7 @@ fn rk_blkdev_status_test_unset(status: isize, flag: isize) -> bool {
 /// - false：操作是不成功的或者发生了错误
 #[inline]
 fn rk_blkdev_status_successful(status: isize) -> bool {
-    rk_blkdev_status_test_set(status,0x1)
+    rk_blkdev_status_test_set(status, 0x1)
 }
 
 /// 测试`rk_blkdev_submut_one`返回的状态是否表明操作需要被重试
@@ -405,7 +413,7 @@ fn rk_blkdev_status_successful(status: isize) -> bool {
 /// - false：操作是成功的或者发生了错误
 #[inline]
 fn rk_blkdev_status_notready(status: isize) -> bool {
-    rk_blkdev_status_test_unset(status,0x1)
+    rk_blkdev_status_test_unset(status, 0x1)
 }
 
 /// 测试`rk_blkdev_submut_one`返回的状态是否表明了上一个操作可以被再一次成功重复
@@ -419,7 +427,7 @@ fn rk_blkdev_status_notready(status: isize) -> bool {
 /// - false：操作是成功的或者发生了错误
 #[inline]
 fn rk_blkdev_status_more(status: isize) -> bool {
-    rk_blkdev_status_test_set(status,0x1|0x2)
+    rk_blkdev_status_test_set(status, 0x1 | 0x2)
 }
 
 /// 在队列和在目标队列上重新被许可的中断被重新许可之前，从它们那里得到回应
@@ -558,7 +566,7 @@ fn rk_blkdev_queue_unconfigure(dev: &RkBlkdev, queue_id: u16) -> isize {
     } else {
         //TODO #[cfg(feature = "dispatcherthreads")]if (dev->_data->queue_handler[queue_id].callback)_destroy_event_handler(&dev->_data->queue_handler[queue_id]);
         println!("blkdev{}: Stopped blkdev{}\n", dev._data.id);
-        dev._queue[queue_id]=None;
+        dev._queue[queue_id] = None;
     }
     rc
 }
