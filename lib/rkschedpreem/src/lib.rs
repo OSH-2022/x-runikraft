@@ -1,7 +1,7 @@
 #![no_std]
 
 use rkschedbasis::{SchedulerCoop, SchedulerPreem, RKthread, RKthreadAttr, PrioT};
-use runikraft::list::Tailq;
+use runikraft::list::{Tailq, TailqPosMut};
 use rkalloc::RKalloc;
 use core::time::Duration;
 
@@ -25,16 +25,16 @@ impl<'b> SchedulerCoop for RKschedpreem<'b> {
     fn yield_sched(&mut self) {
         todo!()
     }
-    fn add_thread<'a>(&mut self, t: &'a mut RKthread<'a>, attr: &'a mut RKthreadAttr) {
+    fn add_thread<'a>(&mut self, t: &'a mut RKthread<'a>, attr: &'a mut RKthreadAttr) -> Result<(), &'static str> {
         todo!()
     }
-    fn remove_thread<'a>(&mut self, t: &'a mut RKthread<'a>) {
+    fn remove_thread<'a>(&mut self, t_pos: TailqPosMut<RKthread>) -> Result<(), &'static str> {
         todo!()
     }
-    fn block_thread<'a>(&mut self, t: &'a mut RKthread<'a>) {
+    fn block_thread<'a>(&mut self, t_pos: TailqPosMut<RKthread>) {
         todo!()
     }
-    fn wake_thread<'a>(&mut self, t: &'a mut RKthread<'a>) {
+    fn wake_thread<'a>(&mut self, t_pos: TailqPosMut<RKthread>) {
         todo!()
     }
     fn sleep_thread(&self, nsec: Duration) {
