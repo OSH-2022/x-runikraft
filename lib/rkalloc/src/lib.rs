@@ -1,8 +1,8 @@
 #![no_std]
 use core::mem::{align_of,size_of, ManuallyDrop};
 use core::ptr::NonNull;
-//TODO: extern crate alloc;
-//use alloc::alloc::GlobalAlloc;
+extern crate alloc;
+use alloc::alloc::GlobalAlloc;
 
 /// Runikraft的内存分配器API
 /// `RKalloc`没有模仿`uk_alloc`，而是模仿了`alloc::alloc::GlobalAlloc`，
@@ -112,23 +112,22 @@ struct RustStyleAlloc {
     a: Option<NonNull<dyn RKalloc>>
 }
 
-//TODO
-// unsafe impl GlobalAlloc for RustStyleAlloc {
-//     unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
-//         self.a.unwrap().as_ref().alloc(layout.size(), layout.align())
-//     }
-//     unsafe fn alloc_zeroed(&self, layout: core::alloc::Layout) -> *mut u8 {
-//         self.a.unwrap().as_ref().alloc_zeroed(layout.size(), layout.align())
-//     }
-//     unsafe fn realloc(&self, ptr: *mut u8, layout: core::alloc::Layout, new_size: usize) -> *mut u8 {
-//         self.a.unwrap().as_ref().realloc(ptr, layout.size(), new_size, layout.align())
-//     }
-//     unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
-//         self.a.unwrap().as_ref().dealloc(ptr, layout.size(), layout.align());
-//     }
-// }
+unsafe impl GlobalAlloc for RustStyleAlloc {
+    unsafe fn alloc(&self, layout: core::alloc::Layout) -> *mut u8 {
+        self.a.unwrap().as_ref().alloc(layout.size(), layout.align())
+    }
+    unsafe fn alloc_zeroed(&self, layout: core::alloc::Layout) -> *mut u8 {
+        self.a.unwrap().as_ref().alloc_zeroed(layout.size(), layout.align())
+    }
+    unsafe fn realloc(&self, ptr: *mut u8, layout: core::alloc::Layout, new_size: usize) -> *mut u8 {
+        self.a.unwrap().as_ref().realloc(ptr, layout.size(), new_size, layout.align())
+    }
+    unsafe fn dealloc(&self, ptr: *mut u8, layout: core::alloc::Layout) {
+        self.a.unwrap().as_ref().dealloc(ptr, layout.size(), layout.align());
+    }
+}
 
-//TODO: #[global_allocator]
+#[global_allocator]
 static mut ALLOCATOR: RustStyleAlloc = RustStyleAlloc{a:None};
 
 /// 获取全局默认分配器
@@ -140,3 +139,5 @@ pub unsafe fn get_default() -> &'static dyn RKalloc {
 pub unsafe fn register(a: *const dyn RKalloc) {
     ALLOCATOR.a = NonNull::new(a as *mut _);
 }
+
+extern crate alloc_error_handler;
