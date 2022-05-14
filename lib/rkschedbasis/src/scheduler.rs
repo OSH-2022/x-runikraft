@@ -26,11 +26,11 @@ pub trait SchedulerPreem {
     /// set thread priority
     fn set_thread_prio<'a>(&mut self, t: &'a mut RKthread<'a>, prio: PrioT);
     /// get thread priority
-    fn get_thread_prio<'a>(&self, t: &'a RKthread<'a>) -> PrioT;
+    fn get_thread_prio<'a>(&self, t: &'a mut RKthread<'a>) -> PrioT;
     /// set thread time slice
     fn set_thread_timeslice<'a>(&mut self, t: &'a mut RKthread<'a>, tslice: Duration);
     /// get thread time slice
-    fn get_thread_timeslice<'a>(&self, t: &'a RKthread<'a>) -> Duration;
+    fn get_thread_timeslice<'a>(&self, t: &'a mut RKthread<'a>) -> Duration;
 }
 
 pub struct SchedPrivate<'a> {
