@@ -1,5 +1,5 @@
 #![no_std]
-use rkschedbasis::{RKthread, RKthreadAttr};
+pub use rkschedbasis::*;
 use rkschedcoop::RKschedcoop;
 use rkschedpreem::RKschedpreem;
 use rkalloc::RKalloc;
