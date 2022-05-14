@@ -1,3 +1,4 @@
+#![no_std]
 mod scheduler;
 mod wait;
 mod thread;
