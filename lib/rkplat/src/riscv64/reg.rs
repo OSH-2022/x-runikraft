@@ -1,6 +1,7 @@
 /// 所有的通用寄存器
 #[repr(C)]
 #[derive(Debug)]
+#[derive(Default)]
 pub struct RegGen {
     pub t0: usize,
     pub t1: usize,
@@ -40,7 +41,10 @@ pub struct RegGen {
 }
 
 /// 浮点数寄存器
+#[cfg(feature="save_fp")]
 #[repr(C)]
+#[derive(Debug)]
+#[derive(Default)]
 pub struct RegFloat {
     pub ft0: f64,
     pub ft1: f64,

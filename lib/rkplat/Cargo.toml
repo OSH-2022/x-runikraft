@@ -6,6 +6,7 @@ edition = "2021"
 [features]
     default = ["has_smp"]
     has_smp = []            # 对称多处理器支持
+    save_fp = []            # 在线程切换时保存浮点寄存器
 
 [dependencies]
     rkalloc = {path = "../rkalloc"}
