@@ -5,7 +5,6 @@ mod wait;
 
 pub use thread::*;
 pub use wait::*;
-
 use core::time::Duration;
 
 /// 调度器 sched 的 trait 定义
@@ -17,17 +16,17 @@ pub trait RKsched<'a> {
     /// yield scheduler
     fn yield_sched(&mut self);
     /// add thread
-    fn add_thread(&mut self, t: RKthread, attr: &'a mut RKthreadAttr) -> Result<(), &'static str>;
+    fn add_thread(&mut self, t: RKthread<'a>, attr: RKthreadAttr) -> Result<(), &'static str>;
     /// remove thread
-    fn remove_thread(&mut self, t: *mut RKthread) -> Result<(), &'static str>;
+    fn remove_thread(&mut self, t: *mut RKthread<'a>) -> Result<(), &'static str>;
     /// block thread
-    fn block_thread(&mut self, t: *mut RKthread);
+    fn block_thread(&mut self, t: *mut RKthread<'a>);
     /// wake thread
-    fn wake_thread(&mut self, t: *mut RKthread);
+    fn wake_thread(&mut self, t: *mut RKthread<'a>);
     /// let current thread sleep nsec
-    fn sleep_thread(&self, nsec: Duration);
+    fn sleep_thread(&mut self, nsec: Duration);
     /// let current thread exit
-    fn exit_thread(&self);
+    fn exit_thread(&mut self);
     /// set thread priority
     fn set_thread_prio(&mut self, t: *mut RKthread, prio: PrioT) {
         unsafe {
@@ -69,6 +68,7 @@ pub trait RKschedInternelFun {
 
     fn thread_switch(&mut self, prev: *mut RKthread, next: *mut RKthread);
 }
+
 
 pub struct SchedPrivate<'a> {
     pub thread_list: RKthreadList<'a>,
