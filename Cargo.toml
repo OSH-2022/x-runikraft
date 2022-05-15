@@ -10,5 +10,6 @@ members = [
     "lib/rkring",
     "lib/rkmbox",
     "lib/rkblkdev",
-    "lib/rksched"
+    "lib/rksched",
+    "lib/rksignal",
 ]

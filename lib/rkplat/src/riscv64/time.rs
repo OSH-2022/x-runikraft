@@ -1,5 +1,3 @@
-use crate::lcpu::enable_irq;
-
 use super::{lcpu,sbi};
 
 pub type Duration = core::time::Duration;

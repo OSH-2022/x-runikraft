@@ -14,3 +14,4 @@ rkplat = {path = "../rkplat"}
 [features]
 dispatcherthreads = []
 sync_io_blocked_waiting = []
+xen_blkfront_grefpool=[]

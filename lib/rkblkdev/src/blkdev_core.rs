@@ -2,6 +2,7 @@
 
 use rksched::{RKsched, RKthread};
 use runikraft::list::Tailq;
+use crate::blkfront::RkBlkdevQueue;
 use crate::blkreq::{RkBlkreq, RkBlkreqOp};
 use crate::CONFIG_LIBUKBLKDEV_MAXNBQUEUES;
 
@@ -63,12 +64,6 @@ pub struct RkBlkdevQueueInfo {
     nb_is_power_of_two: isize,
 }
 
-/**
- * Queue Structure used for both requests and responses.
- * This is private to the drivers.
- * In the API, this structure is used only for type checking.
- */
-pub struct RkBlkdevQueue {}
 
 
 ///用于队列事件回调的函数类型
@@ -94,12 +89,12 @@ pub struct RkBlkdevQueueConf<'a> {
     ///用于设备描述符环的分配器
     a: &'a dyn rkalloc::RKalloc,
     ///事件回调函数
-    callback: RkBlkdevQueueEventT,
+    pub(crate) callback: RkBlkdevQueueEventT,
     ///回调的参数指针
-    callback_cookie: *mut u8,
+    pub(crate) callback_cookie: *mut u8,
     #[cfg(feature = "dispatcherthreads")]
     ///描述符的调度器
-    s: &'a rksched::RKsched<'a>,
+    pub(crate) s: *mut RKsched<'a>,
 }
 
 #[cfg(feature = "dispatcherthreads")]

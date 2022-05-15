@@ -2,9 +2,11 @@
 
 use core::intrinsics::{atomic_load_unordered, atomic_store_unordered};
 use core::sync::atomic::AtomicU32;
+use crate::blkdev::RkBlkdevSyncIORequest;
 use crate::blkdev_core::{RkBlkdevQueueFinishReqsT, RkBlkdevState};
 use crate::blkdev_core::RkBlkdevState::RkBlkdevConfigured;
 use crate::blkreq::RkBlkreqState::RkBlkreqFinished;
+use crate::RkBlkdevEventHandler;
 
 type Sector = usize;
 
@@ -13,20 +15,20 @@ type Sector = usize;
 pub struct RkBlkreq {
     //输入成员
     ///操作类型
-    operation: RkBlkreqOp,
+    pub(crate) operation: RkBlkreqOp,
     ///操作开始的起始扇区
-    start_sector: Sector,
+    pub(crate) start_sector: Sector,
     ///扇区数量的大小
-    nb_sectors: Sector,
+    pub(crate) nb_sectors: Sector,
     ///指向数据的指针
-    aio_buf: *mut u8,
+    pub(crate) aio_buf: *mut u8,
     ///回复的请求的参数
-    cb_cookie: *mut u8,
+    cb_cookie: *RkBlkdevSyncIORequest,
     //输出成员
     ///请求的状态：完成/未完成
     pub(crate) state: RkBlkreqState,
     ///操作状态的结果（错误返回负值）
-    result: isize,
+    pub(crate) result: isize,
 }
 
 ///操作状态
@@ -38,11 +40,11 @@ pub enum RkBlkreqState {
 ///支持的操作
 pub enum RkBlkreqOp {
     ///读操作
-    RkBlkreqRead(u8),
+    RkBlkreqRead,
     ///写操作
-    RkBlkreqWrite(u8),
+    RkBlkreqWrite,
     ///冲洗易变的写缓存
-    RkBlkreqFflush(u8),
+    RkBlkreqFflush,
 }
 
 ///用于执行一个响应后的请求
@@ -82,12 +84,12 @@ pub type RkBlkreqEventT = fn(&RkBlkreq, *mut u8);
 ///	请求回复的参数
 ///
 #[inline]
-unsafe fn rk_blkreq_init(req: &mut RkBlkreq, op: RkBlkreqOp, start: Sector, nb_sectors: Sector, aio_buf: *mut u8, cb_cookie: *mut u8) {
+pub fn rk_blkreq_init(req: &mut RkBlkreq, op: RkBlkreqOp, start: Sector, nb_sectors: Sector, aio_buf: *mut u8, cb:RkBlkreqEventT, cb_cookie: *RkBlkdevSyncIORequest) {
     req.operation=op;
     req.start_sector=start;
     req.nb_sectors=nb_sectors;
     req.aio_buf=aio_buf;
-    atomic_store_unordered::<RkBlkdevState>(*req.state,*RkBlkreqFinished);
+    unsafe {atomic_store_unordered::<RkBlkdevState>(*req.state,*RkBlkreqFinished);}
     req.cb=cb;
     req.cb_cookie=cb_cookie;
 }

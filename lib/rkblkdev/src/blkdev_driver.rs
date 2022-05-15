@@ -3,7 +3,7 @@
 use core::intrinsics::atomic_store_unordered;
 use rkalloc::{dealloc_type, RKalloc, RKallocExt};
 use crate::blkdev_core::{RkBlkdev, RkBlkdevEventHandler, RkBlkdevState};
-use crate::{_alloc_data, BLKDEV_COUNT, CONFIG_LIBUKBLKDEV_MAXNBQUEUES, RK_BLKDEV_LIST, RkBlkdevData};
+use crate::{_alloc_data, BLKDEV_COUNT, CONFIG_LIBUKBLKDEV_MAXNBQUEUES, ptriseer, RK_BLKDEV_LIST, RkBlkdevData};
 use crate::blkdev_core::RkBlkdevState::{RkBlkdevConfigured, RkBlkdevUnconfigured};
 use crate::blkreq::RkBlkreq;
 use crate::blkreq::RkBlkreqState::RkBlkreqFinished;
@@ -31,7 +31,7 @@ use crate::blkreq::RkBlkreqState::RkBlkreqFinished;
 pub fn rk_blkdev_drv_register(mut dev: RkBlkdev, a: &dyn RKalloc, drv_name: &str) -> i16 {
 
     //数据必须被取消分配
-    assert_ne!(dev._data);
+    assert!(ptriseer(dev._data as i64));
     //断言必要的配置
     unsafe {
         if let Some(x) = BLKDEV_COUNT {
