@@ -94,12 +94,12 @@ pub struct RkBlkdevQueueConf<'a> {
     ///用于设备描述符环的分配器
     a: &'a dyn rkalloc::RKalloc,
     ///事件回调函数
-    callback: RkBlkdevQueueEventT,
+    pub(crate) callback: RkBlkdevQueueEventT,
     ///回调的参数指针
-    callback_cookie: *mut u8,
+    pub(crate) callback_cookie: *mut u8,
     #[cfg(feature = "dispatcherthreads")]
     ///描述符的调度器
-    s: &'a rksched::RKsched<'a>,
+    pub(crate) s: *mut RKsched<'a>,
 }
 
 #[cfg(feature = "dispatcherthreads")]
