@@ -13,6 +13,7 @@ mod blkdev;
 mod blkdev_core;
 mod blkdev_driver;
 mod blkreq;
+mod blkfront;
 
 static mut RK_BLKDEV_LIST: Tailq<RkBlkdev> = Tailq;
 static mut BLKDEV_COUNT: Option<i16> = None;
