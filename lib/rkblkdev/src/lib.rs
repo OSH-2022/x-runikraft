@@ -4,8 +4,7 @@ extern crate alloc;
 
 use core::ptr::{drop_in_place, null, null_mut};
 use rkalloc::{alloc_type, RKalloc};
-use rksched::RKsched;
-use rkschedbasis::RKthreadAttr;
+use rksched::{RKsched, RKthreadAttr};
 use runikraft::list::Tailq;
 use crate::blkdev_core::{RkBlkdev, RkBlkdevData, RkBlkdevEventHandler, RkBlkdevQueueEventT, RkBlkdevState};
 

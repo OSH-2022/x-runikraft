@@ -7,5 +7,5 @@ edition = "2021"
 
 [dependencies]
     rkalloc = {path = "../rkalloc"}
-    rkschedbasis = {path = "../rkschedbasis"}
+    rksched = {path = "../rksched"}
     runikraft = {path = "../../core"}

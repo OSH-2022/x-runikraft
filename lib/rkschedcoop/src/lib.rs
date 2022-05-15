@@ -3,6 +3,7 @@
 use rkschedbasis::{SchedulerCoop, RKthread, RKthreadAttr, RKthreadList, SchedPrivate};
 use runikraft::list::{Tailq, TailqPosMut};
 use rkalloc::RKalloc;
+use rkplat::lcpu;
 use core::time::Duration;
 
 pub struct RKschedcoop<'a> {
@@ -33,39 +34,47 @@ impl<'b> SchedulerCoop for RKschedcoop<'b> {
         self.schedcoop_schedule();
     }
 
-    fn add_thread<'a>(&mut self, t: *mut RKthread, attr: &'a mut RKthreadAttr) -> Result<(), &'static str> {
-        
+    fn add_thread<'a>(&mut self, mut t: RKthread, attr: &'a mut RKthreadAttr) -> Result<(), &'static str> {
+        let mut flags: usize = 0;
+        let prv = self.prv;
+        t.set_runnable();
+
+        flags = lcpu::save_irqf();
+
+        self.prv.sleeping_threads.push_back(t);
+
+        lcpu::restore_irqf(flags);
+
+        Ok(())
     }
-    
-    // fn add_thread<'a>(&mut self, t: &'a mut RKthread<'a>, attr: &'a mut RKthreadAttr) -> Result<(), &'static str> {
-    //     let mut flags: usize = 0;
-    //     let prv = self.prv;
-    //     t.set_runnable();
-    //     //flags = rkplat_lcpu_save_irqf();
-    //     let new_t = t.clone();
-    //     self.prv.sleeping_threads.push_back(new_t);
-    // 
-    //     //rkplat_lcpu_restore_irqf(flags);
-    // 
-    //     Ok(())
-    // }
-    unsafe fn remove_thread<'a>(&mut self, t: &'a mut RKthread<'a>) -> Result<(), &'static str> {
+
+    fn remove_thread<'a>(&mut self, t: *mut RKthread) -> Result<(), &'static str> {
         let mut flags: usize = 0;
         let prv = self.prv;
 
-        //flags = rkplat_lcpu_save_irqf();
-        let t_pos = TailqPosMut::from_ref(t);
-        /* Remove from the thread list */
-        //TODO: here need judge if t_pos.pos != rk_thread_current(), then
-        let mut t = prv.thread_list.remove(t_pos).0;
-        t.clear_runnable();
+        flags = lcpu::save_irqf();
+        unsafe {
+            let t_pos = TailqPosMut::from_ptr(t);
+            if t != rkschedbasis::thread_current() {
+                let mut thread = prv.thread_list.remove(t_pos).0;
+                thread.clear_runnable();
+                thread.exit();
+                self.exited_threads.push_front(thread);
+            }
+            else {
+                let mut thread = prv.thread_list.remove(t_pos).0;
+                thread.clear_runnable();
+                thread.exit();
+                self.exited_threads.push_front(thread);
+                self.schedcoop_schedule();
+            }
+        }
 
-        t.exit();
 
         /* Put onto exited list */
         self.exited_threads.push_back(t);
 
-        //rkplat_lcpu_restore_irqf(flags);
+        lcpu::restore_irqf(flags);
 
         /* Schedule only if current thread is exiting */
         //TODO: here need judge if t == rk_thread_current(), then
@@ -76,6 +85,7 @@ impl<'b> SchedulerCoop for RKschedcoop<'b> {
 
         Ok(())
     }
+
     unsafe fn block_thread<'a>(&mut self, t: &'a mut RKthread<'a>) {
 
         let prv = self.prv;
