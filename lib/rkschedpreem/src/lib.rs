@@ -1,6 +1,6 @@
 #![no_std]
 
-use rkschedbasis::{SchedulerCoop, SchedulerPreem, RKthread, RKthreadAttr, PrioT};
+use rksched::{RKsched, RKschedInternelFun, RKthread, RKthreadAttr, PrioT};
 use runikraft::list::{Tailq, TailqPosMut};
 use rkalloc::RKalloc;
 use core::time::Duration;
@@ -21,41 +21,53 @@ impl<'a> RKschedpreem<'a> {
     }
 }
 
-impl<'b> SchedulerCoop for RKschedpreem<'b> {
+impl<'a> RKsched<'a> for RKschedpreem<'a> {
+    fn add_thread(&mut self, t: RKthread<'a>, attr: RKthreadAttr) -> Result<(), &'static str> {
+        todo!()
+    }
+    fn sched_started(&self) -> bool {
+        todo!()
+    }
+    fn sched_start(&self) {
+        todo!()
+    }
     fn yield_sched(&mut self) {
         todo!()
     }
-    fn add_thread<'a>(&mut self, t: &'a mut RKthread<'a>, attr: &'a mut RKthreadAttr) -> Result<(), &'static str> {
+    fn block_thread(&mut self, t: *mut RKthread<'a>) {
         todo!()
     }
-    fn remove_thread<'a>(&mut self, t_pos: TailqPosMut<RKthread>) -> Result<(), &'static str> {
+    fn exit_thread(&mut self) {
         todo!()
     }
-    fn block_thread<'a>(&mut self, t_pos: TailqPosMut<RKthread>) {
+    fn remove_thread(&mut self, t: *mut RKthread<'a>) -> Result<(), &'static str> {
         todo!()
     }
-    fn wake_thread<'a>(&mut self, t_pos: TailqPosMut<RKthread>) {
+    fn sleep_thread(&mut self, nsec: Duration) {
         todo!()
     }
-    fn sleep_thread(&self, nsec: Duration) {
-        todo!()
-    }
-    fn exit_thread(&self) {
+    fn wake_thread(&mut self, t: *mut RKthread<'a>) {
         todo!()
     }
 }
 
-impl<'b> SchedulerPreem for RKschedpreem<'b> {
-    fn set_thread_prio<'a>(&mut self, t: &'a mut RKthread<'a>, prio: PrioT) {
+impl<'a> RKschedInternelFun for RKschedpreem<'a> {
+    fn thread_switch(&mut self, prev: *mut RKthread, next: *mut RKthread) {
         todo!()
     }
-    fn get_thread_prio<'a>(&self, t: &'a RKthread<'a>) -> PrioT {
+    fn thread_kill(&mut self, t: *mut RKthread) {
         todo!()
     }
-    fn set_thread_timeslice<'a>(&mut self, t: &'a mut RKthread<'a>, tslice: Duration) {
+    fn thread_destroy(&mut self, t: *mut RKthread) {
         todo!()
     }
-    fn get_thread_timeslice<'a>(&self, t: &'a RKthread<'a>) -> Duration {
+    fn thread_create(&mut self, name: *const char, attr: &mut RKthreadAttr, function: fn(*mut u8), arg: *mut u8) -> *mut RKthread {
+        todo!()
+    }
+    fn idle_init(&mut self, stack: *mut u8, function: fn(*mut u8)) {
+        todo!()
+    }
+    fn get_idle(&self) -> *mut RKthread {
         todo!()
     }
 }
