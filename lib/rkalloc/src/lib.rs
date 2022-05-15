@@ -140,4 +140,6 @@ pub unsafe fn register(a: *const dyn RKalloc) {
     ALLOCATOR.a = NonNull::new(a as *mut _);
 }
 
-extern crate alloc_error_handler;
+//使用feature使它默认不被编译，这样rust-analyzer就不会因为找不到crate __alloc_error_handler报错
+#[cfg(feature="__alloc_error_handler")]
+extern crate __alloc_error_handler;
