@@ -73,6 +73,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "rkschedcoop"
+version = "0.1.0"
+dependencies = [
+ "rkalloc",
+ "rkplat",
+ "rksched",
+ "runikraft",
+]
+
+[[package]]
+name = "rkschedpreem"
+version = "0.1.0"
+dependencies = [
+ "rkalloc",
+ "rkplat",
+ "rksched",
+ "runikraft",
+]
+
+[[package]]
 name = "rksignal"
 version = "0.1.0"
 dependencies = [
