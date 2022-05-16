@@ -8,6 +8,7 @@ edition = "2021"
     alloc_buddy = ["rkalloc_buddy"]
 
 [dependencies]
+    runikraft = {path = "../../core"}
     rkalloc = {path = "../rkalloc"}
     rkalloc_buddy = {path = "../rkalloc_buddy", optional = true}
     rkplat = {path = "../rkplat"}
