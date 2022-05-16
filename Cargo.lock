@@ -43,6 +43,7 @@ dependencies = [
  "rkalloc",
  "rkalloc_buddy",
  "rkplat",
+ "runikraft",
 ]
 
 [[package]]

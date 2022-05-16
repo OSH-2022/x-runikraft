@@ -109,7 +109,9 @@ pub unsafe fn dealloc_type<T> (alloc: &dyn RKalloc, ptr: *mut T) {
 
 // FIXME: Unikraft允许注册多个全局分配器，但Runikraft暂时只支持一个
 struct RustStyleAlloc {
-    a: Option<NonNull<dyn RKalloc>>
+    a: Option<NonNull<dyn RKalloc>>,
+    e: Option<NonNull<dyn RKallocExt>>,
+    s: Option<NonNull<dyn RKallocState>>,
 }
 
 unsafe impl GlobalAlloc for RustStyleAlloc {
@@ -128,16 +130,42 @@ unsafe impl GlobalAlloc for RustStyleAlloc {
 }
 
 #[global_allocator]
-static mut ALLOCATOR: RustStyleAlloc = RustStyleAlloc{a:None};
+static mut ALLOCATOR: RustStyleAlloc = RustStyleAlloc{a:None,e:None,s:None};
 
 /// 获取全局默认分配器
-pub unsafe fn get_default() -> &'static dyn RKalloc {
-    ALLOCATOR.a.unwrap().as_ref()
+pub fn get_default() -> Option<&'static dyn RKalloc> {
+    unsafe{
+        ALLOCATOR.a.map(|x| x.as_ref())
+    }
+}
+
+/// 获取全局默认拓展分配器
+pub fn get_default_ext() -> Option<&'static dyn RKallocExt> {
+    unsafe{
+        ALLOCATOR.e.map(|x| x.as_ref())
+    }
+}
+
+/// 获取全局默认分配器的状态信息
+pub fn get_default_state() -> Option<&'static dyn RKallocState> {
+    unsafe{
+        ALLOCATOR.s.map(|x| x.as_ref())
+    }
 }
 
 /// 注册全局默认分配器
 pub unsafe fn register(a: *const dyn RKalloc) {
     ALLOCATOR.a = NonNull::new(a as *mut _);
+}
+
+/// 注册全局默认拓展分配器
+pub unsafe fn register_ext(e: *const dyn RKallocExt) {
+    ALLOCATOR.e = NonNull::new(e as *mut _);
+}
+
+/// 注册全局默认分配器的状态信息
+pub unsafe fn register_state(s: *const dyn RKallocState) {
+    ALLOCATOR.s = NonNull::new(s as *mut _);
 }
 
 //使用feature使它默认不被编译，这样rust-analyzer就不会因为找不到crate __alloc_error_handler报错

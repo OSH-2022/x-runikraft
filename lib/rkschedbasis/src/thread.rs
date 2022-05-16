@@ -59,8 +59,8 @@ impl RKthreadAttr {
 
     fn set_detachstate(&mut self, state: ThreadAttrState) {
         match state {
-            Waitable => self.detached = true,
-            Detached => self.detached = false,
+            ThreadAttrState::Waitable => self.detached = true,
+            ThreadAttrState::Detached => self.detached = false,
         };
     }
 
