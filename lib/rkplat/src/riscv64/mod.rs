@@ -9,6 +9,7 @@ pub mod spinlock;
 pub mod thread;
 
 mod intctrl;
+mod exception;
 
 mod constants;
 

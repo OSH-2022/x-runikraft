@@ -3,7 +3,7 @@
 use rksched::{RKsched, RKschedInternelFun, RKthread, RKthreadAttr, RKthreadList, SchedPrivate};
 use runikraft::list::{TailqPosMut};
 use rkalloc::RKalloc;
-use rkplat::{lcpu, thread::Context};
+use rkplat::{lcpu, thread};
 use core::time::Duration;
 
 pub struct RKschedcoop<'a> {
@@ -28,7 +28,7 @@ impl<'a> RKschedcoop<'a> {
 impl<'a> RKsched<'a> for RKschedcoop<'a> {
     fn sched_start(&self) {
         unsafe {
-            Context::start(self.idle.ctx);
+            thread::start(self.idle.ctx);
         }
     }
     fn sched_started(&self) -> bool {

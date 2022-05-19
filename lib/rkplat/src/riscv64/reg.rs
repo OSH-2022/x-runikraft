@@ -1,43 +1,74 @@
-/// 所有的通用寄存器
+/// 发生异常时需要保存的所有的通用寄存器
+/// size=152
 #[repr(C)]
 #[derive(Debug)]
 #[derive(Default)]
-pub struct RegGen {
-    pub t0: usize,
-    pub t1: usize,
-    pub t2: usize,
-    pub t3: usize,
-    pub t4: usize,
-    pub t5: usize,
-    pub t6: usize,
-    // arguments: non interrupts/non tracing syscalls only save upto here
-    pub a0: usize,
-    pub a1: usize,
-    pub a2: usize,
-    pub a3: usize,
-    pub a4: usize,
-    pub a5: usize,
-    pub a6: usize,
-    pub a7: usize,
-    // end arguments
-    pub s0: usize,
-    pub s1: usize,
-    pub s2: usize,
-    pub s3: usize,
-    pub s4: usize,
-    pub s5: usize,
-    pub s6: usize,
-    pub s7: usize,
-    pub s8: usize,
-    pub s9: usize,
-    pub s10: usize,
-    pub s11: usize,
-    //
-    pub ra: usize,
-    pub sp: usize,
-    pub tp: usize,
-    pub pc: usize,
-    pub sstatus: usize,
+pub struct RegGenExcept {
+    pub t0: usize,      //0
+    pub t1: usize,      //8
+    pub t2: usize,      //16
+    pub t3: usize,      //24
+    pub t4: usize,      //32
+    pub t5: usize,      //40
+    pub t6: usize,      //48
+    pub a0: usize,      //56
+    pub a1: usize,      //64
+    pub a2: usize,      //72
+    pub a3: usize,      //80
+    pub a4: usize,      //88
+    pub a5: usize,      //96
+    pub a6: usize,      //104
+    pub a7: usize,      //112
+    pub ra: usize,      //120
+    pub pc: usize,      //128
+    pub sstatus: usize, //136
+    pub sp: usize,      //144
+}
+
+/// 发生中断时需要保存的所有的通用寄存器
+/// size=144
+#[repr(C)]
+#[derive(Debug)]
+#[derive(Default)]
+pub struct RegGenInt {
+    pub t0: usize,      //0
+    pub t1: usize,      //8
+    pub t2: usize,      //16
+    pub t3: usize,      //24
+    pub t4: usize,      //32
+    pub t5: usize,      //40
+    pub t6: usize,      //48
+    pub a0: usize,      //56
+    pub a1: usize,      //64
+    pub a2: usize,      //72
+    pub a3: usize,      //80
+    pub a4: usize,      //88
+    pub a5: usize,      //96
+    pub a6: usize,      //104
+    pub a7: usize,      //112
+    pub ra: usize,      //120
+    pub pc: usize,      //128
+    pub sstatus: usize, //136
+}
+
+/// ctx_switch时保存需要保存的所有的通用寄存器
+/// size=96
+#[repr(C)]
+#[derive(Debug)]
+#[derive(Default)]
+pub struct RegGenSw {
+    pub s0: usize,  //0
+    pub s1: usize,  //8
+    pub s2: usize,  //16
+    pub s3: usize,  //24
+    pub s4: usize,  //32
+    pub s5: usize,  //40
+    pub s6: usize,  //48
+    pub s7: usize,  //56
+    pub s8: usize,  //64
+    pub s9: usize,  //72
+    pub s10: usize, //80
+    pub s11: usize, //88
 }
 
 /// 浮点数寄存器

@@ -13,13 +13,8 @@ struct IRQHandler {
     arg: *mut u8,
 }
 
-/// 直接[None;128]会报 E0277
-static mut IRQ_HANDLERS:[Option<SList<IRQHandler>>;MAX_IRQ] = include!("128None.txt");
-
-#[inline(always)]
-const fn irq_7bits(irq: usize) -> usize {
-    irq&0x3F | irq>>57
-}
+/// 直接[None;64]会报 E0277
+static mut IRQ_HANDLERS:[Option<SList<IRQHandler>>;MAX_IRQ] = include!("64None.txt");
 
 fn allocator() -> &'static dyn RKalloc {
     unsafe {
@@ -59,7 +54,7 @@ pub unsafe fn register(irq: usize, func: IRQHandlerFunc, arg: *mut u8) -> Result
     let handler = IRQHandler{func,arg};
     let flags =lcpu::save_irqf(); 
     //interruption
-    IRQ_HANDLERS[irq_7bits(irq)].as_mut().unwrap().push_front(handler).unwrap();
+    IRQ_HANDLERS[irq].as_mut().unwrap().push_front(handler).unwrap();
     lcpu::restore_irqf(flags);
     if irq&1<<63 !=0 { intctrl::clear_irq(irq&0x3F); }
     Ok(())
@@ -67,8 +62,7 @@ pub unsafe fn register(irq: usize, func: IRQHandlerFunc, arg: *mut u8) -> Result
 
 //TODO: 
 #[no_mangle]
-unsafe extern "C" fn __rkplat_irq_handle(irq: usize, regs: &reg::RegGen) {
-    println!("regs={:?}",regs);
+unsafe extern "C" fn __rkplat_irq_handle(irq: usize) {
     for i in IRQ_HANDLERS[irq].as_ref().unwrap().iter() {
         if (i.func)(i.arg) {
             intctrl::ack_irq(irq);
@@ -76,5 +70,5 @@ unsafe extern "C" fn __rkplat_irq_handle(irq: usize, regs: &reg::RegGen) {
         }
     }
     println!("Unhandled irq={}",irq);
-    panic!();
+    // panic!();
 }
