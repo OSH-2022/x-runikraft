@@ -1,8 +1,3 @@
-#![no_std]
-
-#[macro_use]
-extern crate rkplat;
-
 use core::cmp::min;
 use core::mem::size_of;
 use core::ptr::write_bytes;
@@ -222,7 +217,7 @@ fn rk_blkdev_queue_configure(dev: &RkBlkdev, queue_id: u16, nb_desc: u16, queue_
         }
     }
     //确保我们没有第二次对这个队列进行初始化
-    if !ptriseer(dev._queue[queue_id]as i64){
+    if !ptriseer(dev._queue[queue_id as usize].unwrap() as i64){
         return -12;
     }
     #[cfg(not(feature = "dispatcherthreads"))]
@@ -278,7 +273,7 @@ fn rk_blkdev_start(dev: &RkBlkdev) -> isize {
 ///     一个指向类型*RkBlkdevCapabilities*的指针
 ///
 #[inline]
-fn rk_blkdev_capbilities(blkdev: &RkBlkdev) -> &RkBlkdevCap {
+fn rk_blkdev_capbilities<'a>(blkdev: &'a RkBlkdev) -> &'a RkBlkdevCap {
     assert!(blkdev._data.state >= RkBlkdevRunning);
     &blkdev.capabilities
 }
@@ -480,7 +475,7 @@ pub struct RkBlkdevSyncIORequest {
 
 #[cfg(feature = "sync_io_blocked_waiting")]
 pub fn __sync_io_callback(req: &RkBlkreq, cookie_callback: *mut u8) {
-   let sync_io_req:* RkBlkdevSyncIORequest=cookie_callback as *RkBlkdevSyncIORequest;
+   let sync_io_req:*const RkBlkdevSyncIORequest=cookie_callback as *const RkBlkdevSyncIORequest;
     //TODO uk_semaphore_up(&sync_io_req->s);
 }
 
@@ -591,7 +586,7 @@ fn rk_blkdev_queue_unconfigure(dev: &RkBlkdev, queue_id: u16) -> isize {
     assert!(!ptriseer(dev._queue[queue_id]as i64));
     rc = dev.dev_ops.queue_unconfigure(dev._queue[queue_id]);
     if rc != 0 {
-        println!("Failed to unconfigure blkdev{}-q{}: {}\n", dev._data.id, queue, rc);
+        println!("Failed to unconfigure blkdev{}-q{}: {}\n", dev._data.id, queue_id, rc);
     } else {
         #[cfg(feature = "dispatcherthreads")]
         if dev._data.queue_handler[queue_id].callback.is_null() {
@@ -626,7 +621,7 @@ fn rk_blkdev_unconfigure(dev: &RkBlkdev) -> isize {
     }
     rc = dev.dev_ops.dev_unconfigure();
     if rc != 0 {
-        println!("Failed to unconfigure blkdev{}-q{}: {}\n", dev._data.id, queue, rc);
+        println!("Failed to unconfigure blkdev{}: {}\n", dev._data.id, rc);
     } else {
         println!("Unconfigured blkdev{}\n", dev._data.id);
         dev._data.state = RkBlkdevUnconfigured;

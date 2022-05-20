@@ -1,5 +1,3 @@
-#![no_std]
-
 use rkalloc::RKalloc;
 use crate::RkBlkdev;
 
@@ -36,7 +34,7 @@ pub struct RkBlkdevQueue {
     /* Event channel for the front ring. */
     //TODO evtchn_port_t evtchn;
     /* Allocator for this queue. */
-    a: dyn RKalloc,
+    a: *const dyn RKalloc,
     /* The libukblkdev queue identifier */
     queue_id:u16,
     /* The flag to interrupt on the queue */
@@ -60,7 +58,7 @@ pub struct BlkfrontDev <'a>{
     /* Value which indicates that the backend can process requests with the
      * BLKIF_OP_WRITE_FLUSH_DISKCACHE request opcode.
      */
-    flush:int,
+    flush:i32,
     /* Number of configured queues used for requests */
     nb_queues:u16,
     /* Vector of queues used for communication with backend */

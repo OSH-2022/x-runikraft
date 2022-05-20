@@ -2,6 +2,9 @@
 
 extern crate alloc;
 
+#[macro_use]
+extern crate rkplat;
+
 use core::ptr::{drop_in_place, null, null_mut};
 use rkalloc::{alloc_type, RKalloc};
 use rksched::{RKsched, RKthreadAttr};
@@ -14,9 +17,11 @@ mod blkdev_driver;
 mod blkreq;
 mod blkfront;
 
-static mut RK_BLKDEV_LIST: Tailq<RkBlkdev> = Tailq;
+static mut RK_BLKDEV_LIST: Option<Tailq<RkBlkdev>> = None;
 static mut BLKDEV_COUNT: Option<i16> = None;
-const CONFIG_LIBUKBLKDEV_MAXNBQUEUES: u16 = core::u16::from_str(env!("PATH"));
+//FIXME
+//const CONFIG_LIBUKBLKDEV_MAXNBQUEUES: u16 = core::u16::from_str(env!("PATH"));
+const CONFIG_LIBUKBLKDEV_MAXNBQUEUES: u16 = 1;
 
 pub unsafe fn _alloc_data<'a>(a: &'a (dyn RKalloc + 'a), blkdev_id: u16, drv_name: &'a str) -> *mut RkBlkdevData<'a> {
     let mut data: *mut RkBlkdevData = alloc_type::<RkBlkdevData>(a, RkBlkdevData{
@@ -52,7 +57,7 @@ pub fn _create_event_handler(callback: RkBlkdevQueueEventT, cookie: *mut u8, eve
 }
 
 #[cfg(feature = "dispatcherthreads")]
-pub fn _create_event_handler(callback: RkBlkdevQueueEventT, cookie: *mut u8, dev: * RkBlkdev, queue_id: u16, s: *mut RKsched, event_handler: &mut RkBlkdevEventHandler) -> isize {
+pub fn _create_event_handler(callback: RkBlkdevQueueEventT, cookie: *mut u8, dev: *const RkBlkdev, queue_id: u16, s: *mut RKsched, event_handler: &mut RkBlkdevEventHandler) -> isize {
     event_handler.callback = callback;
     event_handler.cookie = cookie;
     //如果我们没有回调，我们就不需要线程
