@@ -1,5 +1,5 @@
 use super::reg;
-use core::{arch, ptr::addr_of_mut};
+use core::arch;
 
 extern "C" {
     fn __thread_starter();
@@ -32,13 +32,14 @@ pub struct Context {
 /// - `arg`: 启动新线程的参数
 /// 
 /// 创建后的线程的入口地址是`__thread_starter`。
-/// `__thread_starter`会调用形如`fn thread_main(arg: *mut u8)`的函数
-pub unsafe fn init(ctx: *mut Context, sp: usize, tp: usize, func: fn(*mut u8), arg: *mut u8) {
+/// `__thread_starter`会调用形如`fn thread_entry(arg: *mut u8)->!`的函数，
+/// `thread_entry`应进一步调用`thread_main`，并且在`thread_main`退出时通知调度器切换到另外一个线程
+pub unsafe fn init(ctx: *mut Context, sp: usize, tp: usize, entry: unsafe fn(*mut u8)->!, arg: *mut u8) {
     arch::asm!(
-       "sd {func}, -4({sp})
-        sd {arg}, -8({sp})",
+       "sd {func}, -8({sp})
+        sd {arg}, -16({sp})",
         sp=in(reg)sp,
-        func=in(reg)func,
+        func=in(reg)entry,
         arg=in(reg)arg
     );
     (*ctx).sp = sp - 16;
@@ -59,6 +60,10 @@ pub unsafe fn start(ctx: *mut Context) -> ! {
 /// 1. 刚刚调用`switch`，这时，`nextctx`会观察到`switch`返回；
 /// 2. 从未执行过，这时，将执行`__thread_starter`
 pub unsafe fn switch(prevctx: *mut Context, nextctx: *mut Context) {
+    #[cfg(feature="save_fp")]
+    __thread_save_sp((*prevctx).fregs);
+    #[cfg(feature="save_fp")]
+    __thread_restore_sp((*nextctx).fregs);
     __thread_context_switch(prevctx,nextctx);
 }
 
