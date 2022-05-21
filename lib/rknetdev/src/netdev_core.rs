@@ -33,8 +33,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 // Translated from unikraft/lib/uknetdev/include/uk/netdev_core.h.
 
-use runikraft::list;
+use rklist::Tailq;
 use rkalloc::RKalloc;
+use runikraft::config;
 #[cfg(feature="dispatcherthreads")]
 use rksched::RKsched;
 use super::netbuf::Netbuf;
@@ -44,11 +45,7 @@ use core::str::FromStr;
 use core::ops::{Index,IndexMut};
 
 
-//FIXME: 统一管理配置
-pub const CONFIG_RK_NETDEV_SCRATCH_SIZE: usize = 0;
-pub const CONFIG_LIBUKNETDEV_MAXNBQUEUES: usize = 1;
-
-pub type NetdevList<'a> = list::Tailq<'a,Netdev<'a>>;
+pub type NetdevList<'a> = Tailq<'a,Netdev<'a>>;
 
 //Ethernet size macros
 
@@ -327,7 +324,7 @@ pub(crate) struct EventHandler {
 pub(crate) struct Data<'a> {
     pub(crate) state: State,
 
-    pub(crate) rxq_handler: [EventHandler;CONFIG_LIBUKNETDEV_MAXNBQUEUES],
+    pub(crate) rxq_handler: [EventHandler;config::LIBUKNETDEV_MAXNBQUEUES],
 
     pub(crate) id: usize,//ID is assigned during registration
     pub(crate) drv_name: &'a str, 
@@ -412,11 +409,11 @@ pub struct Netdev<'a> {
     pub(crate) ops: *const dyn Operations,
 
     /// Pointers to queues (API-private)
-    pub(crate) rx_queue: [RxQueue;CONFIG_LIBUKNETDEV_MAXNBQUEUES],
-    pub(crate) tx_queue: [TxQueue;CONFIG_LIBUKNETDEV_MAXNBQUEUES],
+    pub(crate) rx_queue: [RxQueue;config::LIBUKNETDEV_MAXNBQUEUES],
+    pub(crate) tx_queue: [TxQueue;config::LIBUKNETDEV_MAXNBQUEUES],
 
     /// Netdevice address configuration
     pub(crate) einfo: Einfo,
 
-    pub(crate) scratch_pad: [u8;CONFIG_RK_NETDEV_SCRATCH_SIZE],
+    pub(crate) scratch_pad: [u8;config::RK_NETDEV_SCRATCH_SIZE],
 }

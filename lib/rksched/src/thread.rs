@@ -1,5 +1,5 @@
 use super::{RKsched, wait::RKwaitQ};
-use runikraft::list::Tailq;
+use rklist::Tailq;
 use core::{debug_assert, panic};
 use rkalloc::RKalloc;
 use core::time::Duration;

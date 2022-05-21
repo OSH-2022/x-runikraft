@@ -1,5 +1,5 @@
 use super::thread::RKthread;
-use runikraft::list::STailq;
+use rklist::STailq;
 
 /// 等待队列条目结构体
 pub struct RKwaitQEntry<'a> {

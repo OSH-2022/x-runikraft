@@ -17,3 +17,5 @@ fn __panic_handler(info: &panic::PanicInfo) -> !
     bootstrap::crash();
 }
 
+pub mod drivers;
+

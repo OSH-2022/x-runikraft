@@ -46,6 +46,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "rklist"
+version = "0.1.0"
+dependencies = [
+ "rkalloc",
+]
+
+[[package]]
 name = "rkmbox"
 version = "0.1.0"
 
@@ -54,6 +61,7 @@ name = "rknetdev"
 version = "0.1.0"
 dependencies = [
  "rkalloc",
+ "rklist",
  "rksched",
  "runikraft",
 ]
@@ -63,6 +71,7 @@ name = "rkplat"
 version = "0.1.0"
 dependencies = [
  "rkalloc",
+ "rklist",
  "runikraft",
 ]
 
@@ -79,6 +88,7 @@ name = "rksched"
 version = "0.1.0"
 dependencies = [
  "rkalloc",
+ "rklist",
  "rkplat",
  "runikraft",
 ]
@@ -107,12 +117,10 @@ dependencies = [
 name = "rksignal"
 version = "0.1.0"
 dependencies = [
+ "rklist",
  "runikraft",
 ]
 
 [[package]]
 name = "runikraft"
 version = "0.1.0"
-dependencies = [
- "rkalloc",
-]

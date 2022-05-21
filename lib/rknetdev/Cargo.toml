@@ -9,5 +9,6 @@
 
 [dependencies]
     runikraft = {path = "../../core"}
+    rklist = {path = "../rklist"}
     rkalloc = {path = "../rkalloc"}
     rksched = {path = "../rksched", optional=true}

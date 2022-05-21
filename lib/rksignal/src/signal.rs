@@ -1,6 +1,6 @@
-use runikraft::list::List;
+use rklist::List;
 
-pub type sigset = u64;
+pub type Sigset = u64;
 
 pub union Sahandler {
     pub sa_handler: fn(i32),
@@ -15,7 +15,7 @@ pub struct Siginfo {
 
 pub struct Sigaction {
     pub sa_handler: Sahandler,
-    pub sa_mask: sigset,
+    pub sa_mask: Sigset,
     pub sa_flags: i32,
     pub sa_restorer: fn()
 }
@@ -28,7 +28,7 @@ pub struct Signal<'a> {
 }
 
 pub struct ProcSig<'a> {
-    pub pending: sigset,
+    pub pending: Sigset,
     pub pending_signals: [Siginfo; 32],
     pub sigaction: [Sigaction; 32],
     pub list_node: List<'a, u8>
@@ -42,13 +42,13 @@ pub enum RkSigWaiting {
 
 pub struct ThreadSigWait {
     pub status: RkSigWaiting,
-    pub awaited: sigset,
+    pub awaited: Sigset,
     pub received_signal: Siginfo
 }
 
 pub struct ThreadSig<'a> {
-    pub mask: sigset,
-    pub pending: sigset,
+    pub mask: Sigset,
+    pub pending: Sigset,
     pub pending_signals: List<'a, u8>,
     pub wait: ThreadSigWait,
     pub list_node: List<'a, u8>

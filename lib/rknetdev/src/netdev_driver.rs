@@ -31,9 +31,10 @@
 // POSSIBILITY OF SUCH DAMAGE.
 // Translated from unikraft/lib/uknetdev/include/uk/netdev_driver.h.
 
-use super::netdev_core::{Netdev,CONFIG_LIBUKNETDEV_MAXNBQUEUES};
+use runikraft::config;
+
+use super::netdev_core::{Netdev};
 use rkalloc::RKalloc;
-use core::ptr::addr_of_mut;
 
 /// Adds a Runikraft network device to the device list.
 /// This should be called whenever a driver adds a new found device.
@@ -56,7 +57,7 @@ pub fn register<'a>(dev: &mut Netdev<'a>, a: *const dyn RKalloc, drv_name: &'a s
 /// - `dev`: Runikraft network device to which the event relates to
 /// - `queue_id`: receive queue ID to which the event relates to
 pub fn rx_event(dev: &mut Netdev, queue_id: usize){
-    assert!(queue_id<CONFIG_LIBUKNETDEV_MAXNBQUEUES);
+    assert!(queue_id<config::LIBUKNETDEV_MAXNBQUEUES);
 
     let p_dev = dev as *mut Netdev;
     let rxq_handler = &mut dev.data.rxq_handler[queue_id];

@@ -1,3 +1,5 @@
+#![no_std]
+
 mod slist;
 mod list;
 mod stailq;

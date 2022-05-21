@@ -1,16 +1,16 @@
-use super::signal::sigset;
+use super::signal::Sigset;
 
-pub fn sigemptyset(ptr: &mut sigset) -> i32 {
+pub fn sigemptyset(ptr: &mut Sigset) -> i32 {
     *ptr = 0 as u64;
     return 0;
 }
 
-pub fn sigfillset(ptr: &mut sigset) -> i32 {
+pub fn sigfillset(ptr: &mut Sigset) -> i32 {
     *ptr = !0;
     return 0;
 }
 
-pub fn sigaddset(ptr: &mut sigset, signo: i32) -> i32 {
+pub fn sigaddset(ptr: &mut Sigset, signo: i32) -> i32 {
     //if (signo >= NSIG || signo <= 0) {
 	//	errno = EINVAL;
 	//	return -1;
@@ -20,7 +20,7 @@ pub fn sigaddset(ptr: &mut sigset, signo: i32) -> i32 {
     return 0;
 }
 
-pub fn sigdelset(ptr: &mut sigset, signo: i32) -> i32 {
+pub fn sigdelset(ptr: &mut Sigset, signo: i32) -> i32 {
     //if (signo >= NSIG || signo <= 0) {
 	//	errno = EINVAL;
 	//	return -1;
@@ -30,23 +30,23 @@ pub fn sigdelset(ptr: &mut sigset, signo: i32) -> i32 {
     return 0;
 }
 
-pub fn sigcopyset(ptr1: &mut sigset, ptr2: &mut sigset) {
+pub fn sigcopyset(ptr1: &mut Sigset, ptr2: &mut Sigset) {
     *ptr1 = *ptr2;
 }
 
-pub fn sigandset(ptr1: &mut sigset, ptr2: &mut sigset) {
+pub fn sigandset(ptr1: &mut Sigset, ptr2: &mut Sigset) {
     *ptr1 &= *ptr2;
 }
 
-pub fn sigorset(ptr1: &mut sigset, ptr2: &mut sigset) {
+pub fn sigorset(ptr1: &mut Sigset, ptr2: &mut Sigset) {
     *ptr1 |= *ptr2;
 }
 
-pub fn sigreverseset(ptr: &mut sigset) {
+pub fn sigreverseset(ptr: &mut Sigset) {
     *ptr = !(*ptr);
 }
 
-pub fn sigismember(ptr: &mut sigset, signo: i32) -> i32 {
+pub fn sigismember(ptr: &mut Sigset, signo: i32) -> i32 {
     //if (signo >= NSIG || signo <= 0) {
 	//	errno = EINVAL;
 	//	return -1;
@@ -60,7 +60,7 @@ pub fn sigismember(ptr: &mut sigset, signo: i32) -> i32 {
     }
 }
 
-pub fn sigisempty(ptr: &mut sigset) -> i32 {
+pub fn sigisempty(ptr: &mut Sigset) -> i32 {
     if *ptr == 0 {
         return 1;
     }

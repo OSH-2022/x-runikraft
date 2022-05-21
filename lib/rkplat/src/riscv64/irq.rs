@@ -1,8 +1,7 @@
 use rkalloc::RKalloc;
-use runikraft::list::SList;
+use rklist::SList;
 use super::constants::*;
-use super::{lcpu,intctrl,reg};
-//use runikraft::list::SList;
+use super::{lcpu,intctrl};
 
 static mut ALLOCATOR: Option<*const dyn RKalloc> = None;
 /// 中断响应函数，返回false将中断转交给下一个函数处理，返回true表示中断处理完毕

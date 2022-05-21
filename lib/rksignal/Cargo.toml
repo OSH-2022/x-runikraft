@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 runikraft = {path="../../core"}
+rklist = {path = "../rklist"}

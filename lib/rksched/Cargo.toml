@@ -9,3 +9,4 @@ edition = "2021"
     rkalloc = {path = "../rkalloc"}
     runikraft = {path = "../../core"}
     rkplat = {path = "../rkplat"}
+    rklist = {path = "../rklist"}
