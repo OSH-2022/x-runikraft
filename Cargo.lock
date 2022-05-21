@@ -48,6 +48,10 @@ dependencies = [
 [[package]]
 name = "rkmbox"
 version = "0.1.0"
+dependencies = [
+ "rkalloc",
+ "rkplat",
+]
 
 [[package]]
 name = "rkplat"
