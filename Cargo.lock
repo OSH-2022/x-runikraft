@@ -50,6 +50,15 @@ name = "rkmbox"
 version = "0.1.0"
 
 [[package]]
+name = "rknetdev"
+version = "0.1.0"
+dependencies = [
+ "rkalloc",
+ "rksched",
+ "runikraft",
+]
+
+[[package]]
 name = "rkplat"
 version = "0.1.0"
 dependencies = [
