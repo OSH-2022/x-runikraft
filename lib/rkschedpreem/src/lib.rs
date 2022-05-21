@@ -1,7 +1,7 @@
 #![no_std]
 
 use rksched::{RKsched, RKschedInternelFun, RKthread, RKthreadAttr, PrioT};
-use runikraft::list::{Tailq, TailqPosMut};
+use rklist::{Tailq, TailqPosMut};
 use rkalloc::RKalloc;
 use core::time::Duration;
 

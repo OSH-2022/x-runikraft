@@ -1,5 +1,5 @@
 use rksched::{RKsched, RKthread};
-use runikraft::list::Tailq;
+use rklist::Tailq;
 use crate::blkfront::RkBlkdevQueue;
 use crate::blkreq::{RkBlkreq, RkBlkreqOp,Sector};
 use crate::CONFIG_LIBUKBLKDEV_MAXNBQUEUES;

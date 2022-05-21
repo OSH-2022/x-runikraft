@@ -21,7 +21,7 @@ const RK_THREAD_ATTR_TIMESLICE_NIL: u64 = 0;
 pub type PrioT = i32;
 
 //状态类型
-enum ThreadAttrState {
+pub enum ThreadAttrState {
     Waitable,
     Detached,
 }
@@ -54,39 +54,39 @@ impl RKthreadAttr {
         }
     }
 
-    fn finish(&self) {} //暂定为空函数
+    pub fn finish(&self) {} //暂定为空函数
 
-    fn set_detachstate(&mut self, state: ThreadAttrState) {
+    pub fn set_detachstate(&mut self, state: ThreadAttrState) {
         match state {
             Waitable => self.detached = true,
             Detached => self.detached = false,
         };
     }
 
-    fn get_detachstate(&self) -> ThreadAttrState {
+    pub fn get_detachstate(&self) -> ThreadAttrState {
         match self.detached {
             true => ThreadAttrState::Detached,
             false => ThreadAttrState::Waitable,
         }
     }
 
-    fn set_prio(&mut self, prio: PrioT) {
+    pub fn set_prio(&mut self, prio: PrioT) {
         if self.prio >= RK_THREAD_ATTR_PRIO_MIN && self.prio <= RK_THREAD_ATTR_PRIO_MAX {
             self.prio = prio;
         }
     }
 
-    fn get_prio(&self) -> PrioT {
+    pub fn get_prio(&self) -> PrioT {
         self.prio
     }
 
-    fn set_timeslice(&mut self, timeslice: Duration) {
+    pub fn set_timeslice(&mut self, timeslice: Duration) {
         //这里要用到平台层定义的RK_PLAT_TIME_TICK_NSEC——时间滴答长度，暂且定义为1ns
         debug_assert!(self.timeslice.as_nanos() >= 1);
         self.timeslice = timeslice;
     }
 
-    fn get_timeslice(&self) -> Duration {
+    pub fn get_timeslice(&self) -> Duration {
         self.timeslice
     }
 }
@@ -178,7 +178,7 @@ impl<'a> RKthread<'a> {
     ////////////////////////////
     /// 非 API 部分
     ////////////////////////////
-    fn is_runnable(&self) -> bool {
+    pub fn is_runnable(&self) -> bool {
         match self.flags & RUNNABLE_FLAG {
             0 => false,
             _ => true,
@@ -215,16 +215,16 @@ impl<'a> RKthread<'a> {
     }
 
     //线程初始化
-    unsafe fn init(&mut self, /*cbs: *mut plat_ctx_callbacks, */allocator: &'a dyn RKalloc,
+    pub unsafe fn init(&mut self, /*cbs: *mut plat_ctx_callbacks, */allocator: &'a dyn RKalloc,
                    name: &'a str, stack: *mut u8, tls: *const char, entry: fn(*mut u8), arg: *mut u8) {
         // TODO
     }
     //线程完成
-    unsafe fn finish(&mut self, allocator: &'a dyn RKalloc) {
+    pub unsafe fn finish(&mut self, allocator: &'a dyn RKalloc) {
         // TODO
     }
 
-    fn block(&mut self) {
+    pub fn block(&mut self) {
         // TODO
     }
 
@@ -232,7 +232,7 @@ impl<'a> RKthread<'a> {
         // TODO
     }
 
-    fn wake(&mut self) {
+    pub fn wake(&mut self) {
         // TODO
     }
 

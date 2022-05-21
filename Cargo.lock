@@ -26,16 +26,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rkblkdev"
-version = "0.1.0"
-dependencies = [
- "rkalloc",
- "rkplat",
- "rksched",
- "runikraft",
-]
-
-[[package]]
 name = "rkboot"
 version = "0.1.0"
 dependencies = [
@@ -58,16 +48,6 @@ version = "0.1.0"
 dependencies = [
  "rkalloc",
  "rkplat",
-]
-
-[[package]]
-name = "rknetdev"
-version = "0.1.0"
-dependencies = [
- "rkalloc",
- "rklist",
- "rksched",
- "runikraft",
 ]
 
 [[package]]
@@ -102,6 +82,7 @@ name = "rkschedcoop"
 version = "0.1.0"
 dependencies = [
  "rkalloc",
+ "rklist",
  "rkplat",
  "rksched",
  "runikraft",
@@ -112,6 +93,7 @@ name = "rkschedpreem"
 version = "0.1.0"
 dependencies = [
  "rkalloc",
+ "rklist",
  "rkplat",
  "rksched",
  "runikraft",

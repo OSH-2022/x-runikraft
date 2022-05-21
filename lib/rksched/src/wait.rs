@@ -9,7 +9,7 @@ pub struct RKwaitQEntry<'a> {
 
 impl<'a> RKwaitQEntry<'a> {
     //等待队列条目初始化
-    fn new(&mut self, thread: &'a mut RKthread<'a>) -> Self {
+    pub fn new(&mut self, thread: &'a mut RKthread<'a>) -> Self {
         Self {
             waiting: 0,
             thread,

@@ -10,8 +10,6 @@ members = [
     "lib/rkalloc_buddy",
     "lib/rkring",
     "lib/rkmbox",
-    "lib/rkblkdev",
-    "lib/rknetdev",
     "lib/rksched",
     "lib/rkschedcoop",
     "lib/rkschedpreem",
