@@ -66,6 +66,7 @@ impl<'a,T> Ring<'a,T> {
     /// 为 Ring 分配内存
     /// `count`: 容量
     /// `alloc`: 分配器
+
     pub fn new(count: usize, a: &'a dyn RKalloc) -> Option<Ring<'a,T>> {
         assert!(count.is_power_of_two());
         let br_ring_data = unsafe{a.alloc_zeroed(count*size_of::<T>(),64) as *mut Option<T>};
