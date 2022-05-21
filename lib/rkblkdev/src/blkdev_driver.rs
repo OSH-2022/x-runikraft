@@ -1,12 +1,10 @@
-#![no_std]
-
-use core::intrinsics::atomic_store_unordered;
+use core::sync::atomic;
 use rkalloc::{dealloc_type, RKalloc, RKallocExt};
 use crate::blkdev_core::{RkBlkdev, RkBlkdevEventHandler, RkBlkdevState};
-use crate::{_alloc_data, BLKDEV_COUNT, CONFIG_LIBUKBLKDEV_MAXNBQUEUES, RK_BLKDEV_LIST, RkBlkdevData};
+use crate::{_alloc_data, BLKDEV_COUNT, CONFIG_LIBUKBLKDEV_MAXNBQUEUES, ptriseer, RK_BLKDEV_LIST, RkBlkdevData};
 use crate::blkdev_core::RkBlkdevState::{RkBlkdevConfigured, RkBlkdevUnconfigured};
 use crate::blkreq::RkBlkreq;
-use crate::blkreq::RkBlkreqState::RkBlkreqFinished;
+use crate::blkreq::RkBlkreqFinished;
 
 /// 向设备链表增加Runikraft块设备
 /// 一旦驱动增加了新找到的设备，这个函数就应该被调用
@@ -31,7 +29,7 @@ use crate::blkreq::RkBlkreqState::RkBlkreqFinished;
 pub fn rk_blkdev_drv_register(mut dev: RkBlkdev, a: &dyn RKalloc, drv_name: &str) -> i16 {
 
     //数据必须被取消分配
-    assert_ne!(dev._data);
+    assert!(ptriseer(dev._data as i64));
     //断言必要的配置
     unsafe {
         if let Some(x) = BLKDEV_COUNT {
@@ -77,8 +75,8 @@ pub fn rk_blkdev_drv_queue_event(dev: &RkBlkdev, queue_id: u16) {
     queue_handler = dev._data.queue_handler[queue_id];
     //TODO #[cfg(feature = "dispatcherthreads")]
     // uk_semaphore_up(&queue_handler->events);
-    #[cfg ! (feature = "dispatcherthreads")]
-    queue_handler.callback(dev, queue_id, queue_handler.cookie);
+    #[cfg(not (feature = "dispatcherthreads"))]
+    (queue_handler.callback)(dev, queue_id, queue_handler.cookie);
 }
 
 /**
@@ -88,7 +86,7 @@ pub fn rk_blkdev_drv_queue_event(dev: &RkBlkdev, queue_id: u16) {
  *    uk_blkreq structure
  */
 pub fn rk_blkdev_finished(req: RkBlkreq) {
-    unsafe { atomic_store_unordered(*(req.state), RkBlkreqFinished) }
+    req.state.store(RkBlkreqFinished, atomic::Ordering::Release);
 }
 
 /// 释放给Runikraft块设备的数据

@@ -7,6 +7,5 @@ edition = "2021"
 
 [dependencies]
     rkalloc = {path = "../rkalloc"}
-    rkschedbasis = {path = "../rkschedbasis"}
-    rkschedcoop = {path = "../rkschedcoop"}
-    rkschedpreem = {path = "../rkschedpreem"}
+    runikraft = {path = "../../core"}
+    rkplat = {path = "../rkplat"}

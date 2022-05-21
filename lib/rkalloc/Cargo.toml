@@ -6,3 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+ 
+[features]
+    __alloc_error_handler=[] #内部使用: 防止rust-analyzer报错

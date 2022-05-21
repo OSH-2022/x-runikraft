@@ -1,48 +1,48 @@
-#![no_std]
-
-use core::intrinsics::{atomic_load_unordered, atomic_store_unordered};
-use core::sync::atomic::AtomicU32;
+//use core::intrinsics::{atomic_load_unordered, atomic_store_unordered};
+use core::sync::atomic;
+#[cfg(feature = "sync_io_blocked_waiting")]
+use crate::blkdev::RkBlkdevSyncIORequest;
 use crate::blkdev_core::{RkBlkdevQueueFinishReqsT, RkBlkdevState};
 use crate::blkdev_core::RkBlkdevState::RkBlkdevConfigured;
-use crate::blkreq::RkBlkreqState::RkBlkreqFinished;
+use crate::RkBlkdevEventHandler;
 
-type Sector = usize;
+pub type Sector = usize;
 
 
 ///用于向设备发送请求
 pub struct RkBlkreq {
     //输入成员
     ///操作类型
-    operation: RkBlkreqOp,
+    pub(crate) operation: RkBlkreqOp,
     ///操作开始的起始扇区
-    start_sector: Sector,
+    pub(crate) start_sector: Sector,
     ///扇区数量的大小
-    nb_sectors: Sector,
+    pub(crate) nb_sectors: Sector,
     ///指向数据的指针
-    aio_buf: *mut u8,
+    pub(crate) aio_buf: *mut u8,
     ///回复的请求的参数
-    cb_cookie: *mut u8,
+    #[cfg(feature = "sync_io_blocked_waiting")]
+    cb_cookie: *const RkBlkdevSyncIORequest,
     //输出成员
     ///请求的状态：完成/未完成
     pub(crate) state: RkBlkreqState,
     ///操作状态的结果（错误返回负值）
-    result: isize,
+    pub(crate) result: isize,
 }
 
 ///操作状态
-pub enum RkBlkreqState {
-    RkBlkreqFinished(bool),
-    RkBlkreqUnfinished(bool),
-}
+pub type RkBlkreqState = atomic::AtomicBool;
+pub const RkBlkreqFinished: bool = true;
+pub const RkBlkreqUnfinished: bool = false;
 
 ///支持的操作
 pub enum RkBlkreqOp {
     ///读操作
-    RkBlkreqRead(u8),
+    RkBlkreqRead,
     ///写操作
-    RkBlkreqWrite(u8),
+    RkBlkreqWrite,
     ///冲洗易变的写缓存
-    RkBlkreqFflush(u8),
+    RkBlkreqFflush,
 }
 
 ///用于执行一个响应后的请求
@@ -82,14 +82,26 @@ pub type RkBlkreqEventT = fn(&RkBlkreq, *mut u8);
 ///	请求回复的参数
 ///
 #[inline]
-unsafe fn rk_blkreq_init(req: &mut RkBlkreq, op: RkBlkreqOp, start: Sector, nb_sectors: Sector, aio_buf: *mut u8, cb_cookie: *mut u8) {
+#[cfg(feature = "sync_io_blocked_waiting")]
+pub fn rk_blkreq_init(req: &mut RkBlkreq, op: RkBlkreqOp, start: Sector, nb_sectors: Sector, aio_buf: *mut u8, cb:RkBlkreqEventT, cb_cookie: *const RkBlkdevSyncIORequest) {
     req.operation=op;
     req.start_sector=start;
     req.nb_sectors=nb_sectors;
     req.aio_buf=aio_buf;
-    atomic_store_unordered::<RkBlkdevState>(*req.state,*RkBlkreqFinished);
+    req.state.store(RkBlkreqFinished, atomic::Ordering::Release);
     req.cb=cb;
     req.cb_cookie=cb_cookie;
+}
+
+#[inline]
+#[cfg(not(feature = "sync_io_blocked_waiting"))]
+pub fn rk_blkreq_init(req: &mut RkBlkreq, op: RkBlkreqOp, start: Sector, nb_sectors: Sector, aio_buf: *mut u8, cb:RkBlkreqEventT) {
+    req.operation=op;
+    req.start_sector=start;
+    req.nb_sectors=nb_sectors;
+    req.aio_buf=aio_buf;
+    req.state.store(RkBlkreqFinished, atomic::Ordering::Release);
+    req.cb=cb;
 }
 
 /// 检查请求是否结束
@@ -97,5 +109,5 @@ unsafe fn rk_blkreq_init(req: &mut RkBlkreq, op: RkBlkreqOp, start: Sector, nb_s
 ///
 /// RkBlkreq结构体
 unsafe fn rk_blkreg_is_done(req: &RkBlkreq) -> bool {
-    atomic_load_unordered::<bool>(*(req.state == RkBlkreqFinished))
+    req.state.load(atomic::Ordering::Relaxed) == RkBlkreqFinished
 }

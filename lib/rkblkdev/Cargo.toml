@@ -10,8 +10,8 @@ rkalloc = { path = "../rkalloc" }
 rksched = { path = "../rksched" }
 runikraft = {path = "../../core"}
 rkplat = {path = "../rkplat"}
-rkschedbasis={path="../rkschedbasis"}
 
 [features]
 dispatcherthreads = []
 sync_io_blocked_waiting = []
+xen_blkfront_grefpool=[]

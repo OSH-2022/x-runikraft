@@ -9,6 +9,7 @@ pub mod spinlock;
 pub mod thread;
 
 mod intctrl;
+mod exception;
 
 mod constants;
 
@@ -26,3 +27,4 @@ use core::arch::global_asm;
 global_asm!(include_str!("entry.asm"));
 global_asm!(include_str!("int_entry.asm"));
 global_asm!(include_str!("new_stack.asm"));
+global_asm!(include_str!("thread.asm"));

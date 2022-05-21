@@ -1,5 +1,5 @@
-use super::{scheduler, thread::RKthread};
-use runikraft::list::{STailq, Tailq};
+use super::thread::RKthread;
+use runikraft::list::STailq;
 
 /// 等待队列条目结构体
 pub struct RKwaitQEntry<'a> {

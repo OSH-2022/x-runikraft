@@ -1,22 +1,52 @@
 // 命令行参数分割与整合
 
+/*
+    规范的命令行输入格式：
 
+    自动删除 \n \t \r 等转转义字符
+    允许多条管道进行命令分割
+    重定向符号后要有文件名(
 
-// 命令的相关信息
+*/
+pub const MAX_ARGS_NUM: usize = 20;    // 单条指令参数个数上限
+
+// 原始命令的相关信息
 pub struct CmdInfo {
     pipenum: usize,           // 管道的数目
 
     // 储存每一条子指令 (管道数目 + 1)
     single_command: Vec<String>,
+
     read_redirect: Vec<usize>,    // 输入重定向
     read_filename: Vec<String>,   
+
     write_redirect: Vec<usize>,   // 输出重定向
     write_filename: Vec<String>,
+
     add_redirect: Vec<usize>,     // 追加重定向
     add_filename: Vec<String>,
+
 }
 
+// 单条命令的相关信息
+pub struct SinglecmdInfo {
+
+    command: String,    // 命令头
+    args: Vec<String>,  // 所有参数
+
+    read_redirect: usize,    // 输入重定向
+    read_filename: String,   
+
+    write_redirect: usize,   // 输出重定向
+    write_filename: String,
+
+    add_redirect: usize,     // 追加重定向
+    add_filename: String,
+}
+
+// 针对完整解析内容结构体部分操作
 impl CmdInfo {
+    // 信息输出
     pub fn infoprint(&self) {
         println!("The infomation for this command:");
         println!("Number of pipes: {}", self.pipenum);
@@ -30,6 +60,88 @@ impl CmdInfo {
             i += 1;
         }
     }
+
+    // 获取单独指令的相关信息
+    // index 范围： 0 ~ pipenum
+    pub fn get_command_info(&self, index: usize) -> SinglecmdInfo {
+
+        let mut single_cmdinfo = SinglecmdInfo{
+            command: String::from("NONE"),
+            args: Vec::with_capacity(MAX_ARGS_NUM),
+            read_redirect: 0,
+            read_filename: String::from("NONE"),
+            write_redirect : 0,
+            write_filename : String::from("NONE"), 
+            add_redirect : 0,
+            add_filename : String::from("NONE")
+        };
+
+        if index <= self.pipenum {
+            let mut args_origin = get_args(&self.single_command[index]);
+            single_cmdinfo.command = args_origin[0].clone();
+            args_origin.remove(0);
+            single_cmdinfo.args = args_origin;
+
+            single_cmdinfo.read_redirect = self.read_redirect[index].clone();
+            single_cmdinfo.read_filename = self.read_filename[index].clone();
+            single_cmdinfo.write_redirect = self.write_redirect[index].clone();
+            single_cmdinfo.write_filename = self.write_filename[index].clone();
+            single_cmdinfo.add_redirect = self.add_redirect[index].clone();
+            single_cmdinfo.add_filename = self.add_filename[index].clone();
+        }
+
+        single_cmdinfo.del_redirect();
+
+        return single_cmdinfo;
+    }
+}
+
+// 针对单条命令结构体部分操作
+impl SinglecmdInfo {
+    pub fn infoprint(&self) {
+        println!("The infomation for this single command:");
+        println!("      Command: {}", self.command);
+        
+        let mut i = 0;
+        println!("The args for this single command:   ");
+        if self.args.len() == 0 {
+            println!("      None")
+        }
+        else {
+            while i < self.args.len() {
+                println!("      {} ", self.args[i]);
+                i += 1;
+            }
+        }
+            
+        println!("The redirect infomation for this single command:   ");
+        println!("      read_redirect: {}, write_redirect: {}, add_redirect: {}", self.read_redirect, self.write_redirect, self.add_redirect);
+        println!("      read_filename: {}, write_filename: {}, add_filename: {}", self.read_filename, self.write_filename, self.add_filename);
+    }
+
+    // 删除结构体中关于重定向的参数内容
+    pub fn del_redirect(& mut self) {
+        let mut i = 0;
+        while i < self.args.len() {
+            let ch = self.args[i].as_str();
+            if ch == "<" || ch == ">" || ch == ">>" {
+                self.args.remove(i);
+                self.args.remove(i);
+                continue;
+            }
+            i += 1;
+        }
+    }
+}
+
+
+// 查找转义字符并将其删除
+pub fn del_escape_ch(command: &String) -> String{
+    let mut del_command = command.clone();
+    del_command = del_command.replace("\n", "");
+    del_command = del_command.replace("\r", "");
+    del_command = del_command.replace("\t", "");
+    del_command
 }
 
 
@@ -95,10 +207,13 @@ pub fn print_single(single_cmd: &Vec<String>) {
     }
 }
 
+
 // 根据输入的命令得到相关参数
+// 输入： @command 完整的一条命令
+// 输出： 一个 CmdInfo 结构体，包含了命令的完整解析
 pub fn command_analysis (command: &String) -> CmdInfo {
 
-    let single_command: Vec<String> = get_single(&command);
+    let single_command: Vec<String> = get_single(&del_escape_ch(&command));
 
     let mut read_redirect: Vec<usize> = Vec::with_capacity(10);
     let mut write_redirect: Vec<usize> = Vec::with_capacity(10);
@@ -151,3 +266,20 @@ pub fn command_analysis (command: &String) -> CmdInfo {
         add_filename : add_filename
     }
 }
+
+// 测试程序
+/*
+fn main() {
+    let command: String= String::from(" ls > \n 1.txt| pwd|echo \"$USER\"|- 33 | cat >> 1.txt < 2.txt > 3.txt");
+    // command: 存储命令的 String
+
+    let info = command_analysis(&command);
+    // info: 存储完整解析结果的结构体
+    info.infoprint();
+
+    let single_info = info.get_command_info(4); // 4 is index
+    // single_info: 存储单条指令解析结果的结构体
+    single_info.infoprint();
+
+}
+*/

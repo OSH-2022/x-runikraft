@@ -17,7 +17,7 @@ __runikraft_start:
     addi t0,zero,0
     addi t1,zero,0
     # 初始化中断响应函数
-    la t0, __rkplat_irq_handle_entry
+    la t0, __rkplat_int_except_entry
     csrw stvec, t0
     #加载栈指针
     la sp,boot_stack_top

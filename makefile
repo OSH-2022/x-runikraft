@@ -37,12 +37,11 @@
 PWD := $(shell pwd)
 export MAKE_ROOT_DIR := $(PWD)/build
 export REPORT_ROOT_DIR := $(PWD)/report
-MAKE_BUILD_TYPE ?= release
+MAKE_BUILD_TYPE ?= debug
 OBJCOPY_PREFIX ?= rust-
 RUST_OUTPUT_DIR := $(MAKE_ROOT_DIR)/dev-test/$(MAKE_BUILD_TYPE)
 RUST_BUILD_DIR := $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(MAKE_BUILD_TYPE)
 
-#currently nothing for all
 .PHONY: all
 all: dev-test
 
@@ -64,9 +63,35 @@ $(RUST_OUTPUT_DIR)/dev-test: $(RUST_BUILD_DIR)/dev-test
 	cp $(RUST_BUILD_DIR)/dev-test $(RUST_OUTPUT_DIR)/dev-test
 
 .PHONY: $(RUST_BUILD_DIR)/dev-test
-$(RUST_BUILD_DIR)/dev-test:
-	cargo build --$(MAKE_BUILD_TYPE)
+$(RUST_BUILD_DIR)/dev-test: $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(RUST_BUILD_DIR)/deps/liballoc_error_handler.rlib
+ifeq ($(MAKE_BUILD_TYPE), release)
+	cd dev-test && cargo build --release --features rkalloc/__alloc_error_handler
+else
+ifeq ($(MAKE_BUILD_TYPE), debug)
+	cd dev-test && cargo build --features rkalloc/__alloc_error_handler
+else
+	@echo "Unknown build type, expect release/debug."
+	false
+endif
+endif
+	
+$(RUST_BUILD_DIR)/deps/liballoc_error_handler.rlib: $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib
+	-mkdir --parents $(RUST_BUILD_DIR)/deps
+	cp $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(RUST_BUILD_DIR)/deps/liballoc_error_handler.rlib
+
+$(MAKE_ROOT_DIR)/liballoc_error_handler.rlib: lib/rkalloc/alloc_error_handler.rs
+	env RUSTC_BOOTSTRAP=1 rustc --edition=2021 lib/rkalloc/alloc_error_handler.rs --crate-type lib --target riscv64gc-unknown-none-elf -o $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib
 
 $(MAKE_ROOT_DIR)/report/makefile: makefiles/report.mk
 	-mkdir --parents $(MAKE_ROOT_DIR)/report
 	cp makefiles/report.mk $(MAKE_ROOT_DIR)/report/makefile
+
+.PHONY: run run_debug run_gdb
+run: $(RUST_OUTPUT_DIR)/dev-test.bin
+	qemu-system-riscv64 -machine virt -nographic -bios $$RISCV_BIOS -device loader,file=$(RUST_OUTPUT_DIR)/dev-test.bin,addr=0x80200000
+
+run_debug: $(RUST_OUTPUT_DIR)/dev-test.bin
+	qemu-system-riscv64 -machine virt -nographic -bios $$RISCV_BIOS -device loader,file=$(RUST_OUTPUT_DIR)/dev-test.bin,addr=0x80200000 -s -S
+
+run_gdb: $(RUST_OUTPUT_DIR)/dev-test $(RUST_OUTPUT_DIR)/dev-test.bin
+	riscv64-unknown-elf-gdb -ex 'file $(RUST_OUTPUT_DIR)/dev-test' -ex 'set arch riscv:rv64' -ex 'target remote localhost:1234'

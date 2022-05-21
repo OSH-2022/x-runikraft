@@ -1,0 +1,13 @@
+[package]
+    name = "rknetdev"
+    version = "0.1.0"
+    edition = "2021"
+
+[features]
+    default = []
+    dispatcherthreads = ["rksched"]
+
+[dependencies]
+    runikraft = {path = "../../core"}
+    rkalloc = {path = "../rkalloc"}
+    rksched = {path = "../rksched", optional=true}

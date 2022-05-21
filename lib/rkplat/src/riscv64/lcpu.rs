@@ -159,7 +159,7 @@ pub fn wmb() {atomic::fence(atomic::Ordering::Release);}
 pub fn spinwait() {
     unsafe {
         arch::asm!(
-            ".insn i 0x0F,0,x0,x0,0x010  #arch::pause的实现"
+            ".insn i 0x0F,0,x0,x0,0x010"//arch::pause的实现
         );
     }
 }

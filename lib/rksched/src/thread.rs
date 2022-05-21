@@ -1,10 +1,9 @@
-use super::{scheduler::{SchedulerCoop, SchedulerPreem}, wait::RKwaitQ};
+use super::{RKsched, wait::RKwaitQ};
 use runikraft::list::Tailq;
 use core::{debug_assert, panic};
 use rkalloc::RKalloc;
 use core::time::Duration;
-use core::clone;
-pub use clone::Clone;
+use rkplat::thread::Context;
 
 ////////////////////////////////////////////////////////////////////////
 /// 线程属性 thread_attr 的结构体定义
@@ -47,11 +46,11 @@ impl Default for RKthreadAttr {
 }
 
 impl RKthreadAttr {
-    pub fn new(&mut self) -> Self {
+    pub fn new(&mut self, detached: bool, prio: i32, timeslice: Duration) -> Self {
         Self {
-            detached: false,
-            prio: -1,
-            timeslice: Duration::from_nanos(RK_THREAD_ATTR_TIMESLICE_NIL),
+            detached,
+            prio,
+            timeslice,
         }
     }
 
@@ -109,17 +108,16 @@ pub type RKthreadList<'a> = Tailq<'a, RKthread<'a>>;
 
 pub struct RKthread<'a> {
     name: &'a str,
-    attr: RKthreadAttr,
+    pub attr: RKthreadAttr,
     stack: *mut u8,
     tls: *mut u8,
-    ctx: *mut u8,
+    pub ctx: *mut Context,
     thread_list: RKthreadList<'a>,
     flags: u32,
     pub wakeup_time: Duration,
     detached: bool,
     waiting_threads: RKwaitQ<'a>,
-    coop_sched: &'a dyn SchedulerCoop,
-    preem_sched: &'a dyn SchedulerPreem,
+    sched: &'a dyn RKsched<'a>,
     entry: fn(*mut u8),
     arg: *mut u8,
     prv: *mut u8,
@@ -230,7 +228,7 @@ impl<'a> RKthread<'a> {
         // TODO
     }
 
-    fn block_timeout(&self, nsec: Duration) {
+    pub fn block_timeout(&self, nsec: Duration) {
         // TODO
     }
 
@@ -241,29 +239,8 @@ impl<'a> RKthread<'a> {
     //后面还有一些仿函数宏未完成(thread.h 145~167)
 }
 
-impl<'a> Clone for RKthread<'a> {
-    fn clone(&self) -> Self {
-        Self {
-            name: self.name,
-            attr: self.attr.clone(),
-            stack: self.stack,
-            tls: self.tls,
-            ctx: self.ctx,
-            thread_list: self.thread_list,  //here needs a Clone trait in Tailq
-            flags: self.flags,
-            wakeup_time: self.wakeup_time,
-            detached: self.detached,
-            waiting_threads: self.waiting_threads,  //here also needs a Clone trait in Stailq
-            coop_sched: self.coop_sched,
-            preem_sched: self.preem_sched,
-            entry: self.entry,
-            arg: self.arg,
-            prv: self.prv,
-        }
-    }
-}
 
 //返回当前线程的函数
-pub fn thread_current<'a, T>() -> &'a mut RKthread<'a> {
+pub fn thread_current<'a>() -> *mut RKthread<'a> {
     todo!()//needs the function about stack(operations related to the bottom layer)
 }
