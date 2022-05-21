@@ -5,7 +5,7 @@
 use rkalloc::*;
 use core::sync::atomic::{AtomicU32, Ordering};
 use core::ptr::{null_mut, drop_in_place};
-use core::mem::size_of;
+use core::mem::{size_of, align_of};
 
 #[inline(always)]
 pub fn critical_enter() { rkplat::lcpu::barrier(); }
@@ -46,7 +46,7 @@ impl Ring {
     pub fn new(count: i32, a: &dyn RKalloc) -> *mut Ring {
         let br: *mut Ring;
         unsafe {
-            br = a.alloc(size_of::<Ring>(), count as usize * size_of::<*mut u8>()) as *mut Ring;
+            br = a.alloc(size_of::<Ring>() + count as usize * size_of::<*mut u8>(), count as usize) as *mut Ring;
         }
         if br == null_mut() {
             return null_mut();
@@ -231,7 +231,6 @@ impl Ring {
 				//br->br_cons_tail, cons_head);
             }
         }
-
         self.br_cons_tail = cons_next;
         return Some(buf);
     }
