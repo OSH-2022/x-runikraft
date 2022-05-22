@@ -45,13 +45,16 @@ const DEVICE_TREE_MAGIC: u32 = 0xD00DFEED;
 #[derive(Debug,Clone,Copy)]
 pub(crate) struct HartLocal {
     _reg_space: usize,  //供中断处理程序使用的临时保存寄存器的空间(offset 0)
-    hartsp: usize,          //异常处理程序使用的栈的指针    (offset 8)
-    hartid: usize,          // offset 16
+    pub(crate) hartsp: usize,   //异常处理程序使用的栈的指针    (offset 8)
+    pub(crate) hartid: usize,   // offset 16
+    pub(crate) is_running: bool,// offset 24
+    pub(crate) start_sp: usize, // 启动新的内核时使用的栈指针 (offset 32)
+    pub(crate) start_entry: usize,// 启动新的内核时跳转到的位置 (offset 40)
 }
 
 impl HartLocal {
     const fn new()->Self {
-        Self { _reg_space: 0, hartid: 0, hartsp: 0}
+        Self { _reg_space: 0, hartid: 0, hartsp: 0, start_entry:0, start_sp: 0, is_running: false}
     }
 }
 
@@ -85,6 +88,7 @@ unsafe fn __runikraft_entry_point(hartid: usize, device_ptr: usize) -> !{
         HART_LOCAL[i].hartid = i;
         HART_LOCAL[i].hartsp = (addr_of!(EXCEPT_STACK[i]) as usize)+1024;
     }
+    HART_LOCAL[hartid].is_running = true;
     let scratch_addr = addr_of!(HART_LOCAL[hartid]);
         arch::asm!("csrw sscratch, {s}",
             s=in(reg)scratch_addr);

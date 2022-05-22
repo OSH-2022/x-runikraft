@@ -9,7 +9,7 @@ mod inner {
     }
 
     impl SpinLock {
-        pub fn new() -> SpinLock {
+        pub const fn new() -> SpinLock {
             SpinLock { lock: 0 }
         }
         /// 上锁
@@ -81,7 +81,7 @@ mod inner {
     pub struct SpinLock {} //空
 
     impl SpinLock {
-        pub fn new() -> SpinLock {
+        pub const fn new() -> SpinLock {
             SpinLock {}
         }
         #[inline(always)]
@@ -104,7 +104,7 @@ pub struct SpinLock {
 }
 
 impl SpinLock {
-    pub fn new() -> SpinLock {
+    pub const fn new() -> SpinLock {
         SpinLock { lock: inner::SpinLock::new() }
     }
 

@@ -1,4 +1,3 @@
-#TODO: 针对smp重构
 .text
 .globl __rkplat_int_except_entry
 .align 2
