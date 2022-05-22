@@ -27,6 +27,7 @@
 use core::mem::size_of;
 use core::{str,slice};
 use core::ptr::addr_of;
+use super::uart;
 
 const MAGIC_NUMBER: u32 = 0xd00dfeed;
 const SUPPORTED_VERSION: u32 = 17;
@@ -264,14 +265,54 @@ fn load_node(
 }
 
 fn parse_device(name: &str, props: &[(&str,&[u8])], props_size: usize) -> Result<(), DeviceTreeError> {
-    println!("name={}",name);
-    for i in 0..props_size {
-        print_val(props[i].0, props[i].1)?;
+    if let Some(compatible) = prop_str(props, props_size, "compatible") {
+        match compatible {
+            "ns16550a" => {uart::ns16550::init(name, 
+                prop_u64(props,props_size,"reg").unwrap() as *mut u8,
+                prop_u32(props,props_size,"interrupts").unwrap() as usize)},
+            _ =>{}
+        }
     }
-    println!("\n");
     Ok(())
 }
 
+fn prop_str<'a>(props: &[(&str,&'a [u8])], props_size: usize, prop_name: &str) -> Option<&'a str> {
+    for i in 0..props_size {
+        let val = props[i].1;
+        if props[i].0 == prop_name {
+            if let Ok(s) = str::from_utf8(&val[0..(val.len()-1)]) {
+                return Some(s);
+            }
+        }
+    }
+    None
+}
+
+fn prop_u32(props: &[(&str,&[u8])], props_size: usize, prop_name: &str) -> Option<u32> {
+    for i in 0..props_size {
+        let val = props[i].1;
+        if props[i].0 == prop_name {
+            if let Ok(s) = val.read_be_u32(0) {
+                return Some(s);
+            }
+        }
+    }
+    None
+}
+
+fn prop_u64(props: &[(&str,&[u8])], props_size: usize, prop_name: &str) -> Option<u64> {
+    for i in 0..props_size {
+        let val = props[i].1;
+        if props[i].0 == prop_name {
+            if let Ok(s) = val.read_be_u64(0) {
+                return Some(s);
+            }
+        }
+    }
+    None
+}
+
+#[allow(unused)]
 fn print_val(prop_name: &str, val: &[u8]) -> Result<(), DeviceTreeError>{
     match prop_name {
         "compatible" | "model" | "stdout-path" | "device_type" | "riscv,isa" | "mmu-type" => {
