@@ -5,6 +5,7 @@ pub(crate) fn ack_irq(_irq: usize) {
     //nop
 }
 
+#[allow(unused)]
 pub(crate) fn mask_irq(irq: usize) {
     let irq = 1usize<<irq;
     unsafe {

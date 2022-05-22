@@ -87,7 +87,7 @@ mod inner {
         #[inline(always)]
         pub fn lock(&self) {}
         #[inline(always)]
-        pub fn trylock(&self) -> bool { true }
+        pub fn try_lock(&self) -> bool { true }
         #[inline(always)]
         pub fn unlock(&self) {}
         #[inline(always)]

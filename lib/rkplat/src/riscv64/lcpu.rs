@@ -1,6 +1,8 @@
 use core::time::Duration;
 use core::arch;
-use super::{bootstrap,time};
+use crate::riscv64::sbi::sbi_call;
+
+use super::time;
 use core::sync::atomic;
 
 /// 中断标志，具体格式由平台决定
@@ -64,7 +66,10 @@ pub fn irqs_disabled() -> bool {
 /// 挂起当前的逻辑处理器
 pub fn halt() {
     disable_irq();
-    todo!("HART suspend");
+    //Hart State Management-
+    //sbi_hart_suspend(suspend_type,resume_addr,opaque)
+    //suspend_type=Default retentive suspend
+    sbi_call(0x48534D, 3, 0, 0, 0).expect("Fail to suspend.");
 }
 
 /// 挂起当前处理器一段时间，
@@ -81,8 +86,8 @@ pub fn halt_irq() {
     let flag = save_irqf();
     restore_irqf(0xFFFF);//开启所有中断
     enable_irq();
-    todo!("SBI: HART suspend");
-    disable_irq();
+    sbi_call(0x48534D, 3, 0, 0, 0).expect("Fail to suspend.");
+    restore_irqf(flag);
 }
 
 pub type ID = u32;
@@ -111,14 +116,14 @@ mod smp {
     /// - `lcpuid.0`: 逻辑处理器ID
     /// - `lcpuid.1`: 栈指针
     /// - `lcpuid.2`: 入口函数
-    pub fn start(lcpu_id_sp_entry: &[(ID, StackPointer, Entry)]) -> Result<(), i32> {
+    pub fn start(_lcpu_id_sp_entry: &[(ID, StackPointer, Entry)]) -> Result<(), i32> {
         todo!();
     }
 
     /// 让`lcpuid`中的逻辑处理器等待`timeout`
     ///
     /// 可以用`timeout`=0等待不确定的时间
-    pub fn wait(lcpuid: &[ID], timeout: Duration) -> Result<(), i32> {
+    pub fn wait(_lcpuid: &[ID], _timeout: Duration) -> Result<(), i32> {
         todo!();
     }
 
@@ -126,7 +131,7 @@ mod smp {
     // fn run()
 
     /// 唤醒被挂起或处在低功耗状态的逻辑处理器
-    pub fn wakeup(lcpuid: &[ID]) -> Result<(), i32> {
+    pub fn wakeup(_lcpuid: &[ID]) -> Result<(), i32> {
         todo!();
     }
 }
@@ -136,11 +141,11 @@ pub use smp::*;
 
 #[cfg(not(feature = "has_smp"))]
 #[inline(always)]
-fn id() -> ID { 0 }
+pub fn id() -> ID { 0 }
 
 #[cfg(not(feature = "has_smp"))]
 #[inline(always)]
-fn count() -> ID { 1 }
+pub fn count() -> ID { 1 }
 
 //来自ukarch
 #[inline(always)]

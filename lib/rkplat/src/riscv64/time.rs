@@ -60,6 +60,7 @@ fn block(until: Duration) {
     let time_now = monotonic_clock();
     if until <= time_now {return;}
     let duration = (until.as_nanos() - time_now.as_nanos()) as u64;
+    //Set Timer
     sbi::sbi_call(0x54494D45, 0, (duration/unsafe{TICK_NANOSEC}) as usize, 0, 0).unwrap();
     lcpu::halt_irq();
 }
