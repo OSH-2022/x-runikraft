@@ -1,3 +1,4 @@
+#TODO: 针对smp重构
 .text
 .globl __rkplat_int_except_entry
 .align 2
@@ -6,12 +7,12 @@
 # 异常会完整地在early boot stack中保存原来的寄存器信息，
 # 而中断只会在当前线程的栈上保存通用寄存器
 __rkplat_int_except_entry:
-    csrrw sp, sscratch, sp #保存用户栈，读出系统栈
-    sd t0,-8(sp)
+    csrrw t1, sscratch, t1 #读取 HartLocal
+    sd t0,(t1)             #暂存t0 到 _reg_space
     csrr t0, scause
     bgez t0,__rkplat_except_handle_entry    #scause>=0，即最高位是0，说明是异常
-    ld t0,-8(sp)
-    csrrw sp, sscratch, sp  #还原栈指针和t0
+    ld t0,(t1)
+    csrrw t1, sscratch, t1  #还原t1、t0和sscratch
     addi sp,sp,-144         #直接在当前线程的栈上保存寄存器
     sd t0,(sp)
     sd t1,8(sp)
@@ -60,9 +61,13 @@ __rkplat_int_except_entry:
     sret
 
 __rkplat_except_handle_entry:
-    addi sp,sp, -152    #现在sp指向early boot stack
-    #sd t0,(sp)         #已经保存过t0
-    sd t1,8(sp)
+    ld t0,(t1)          #还原t0
+    sd sp,(t1)          #暂存sp 到 _reg_space
+    ld sp,8(t1)         #现在sp指向异常处理栈
+    addi sp,sp, -152
+    sd t0,(sp)
+    csrrw t0,sscratch,t1 #还原sscratch，并且把t1原来的值加载到t0
+    sd t0,8(sp)
     sd t2,16(sp)
     sd t3,24(sp)
     sd t4,32(sp)
@@ -78,18 +83,19 @@ __rkplat_except_handle_entry:
     sd a7,112(sp)
     sd ra,120(sp)
     csrr t0,sepc
-    csrr t1,sstatus
-    csrr t2,sscratch
+    csrr t3,sstatus
+    ld t2,(t1)          #刚才保存到_reg_space的旧sp
     sd t0,128(sp)
-    sd t1,136(sp)
+    sd t3,136(sp)
     sd t2,144(sp)
     csrr a0, scause
     mv a1,sp
     call __rkplat_exception_handle
     ld t0,128(sp)
     ld t1,136(sp)
-    csrw sepc,t0
-    csrw sstatus,t1 #这里不还原sscratch，因为假定异常处理程序不会进一步触发异常
+    addi t0,t0,4
+    csrw sepc,t0    #将sepc还原成引发异常的指令的下一条指令
+    csrw sstatus,t1
     ld t0,(sp)
     ld t1,8(sp)
     ld t2,16(sp)
@@ -106,6 +112,5 @@ __rkplat_except_handle_entry:
     ld a6,104(sp)
     ld a7,112(sp)
     ld ra,120(sp)
-    addi sp,sp,152
-    csrrw sp, sscratch, sp
+    ld sp,144(sp)   #不允许出现多重异常，所以sscratch里储存的hartsp不应该改变，所以无需还原
     sret
