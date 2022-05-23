@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// slist.rs
+// Authors: 张子辰 <zichen350@gmail.com>
+// Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
+
 use rkalloc::RKalloc;
 use core::ops::{Deref, DerefMut};
 use core::ptr::null_mut;

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// thread.rs
+// Authors: 陈建绿 <2512674094@qq.com>
+// Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
+
 use super::{RKsched, wait::RKwaitQ};
 use rklist::Tailq;
 use core::{debug_assert, panic};

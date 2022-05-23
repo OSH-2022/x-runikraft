@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// align_as.rs
+// Authors: 张子辰 <zichen350@gmail.com>
+// Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
+
 #[repr(align(   1))] pub struct    A1<T> {pub data: T}
 #[repr(align(   2))] pub struct    A2<T> {pub data: T}
 #[repr(align(   4))] pub struct    A4<T> {pub data: T}

@@ -1,14 +1,18 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# rkblkdev/Cargo.toml
+# Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
+
 [package]
 name = "rkblkdev"
 version = "0.1.0"
+authors = [ 郭耸霄 <logname@mail.ustc.edu.cn> ]
+license = "BSD-3-Clause"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+runikraft = {path = "../../core"}
 rkalloc = { path = "../rkalloc" }
 rksched = { path = "../rksched" }
-runikraft = {path = "../../core"}
 rkplat = {path = "../rkplat"}
 rklist = {path = "../rklist"}
 

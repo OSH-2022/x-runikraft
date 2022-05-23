@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // rksignal/lib.rs
 
-// Authors: Kip Macy <kmacy@freebsd.org>
-//          蓝俊玮 <ljw13@mail.ustc.edu.cn>
-//          张子辰 <zichen350@gmail.com>
+// Authors: 蓝俊玮 <ljw13@mail.ustc.edu.cn>
 
-// Copyright (c) 2007-2009 Kip Macy <kmacy@freebsd.org>
 // Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
 // Redistribution and use in source and binary forms, with or without

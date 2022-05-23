@@ -1,8 +1,13 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# rkparam/Cargo.toml
+# Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
+
 [package]
 name = "rkparam"
 version = "0.1.0"
+authors = [ "吴骏东 <1904346407@qq.com>" ]
+license = "BSD-3-Clause"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+    runikraft = {path = "../../core"}

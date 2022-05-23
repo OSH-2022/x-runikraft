@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // rkmbox/lib.rs
 
-// Authors: Kip Macy <kmacy@freebsd.org>
+// Authors: Simon Kuenzer <simon.kuenzer@neclab.eu>
 //          蓝俊玮 <ljw13@mail.ustc.edu.cn>
-//          张子辰 <zichen350@gmail.com>
 
-// Copyright (c) 2007-2009 Kip Macy <kmacy@freebsd.org>
+// Copyright (c) 2018, NEC Europe Ltd., NEC Corporation.
 // Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
 // Redistribution and use in source and binary forms, with or without

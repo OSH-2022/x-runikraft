@@ -1,16 +1,44 @@
-// 命令行参数分割与整合
+// SPDX-License-Identifier: BSD-3-Clause
+// rkparam/lib.rs
 
-/*
-    规范的命令行输入格式：
+// Authors: 吴骏东 <1904346407@qq.com>
 
-    自动删除 \n \t \r 等转转义字符
-    允许多条管道进行命令分割
-    重定向符号后要有文件名(
+// Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
-*/
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+// 1. Redistributions of source code must retain the above copyright
+//    notice, this list of conditions and the following disclaimer.
+// 2. Redistributions in binary form must reproduce the above copyright
+//    notice, this list of conditions and the following disclaimer in the
+//    documentation and/or other materials provided with the distribution.
+// 3. Neither the name of the copyright holder nor the names of its
+//    contributors may be used to endorse or promote products derived from
+//    this software without specific prior written permission.
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
+//! 命令行参数分割与整合
+//!
+//!  规范的命令行输入格式：
+//! 
+//! 自动删除 \n \t \r 等转转义字符
+//! 允许多条管道进行命令分割
+//! 重定向符号后要有文件名(
+
 pub const MAX_ARGS_NUM: usize = 20;    // 单条指令参数个数上限
 
-// 原始命令的相关信息
+/// 原始命令的相关信息
 pub struct CmdInfo {
     pipenum: usize,           // 管道的数目
 
@@ -28,7 +56,7 @@ pub struct CmdInfo {
 
 }
 
-// 单条命令的相关信息
+/// 单条命令的相关信息
 pub struct SinglecmdInfo {
 
     command: String,    // 命令头
@@ -44,9 +72,9 @@ pub struct SinglecmdInfo {
     add_filename: String,
 }
 
-// 针对完整解析内容结构体部分操作
+/// 针对完整解析内容结构体部分操作
 impl CmdInfo {
-    // 信息输出
+    /// 信息输出
     pub fn infoprint(&self) {
         println!("The infomation for this command:");
         println!("Number of pipes: {}", self.pipenum);
@@ -61,8 +89,8 @@ impl CmdInfo {
         }
     }
 
-    // 获取单独指令的相关信息
-    // index 范围： 0 ~ pipenum
+    /// 获取单独指令的相关信息
+    /// index 范围： 0 ~ pipenum
     pub fn get_command_info(&self, index: usize) -> SinglecmdInfo {
 
         let mut single_cmdinfo = SinglecmdInfo{
@@ -119,7 +147,7 @@ impl SinglecmdInfo {
         println!("      read_filename: {}, write_filename: {}, add_filename: {}", self.read_filename, self.write_filename, self.add_filename);
     }
 
-    // 删除结构体中关于重定向的参数内容
+    /// 删除结构体中关于重定向的参数内容
     pub fn del_redirect(& mut self) {
         let mut i = 0;
         while i < self.args.len() {
@@ -135,7 +163,7 @@ impl SinglecmdInfo {
 }
 
 
-// 查找转义字符并将其删除
+/// 查找转义字符并将其删除
 pub fn del_escape_ch(command: &String) -> String{
     let mut del_command = command.clone();
     del_command = del_command.replace("\n", "");
@@ -145,7 +173,7 @@ pub fn del_escape_ch(command: &String) -> String{
 }
 
 
-// 将可能包含的管道命令进行拆分，去除前后空格
+/// 将可能包含的管道命令进行拆分，去除前后空格
 pub fn get_single(command: &String) -> Vec<String>{ 
     let temp_vec: Vec<&str> = command.split("|").collect();
     let mut result: Vec<String> = Vec::with_capacity(10);
@@ -159,8 +187,8 @@ pub fn get_single(command: &String) -> Vec<String>{
     result
 }
 
-// 检查是否有重定向,如果有则将目标文件返回
-// 目前仅支持单文件重定向（< > >> 各至多一个）
+/// 检查是否有重定向,如果有则将目标文件返回
+/// 目前仅支持单文件重定向（< > >> 各至多一个）
 pub fn check_redirect(single_command: &String) -> (String, String, String) {
     let args: Vec<String> = get_args(&single_command);
     let mut i = 0;
@@ -185,7 +213,7 @@ pub fn check_redirect(single_command: &String) -> (String, String, String) {
     (read_filename, write_filename, add_filename)
 }
 
-// 将每条命令中的参数进行分割, 返回一个 String 向量
+/// 将每条命令中的参数进行分割, 返回一个 String 向量
 pub fn get_args(single_command: &String) -> Vec<String>{
     let temp_str: Vec<&str> = single_command.split(" ").collect();
     let mut result: Vec<String> = Vec::with_capacity(10);
@@ -198,7 +226,7 @@ pub fn get_args(single_command: &String) -> Vec<String>{
     result
 }
 
-// 测试输出
+/// 测试输出
 pub fn print_single(single_cmd: &Vec<String>) {
     let mut i = 0;
     while i < single_cmd.len() {
@@ -208,9 +236,11 @@ pub fn print_single(single_cmd: &Vec<String>) {
 }
 
 
-// 根据输入的命令得到相关参数
-// 输入： @command 完整的一条命令
-// 输出： 一个 CmdInfo 结构体，包含了命令的完整解析
+/// 根据输入的命令得到相关参数
+/// 
+/// 输入： @command 完整的一条命令
+/// 
+/// 输出： 一个 CmdInfo 结构体，包含了命令的完整解析
 pub fn command_analysis (command: &String) -> CmdInfo {
 
     let single_command: Vec<String> = get_single(&del_escape_ch(&command));
