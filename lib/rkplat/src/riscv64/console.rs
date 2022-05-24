@@ -1,53 +1,71 @@
 //控制台输入输出
 
 use super::sbi::*;
+use crate::drivers::uart::UartDevice;
 
-//TODO: 更详细的错误信息
-fn putchar(ch: usize) -> bool {
+fn putchar_bios(ch: usize) -> bool {
     if let Err(_) = sbi_call(SBI_CONSOLE_PUTCHAR, 0, ch, 0, 0) {
         return false;
     }
     true
 }
 
-fn getchar() -> Result<usize, usize> {
-    sbi_call(SBI_CONSOLE_GETCHAR, 0, 0, 0, 0)
-}
+// fn getchar_bios() -> Result<usize, usize> {
+//     sbi_call(SBI_CONSOLE_GETCHAR, 0, 0, 0, 0)
+// }
 
+pub(crate) static mut UART_DEIVCE: Option<&dyn UartDevice> = None;
 
 /// 向内核控制台输出字符串
 /// 注意字符串不必是合法的UTF-8，也不会因null终止
 /// - `buf`: 字符串缓冲区
 /// - 返回值: 输出的字符数
-pub fn coutk(buf: &[u8]) -> Result<usize, ()> {
-    for i in buf {
-        if !putchar(*i as usize) {
-            return Err(());
-        }
+#[inline]
+pub fn coutk(buf: &[u8]) -> Option<usize> {
+    unsafe {
+        UART_DEIVCE.map(|uart|{
+            for i in buf {
+                uart.putc(*i);
+            }
+            buf.len()
+        })
     }
-    Ok(buf.len())
 }
 
-/// 向调试控制台输出字符串
-pub fn coutd(buf: &[u8]) -> Result<usize, ()> {
-    coutk(buf)
-}
+// Unikraft的`coutd`的实现和`coutk`相同，所以Runikraft删去了冗余的API
+// /// 向调试控制台输出字符串
+// #[inline]
+// pub fn coutd(buf: &[u8]) -> Result<usize, ()> {
+//     unsafe {
+//         match UART_DEIVCE {
+//             Some(uart) => {uart.coutd(buf)}
+//             None => {Err(())}
+//         }
+//     }
+// }
 
 /// 从控制台读入字符
 /// - `buf`: 目标缓冲区
 /// - 返回值 读入的字符数
-pub fn cink(buf: &mut [u8]) -> Result<usize, ()> {
-    let mut cnt: usize = 0;
-    for i in buf {
-        match getchar() {
-            Ok(ch) => {
-                *i = ch as u8;
-                cnt = cnt + 1;
+#[inline]
+pub fn cink(buf: &mut [u8]) -> Option<usize> {
+    unsafe {
+        if let Some(uart) = UART_DEIVCE {
+            let mut num = 0;
+                
+            while num < buf.len() {
+                if let Some(c) = uart.getc() {
+                    buf[num] = c;
+                    num+=1;
+                }
+                else {break;}
             }
-            Err(_) => { return Err(()); }
+            
+            if num!=0 {Some(num)}
+            else {None}
         }
+        else {None}
     }
-    Ok(cnt)
 }
 
 ///////////////////
@@ -55,16 +73,44 @@ pub fn cink(buf: &mut [u8]) -> Result<usize, ()> {
 
 use core::fmt::{self, Write};
 
+struct RustStyleOutputBIOS;
 struct RustStyleOutput;
+
+pub(crate) fn __print_bios(args: fmt::Arguments) {
+    RustStyleOutputBIOS.write_fmt(args).unwrap();
+}
 
 pub fn __print(args: fmt::Arguments) {
     RustStyleOutput.write_fmt(args).unwrap();
 }
 
+impl Write for RustStyleOutputBIOS {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        for ch in s.as_bytes() {
+            putchar_bios(*ch as usize);
+        }
+        Ok(())
+    }
+}
+
 impl Write for RustStyleOutput {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        coutk(s.as_bytes()).unwrap();
+        if let None = coutk(s.as_bytes()) {
+            panic!("Attempt to use coutk before initializing uart device. str={}",s);
+        }
         Ok(())
+    }
+}
+
+macro_rules! print_bios {
+    ($fmt: literal $(, $($arg: tt)+)?) => {
+        $crate::console::__print_bios(format_args!($fmt $(, $($arg)+)?));
+    }
+}
+
+macro_rules! println_bios {
+    ($fmt: literal $(, $($arg: tt)+)?) => {
+        $crate::console::__print_bios(format_args!(concat!($fmt, "\n") $(, $($arg)+)?));
     }
 }
 

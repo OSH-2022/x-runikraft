@@ -3,7 +3,7 @@ use core::{slice,str};
 use core::mem::{align_of, size_of};
 use core::ptr::addr_of;
 use rkalloc::RKalloc;
-use rkplat::{irq,time,bootstrap};
+use rkplat::{irq,time,bootstrap, device};
 use runikraft::align_as;
 
 const HEAP_SIZE: usize = 65536;
@@ -39,8 +39,9 @@ pub unsafe extern "C" fn rkplat_entry(argc: i32, argv: *mut *mut u8) -> ! {
     rkboot_entry(&a, args);
 }
 
-unsafe fn rkboot_entry(alloc: *const dyn RKalloc, args: &mut [&str]) -> ! {
+unsafe fn rkboot_entry(alloc: &dyn RKalloc, args: &mut [&str]) -> ! {
     irq::init(alloc).unwrap();
+    device::init(alloc).unwrap();
     time::init();
     let ret = main(args);
     rkplat::println!("main returned {}, halting system", ret);

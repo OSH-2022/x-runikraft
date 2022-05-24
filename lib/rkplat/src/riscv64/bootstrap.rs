@@ -4,7 +4,7 @@ use core::ptr::{null_mut, addr_of, addr_of_mut};
 use core::{slice, arch};
 use runikraft::config::rkplat::*;
 use runikraft::config::STACK_SIZE_SCALE as SSS;
-use crate::drivers::device_tree;
+use super::device;
 
 use super::sbi::*;
 
@@ -96,11 +96,7 @@ unsafe fn __runikraft_entry_point(hartid: usize, device_ptr: usize) -> !{
     let magic = u32::from_be(header.be_magic);
     assert_eq!(magic,DEVICE_TREE_MAGIC);
     let len = u32::from_be(header.be_size) as usize;
-    let buffer = slice::from_raw_parts(device_ptr as *const u8, len);
-    match device_tree::parse(buffer) {
-        Ok(_) => {},
-        Err(e) => {panic!("Fail to load device tree. {:?}",&e);}
-    }
+    device::DEVICE_PTR = slice::from_raw_parts(device_ptr as *const u8, len);
     __rkplat_newstack((addr_of_mut!(MAIN_STACK) as *mut u8).add(MAIN_STACK_SIZE), __runikraft_entry_point2,null_mut());
 }
 
@@ -118,7 +114,7 @@ pub fn restart() -> ! {
 
 /// 崩溃
 pub fn crash() -> ! {
-    print!("System crashed!\n");
+    print_bios!("System crashed!\n");
     sbi_call(SBI_SRST, 0, 0, 1, 0).unwrap();
     loop {}//不能用panic，因为panic会调用crash
 }

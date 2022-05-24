@@ -28,6 +28,8 @@ use core::mem::size_of;
 use core::{str,slice};
 use core::ptr::addr_of;
 use super::uart;
+use rkalloc::{RKalloc,alloc_type};
+use crate::console;
 
 const MAGIC_NUMBER: u32 = 0xd00dfeed;
 const SUPPORTED_VERSION: u32 = 17;
@@ -152,7 +154,7 @@ impl From<str::Utf8Error> for DeviceTreeError {
 //debug: addi    sp,sp,-720
 //release: addi    sp,sp,-96
 /// Load a device tree from a memory buffer.
-pub fn parse(buffer: &[u8]) -> Result<(), DeviceTreeError> {
+pub fn parse(a: &dyn RKalloc, buffer: &[u8]) -> Result<(), DeviceTreeError> {
     //  0  magic_number: u32,
 
     //  4  totalsize: u32,
@@ -200,7 +202,7 @@ pub fn parse(buffer: &[u8]) -> Result<(), DeviceTreeError> {
         }
     }
 
-    load_node(buffer, off_dt_struct, off_dt_strings)?;
+    load_node(a, buffer, off_dt_struct, off_dt_strings)?;
 
     Ok(())
 }
@@ -209,11 +211,7 @@ static mut SAVE_PROP_SPACE: [usize;size_of::<(&str,&[u8])>()*2] = [0;size_of::<(
 
 //debug: addi    sp,sp,-1152
 //release: addi    sp,sp,-144
-fn load_node(
-    buffer: &[u8],
-    start: usize,
-    off_dt_strings: usize,
-) -> Result<usize, DeviceTreeError> {
+fn load_node(a: &dyn RKalloc, buffer: &[u8], start: usize, off_dt_strings: usize) -> Result<usize, DeviceTreeError> {
     // check for DT_BEGIN_NODE
     if buffer.read_be_u32(start)? != OF_DT_BEGIN_NODE {
         return Err(DeviceTreeError::ParseError(start));
@@ -246,12 +244,12 @@ fn load_node(
 
         pos = align(val_end, 4);
     }
-    parse_device(name, props, props_size)?;
+    parse_device(a, name, props, props_size)?;
     
 
     // finally, parse children
     while buffer.read_be_u32(pos)? == OF_DT_BEGIN_NODE {
-        let new_pos = load_node(buffer, pos, off_dt_strings)?;
+        let new_pos = load_node(a, buffer, pos, off_dt_strings)?;
         pos = new_pos;
     }
 
@@ -264,13 +262,17 @@ fn load_node(
     Ok(pos)
 }
 
-fn parse_device(name: &str, props: &[(&str,&[u8])], props_size: usize) -> Result<(), DeviceTreeError> {
+fn parse_device(a: &dyn RKalloc, name: &str, props: &[(&str,&[u8])], props_size: usize) -> Result<(), DeviceTreeError> {
     if let Some(compatible) = prop_str(props, props_size, "compatible") {
         match compatible {
-            "ns16550a" => {uart::ns16550::init(name, 
-                prop_u64(props,props_size,"reg").unwrap() as *mut u8,
-                prop_u32(props,props_size,"interrupts").unwrap() as usize)},
-            _ =>{}
+            "ns16550a" | "ns16550" => {
+                unsafe {
+                    console::UART_DEIVCE = Some(&*alloc_type(a,uart::ns16550::Ns16550::new(name,
+                        prop_u64(props,props_size,"reg").unwrap() as usize, 
+                        prop_u32(props,props_size,"interrupts").unwrap() as usize)));
+                }
+            },
+            _ => {}
         }
     }
     Ok(())
@@ -316,24 +318,24 @@ fn prop_u64(props: &[(&str,&[u8])], props_size: usize, prop_name: &str) -> Optio
 fn print_val(prop_name: &str, val: &[u8]) -> Result<(), DeviceTreeError>{
     match prop_name {
         "compatible" | "model" | "stdout-path" | "device_type" | "riscv,isa" | "mmu-type" => {
-            println!("{}={}",prop_name,str::from_utf8(&val[0..(val.len()-1)])?);
+            println_bios!("{}={}",prop_name,str::from_utf8(&val[0..(val.len()-1)])?);
         },
         "interrupts" | "interrupt-parent" => {
-            println!("{}=0x{:x}",prop_name,val.read_be_u32(0)?);
+            println_bios!("{}=0x{:x}",prop_name,val.read_be_u32(0)?);
         }
         "reg" => {
-            print!("{}=<",prop_name);
+            print_bios!("{}=<",prop_name);
             for i in 0..val.len()/8 {
-                print!("0x{:x} ",val.read_be_u64(i*8)?);
+                print_bios!("0x{:x} ",val.read_be_u64(i*8)?);
             }
-            println!(">");
+            println_bios!(">");
         }
         _ => {
-            print!("{}=<",prop_name);
+            print_bios!("{}=<",prop_name);
             for i in val {
-                print!("0x{:x} ",i);
+                print_bios!("0x{:x} ",i);
             }
-            println!(">");
+            println_bios!(">");
         },
     }
     Ok(())

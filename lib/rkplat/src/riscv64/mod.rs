@@ -7,6 +7,7 @@ pub mod irq;
 pub mod spinlock;
 //pub mod memory;
 pub mod thread;
+pub mod device;
 
 mod intctrl;
 mod exception;

@@ -3,7 +3,8 @@ use rklist::SList;
 use super::constants::*;
 use super::{lcpu,intctrl};
 
-static mut ALLOCATOR: Option<*const dyn RKalloc> = None;
+
+static mut ALLOCATOR: Option<&dyn RKalloc> = None;
 /// 中断响应函数，返回false将中断转交给下一个函数处理，返回true表示中断处理完毕
 pub type IRQHandlerFunc = fn(*mut u8)->bool;
 
@@ -17,7 +18,7 @@ static mut IRQ_HANDLERS:[Option<SList<IRQHandler>>;MAX_IRQ] = include!("64None.t
 
 fn allocator() -> &'static dyn RKalloc {
     unsafe {
-        &*ALLOCATOR.unwrap()
+        ALLOCATOR.unwrap()
     }
 }
 
@@ -28,9 +29,13 @@ fn allocator() -> &'static dyn RKalloc {
 /// # 安全性
 /// 
 /// 必须保证分配器`a`在系统关机前仍有效，`a`可以拥有静态生命周期，也可以位于boot stack上
-pub unsafe fn init(a: *const dyn RKalloc) -> Result<(), i32> {
+pub unsafe fn init(a: &dyn RKalloc) -> Result<(), i32> {
     assert!(ALLOCATOR.is_none());
-    ALLOCATOR = Some(a);
+    union Helper<'a> {
+        reference: &'a dyn RKalloc,
+        pointer: *const dyn RKalloc,
+    }
+    ALLOCATOR = Some(Helper{pointer: Helper{reference: a}.pointer}.reference);
     for i in &mut IRQ_HANDLERS{
         *i = Some(SList::new(allocator()));
     }
@@ -47,7 +52,6 @@ pub unsafe fn init(a: *const dyn RKalloc) -> Result<(), i32> {
 /// - `arg`指向的数据必须在关机前仍然有效，它可以是静态数据，也可以是位于boot stack上的数据，
 /// 还可以是由生命足够长的分配器分配的数据
 /// - `func`需要将`arg`转换成合适的类型
-// TODO: 尝试用泛型处理（但看起来很困难）
 pub unsafe fn register(irq: usize, func: IRQHandlerFunc, arg: *mut u8) -> Result<(), i32> 
 {   
     let handler = IRQHandler{func,arg};
