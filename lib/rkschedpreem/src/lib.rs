@@ -30,7 +30,7 @@
 
 #![no_std]
 
-use rksched::{RKsched, RKschedInternelFun, RKthread, RKthreadAttr, PrioT};
+use rksched::{RKsched, RKschedInternelFun, RKthread, RKthreadAttr, Prio};
 use rklist::{Tailq, TailqPosMut};
 use rkalloc::RKalloc;
 use core::time::Duration;

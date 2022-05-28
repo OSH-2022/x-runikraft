@@ -3,18 +3,18 @@
 // Authors: 陈建绿 <2512674094@qq.com>
 // Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
-use super::thread::RKthread;
+use crate::thread::Thread;
 use rklist::STailq;
 
 /// 等待队列条目结构体
-pub struct RKwaitQEntry<'a> {
+pub struct WaitQEntry {
     waiting: i32,
-    thread: &'a mut RKthread<'a>,
+    thread: *mut Thread,
 }
 
-impl<'a> RKwaitQEntry<'a> {
+impl WaitQEntry {
     //等待队列条目初始化
-    pub fn new(&mut self, thread: &'a mut RKthread<'a>) -> Self {
+    pub fn new(&mut self, thread: *mut Thread) -> Self {
         Self {
             waiting: 0,
             thread,
@@ -23,4 +23,4 @@ impl<'a> RKwaitQEntry<'a> {
 }
 
 /// 等待队列头结点结构体
-pub type RKwaitQ<'a> = STailq<'a, RKwaitQEntry<'a>>;
+pub type RKwaitQ = STailq<WaitQEntry>;
