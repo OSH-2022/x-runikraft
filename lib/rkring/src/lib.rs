@@ -36,7 +36,7 @@
 use rkalloc::*;
 use core::slice;
 use core::sync::atomic::{AtomicU32, Ordering};
-use core::mem::{size_of};
+use core::mem::size_of;
 
 use rkplat::lcpu::{rmb,spinwait};
 
@@ -212,7 +212,7 @@ impl<'a,T> Ring<'a,T> {
             return;
         }
         self.br_cons_head.store(cons_next, Ordering::Relaxed);
-
+        self.br_ring[cons_head as usize] = None;
         self.br_cons_tail.store(cons_next,Ordering::Relaxed);
     }
 
@@ -241,15 +241,15 @@ impl<'a,T> Ring<'a,T> {
     /// return a pointer to the first entry in the ring
     /// without modifying it, or NULL if the ring is empty
     /// race-prone if not protected by a lock
-    pub fn peek(&self) -> Option<T> {
+    pub fn peek(&self) -> Option<&mut T> {
         let mut_self = unsafe{(self as *const Self as *mut Self).as_mut().unwrap()};
         mut_self.peek_mut()
     }
-    fn peek_mut(&mut self) -> Option<T> {
+    fn peek_mut(&mut self) -> Option<&mut T> {
         if self.br_cons_head.load(Ordering::Relaxed) == self.br_prod_tail.load(Ordering::Relaxed) {
             None
         } else {
-            self.br_ring[self.br_cons_head.load(Ordering::Relaxed) as usize].take()
+            self.br_ring[self.br_cons_head.load(Ordering::Relaxed) as usize].as_mut()
         }
     }
     
