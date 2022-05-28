@@ -3,202 +3,201 @@
 // Authors: 陈建绿 <2512674094@qq.com>
 // Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
-pub use Errno::*;
-
 pub enum Errno {
     /// Operation not permitted
-    EPerm,
+    Perm=1,
     /// No such file or directory
-    ENoEnt,
+    NoEnt=2,
     /// No such process
-    ESrch,
+    Srch=3,
     /// Interrupted system call
-    EIntr,
+    Intr=4,
     /// Input/output error
-    EIO,
+    IO=5,
     /// Device not configured
-    ENXIo,
+    NXIo=6,
     /// Argument list too long
-    E2Big,
+    TooBig=7,
     /// Exec format error
-    ENoExec,
+    NoExec=8,
     /// Bad file descriptor
-    EBadF,
+    BadF=9,
     /// No child processes
-    EChild,
+    Child=10,
     /// Resource deadlock avoided
-    EDeadLk,
+    DeadLk=11,
     /// Cannot allocate memory
-    ENoMem,
+    NoMem=12,
     /// Permission denied
-    EAccess,
+    Access=13,
     /// Bad address
-    EFault,
+    Fault=14,
     /// Block device required
-    ENotBlk,
+    NotBlk=15,
     /// Device busy
-    EBusy,
+    Busy=16,
     /// File exists
-    EExist,
+    Exist=17,
     /// Cross-device link
-    EXDev,
+    XDev=18,
     /// Operation not supported by device
-    ENoDev,
+    NoDev=19,
     /// Not a directory
-    ENotDir,
+    NotDir=20,
     /// Is a directory
-    EIsDir,
+    IsDir=21,
     /// Invalid argument
-    EInval,
+    Inval=22,
     /// Too many open files in system
-    ENFile,
+    NFile=23,
     /// Too many open files
-    EMFile,
+    MFile=24,
     /// Inappropriate ioctl for device
-    ENoTty,
+    NoTty=25,
     /// Text file busy
-    ETxtBsy,
+    TxtBsy=26,
     /// File too large
-    EFBig,
+    FBig=27,
     /// No space left on device
-    ENoSpc,
+    NoSpc=28,
     /// Illegal seek
-    ESPipe,
+    SPipe=29,
     /// Read-only file system
-    EROFS,
+    ROFS=30,
     /// Too many links
-    EMLink,
+    MLink=31,
     /// Broken pipe
-    EPipe,
+    Pipe=32,
     /// Numerical argument out of domain
-    EDom,
+    Dom=33,
     /// Result too large
-    ERange,
+    Range=34,
     /// Resource temporarily unavailable
-    EAgain,
+    Again=35,
     /// Operation now in progress
-    EInProgress,
+    InProgress=36,
     /// Operation already in progress
-    EAlready,
+    Already=37,
     /// Socket operation on non-socket
-    ENotSock,
+    NotSock=38,
     /// Destination address required
-    EDestAddrReq,
+    DestAddrReq=39,
     /// Message too long
-    EMsgSize,
+    MsgSize=40,
     /// Protocol wrong type for socket
-    EProtoType,
+    ProtoType=41,
     /// Protocol not available
-    ENoProtoOpt,
+    NoProtoOpt=42,
     /// Protocol not supported
-    EProtoNoSupport,
+    ProtoNoSupport=43,
     /// Socket type not supported
-    ESocketNoSupport,
+    SocketNoSupport=44,
     /// Operation not supported on socket
-    EOpNotSupp,
+    OpNotSupp=45,
     /// Protocol family not supported
-    EPFNoSupport,
+    PFNoSupport=46,
     /// Address family not supported by protocol family
-    EAFNoSupport,
+    AFNoSupport=47,
     /// Address already in use
-    EAddrInUse,
+    AddrInUse=48,
     /// Can't assign requested address
-    EAddrNotAvail,
+    AddrNotAvail=49,
     /// Network is down
-    ENetDown,
+    NetDown=50,
     /// Network is unreachable
-    ENetUnreach,
+    NetUnreach=51,
     /// Network dropped connection on reset
-    ENetReset,
+    NetReset=52,
     /// Software caused connection abort
-    EConnAborted,
+    ConnAborted=53,
     /// Connection reset by peer
-    EConnReset,
+    ConnReset=54,
     /// No buffer space available
-    ENoBufS,
+    NoBufS=55,
     /// Socket is already connected
-    EIsConn,
+    IsConn=56,
     /// Socket is not connected
-    ENotConn,
+    NotConn=57,
     /// Can't send after socket shutdown
-    EShutdown,
+    Shutdown=58,
     /// Operation timed out
-    ETimedOut,
+    TimedOut=60,
     /// Connection refused
-    EConnRefused,
+    ConnRefused=61,
     /// Too many levels of symbolic links
-    ELoop,
+    Loop=62,
     /// File name too long
-    ENameTooLong,
+    NameTooLong=63,
     /// Host is down
-    EHostDown,
+    HostDown=64,
     /// No route to host
-    EHostUnreach,
+    HostUnreach=65,
     /// Directory not empty
-    ENotEmpty,
+    NotEmpty=66,
     /// Too many processes
-    EProcLim,
+    ProcLim=67,
     /// Too many users
-    EUsers,
+    Users=68,
     /// Disc quota exceeded
-    EDQuot,
+    DQuot=69,
     /// Stale NFS file handle
-    EStale,
+    Stale=70,
     /// RPC struct is bad
-    EBadRPC,
+    BadRPC=72,
     /// RPC version wrong
-    ERPCMisMatch,
+    RPCMisMatch=73,
     /// RPC prog
-    EProgUnavail,
+    ProgUnavail=74,
     /// Program version wrong
-    EProgMisMatch,
+    ProgMisMatch=75,
     /// Bad procedure for program
-    EProcUnavail,
+    ProcUnavail=76,
     /// No locks available
-    ENoLck,
+    NoLck=77,
     /// Function not implemented
-    ENoSys,
+    NoSys=78,
     /// * Inappropriate file type or format
-    EFType,
+    FType=79,
     /// Authentication error
-    EAuth,
+    Auth=80,
     /// Need authenticator
-    ENeedAuth,
+    NeedAuth=81,
     /// Identifier removed
-    EIDRm,
+    IDRm=82,
     /// No message of desired type
-    ENoMsg,
+    NoMsg=83,
     /// Value too large to be stored in data type
-    EOverFlow,
+    OverFlow=84,
     /// Operation canceled
-    ECanceled,
+    Canceled=85,
     /// Illegal byte sequence
-    EIlSeq,
+    IlSeq=86,
     /// Attribute not found
-    ENoAttr,
+    NoAttr=87,
     /// Programming error
-    EDoofus,
+    Doofus=88,
     /// Bad message
-    EBadMsg,
+    BadMsg=89,
     /// Multihop attempted
-    EMultihop,
+    Multihop=90,
     /// Link has been severed
-    ENoLink,
+    NoLink=91,
     /// Protocol error
-    EProto,
+    Proto=92,
     /// Capabilities insufficient
-    ENotCapable,
+    NotCapable=93,
     /// Not permitted in capability mode
-    ECapMode,
+    CapMode=94,
     /// State not recoverable
-    ENotRecoverable,
+    NotRecoverable=95,
     /// Previous owner died
-    EOwnerDead,
+    OwnerDead=96,
     /// Not supported
-    ENotSup,
-    // Some compatibility definitions
-    /// equals EDeadLk
-    EDeadLock,
-    /// Operation would block, equals EAgain
-    EWouldBlock
+    NotSup=97,
+    // 枚举中不能有同名成员
+    // // Some compatibility definitions
+    // /// equals EDeadLk
+    // DeadLock=11,
+    // /// Operation would block, equals EAgain
+    // WouldBlock=35,
 }

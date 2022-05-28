@@ -109,6 +109,24 @@ pub unsafe trait RKallocExt: RKalloc {
     unsafe fn realloc_ext(&self, old_ptr: *mut u8, new_size: usize) -> *mut u8;
 }
 
+/// 为了方便使用，需要分配器的结构体应该保存静态的分配器引用，然而构造的分配器不一定拥有
+/// 静态生命周期，所以定义了这个强制构造静态生命周期的分配器的函数
+pub unsafe fn make_static<'a>(a: &'a dyn RKalloc)->&'static dyn RKalloc {
+    union Helper<'a> {
+        ptr: *const dyn RKalloc,
+        ref_: &'a dyn RKalloc,
+    }
+    Helper{ptr: Helper{ref_: a}.ptr}.ref_
+}
+
+pub unsafe fn make_static_ext<'a>(a: &'a dyn RKallocExt)->&'static dyn RKallocExt {
+    union Helper<'a> {
+        ptr: *const dyn RKallocExt,
+        ref_: &'a dyn RKallocExt,
+    }
+    Helper{ptr: Helper{ref_: a}.ptr}.ref_
+}
+
 /// 分配器的状态信息
 pub trait RKallocState {
     /// 总空间

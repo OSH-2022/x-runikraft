@@ -39,9 +39,9 @@ impl<T> Node<T> {
 /// - head/head_mut         头结点
 /// - insert_after          指定位置之后插入
 /// - remove_after          删除指定位置之后的元素
-pub struct SList<'a,T> {
+pub struct SList<T> {
     head: *mut Node<T>,
-    alloc: &'a dyn RKalloc,
+    alloc: &'static dyn RKalloc,
     marker: PhantomData<*const Node<T>>,
     size: usize,
 }
@@ -89,9 +89,9 @@ impl<T> Copy for SListPosMut<T> {
 
 }
 
-impl<'a,T> SList<'a,T> {
+impl<T> SList<T> {
     /// 构造单链表
-    pub fn new (alloc: &'a dyn RKalloc) -> Self {
+    pub fn new (alloc: &'static dyn RKalloc) -> Self {
         Self {head: null_mut(), alloc, marker:PhantomData, size: 0}
     }
 
@@ -227,7 +227,7 @@ impl<'a,T> SList<'a,T> {
     }
 }
 
-impl<'a,T> SList<'a,T> {
+impl<T> SList<T> {
     fn push_front_node(&mut self, node: *mut Node<T>) -> Result<(),&'static str>{
         if node.is_null() {return Err("fail to allocate memory");}
         unsafe{
@@ -238,7 +238,7 @@ impl<'a,T> SList<'a,T> {
     }
 }
 
-impl<'a,T> Drop for SList<'a,T> {
+impl<T> Drop for SList<T> {
     fn drop(&mut self) {
         self.clear();
     }

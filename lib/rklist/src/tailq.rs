@@ -48,10 +48,10 @@ impl<T> Node<T> {
 /// - remove_before         删除指定位置之前的元素
 /// - remove                删除指定位置的元素
 /// - remove_after          删除指定位置之后的元素
-pub struct Tailq<'a,T> {
+pub struct Tailq<T> {
     head: *mut Node<T>,
     tail: *mut Node<T>,
-    alloc: &'a dyn RKalloc,
+    alloc: &'static dyn RKalloc,
     marker: PhantomData<*const Node<T>>,
     size: usize,
 }
@@ -113,9 +113,9 @@ impl<T> Copy for TailqPosMut<T> {
 
 }
 
-impl<'a,T> Tailq<'a,T> {
+impl<T> Tailq<T> {
     /// 构造双向尾队列
-    pub fn new (alloc: &'a dyn RKalloc) -> Self {
+    pub fn new (alloc: &'static dyn RKalloc) -> Self {
         Self {head: null_mut(), tail: null_mut(), alloc, marker:PhantomData, size: 0}
     }
 
@@ -432,7 +432,7 @@ impl<'a,T> Tailq<'a,T> {
     }
 }
 
-impl<'a,T> Tailq<'a,T> {
+impl<T> Tailq<T> {
     fn push_front_node(&mut self, node: *mut Node<T>) -> Result<(),&'static str>{
         if node.is_null() {return Err("fail to allocate memory");}
         unsafe{
@@ -469,7 +469,7 @@ impl<'a,T> Tailq<'a,T> {
     }
 }
 
-impl<'a,T> Drop for Tailq<'a,T> {
+impl<'a,T> Drop for Tailq<T> {
     fn drop(&mut self) {
         self.clear();
     }

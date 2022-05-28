@@ -56,16 +56,16 @@ pub struct Sigaction {
 
 pub struct Thread;
 
-pub struct Signal<'a> {
+pub struct Signal {
     pub info: Siginfo,
-    pub list_node: List<'a, u8>
+    pub list_node: List<u8>
 }
 
-pub struct ProcSig<'a> {
+pub struct ProcSig {
     pub pending: Sigset,
     pub pending_signals: [Siginfo; 32],
     pub sigaction: [Sigaction; 32],
-    pub list_node: List<'a, u8>
+    pub list_node: List<u8>
 }
 
 pub enum RkSigWaiting {
@@ -80,10 +80,10 @@ pub struct ThreadSigWait {
     pub received_signal: Siginfo
 }
 
-pub struct ThreadSig<'a> {
+pub struct ThreadSig {
     pub mask: Sigset,
     pub pending: Sigset,
-    pub pending_signals: List<'a, u8>,
+    pub pending_signals: List<u8>,
     pub wait: ThreadSigWait,
-    pub list_node: List<'a, u8>
+    pub list_node: List<u8>
 }

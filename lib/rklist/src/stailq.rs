@@ -42,10 +42,10 @@ impl<T> Node<T> {
 /// - tail/tail_mut         尾结点
 /// - insert_after          指定位置之后插入
 /// - remove_after          删除指定位置之后的元素
-pub struct STailq<'a,T> {
+pub struct STailq<T> {
     head: *mut Node<T>,
     tail: *mut Node<T>,
-    alloc: &'a dyn RKalloc,
+    alloc: &'static dyn RKalloc,
     marker: PhantomData<*const Node<T>>,
     size: usize,
 }
@@ -93,9 +93,9 @@ impl<T> Copy for STailqPosMut<T> {
 
 }
 
-impl<'a,T> STailq<'a,T> {
+impl<T> STailq<T> {
     /// 构造单链表
-    pub fn new (alloc: &'a dyn RKalloc) -> Self {
+    pub fn new (alloc: &'static dyn RKalloc) -> Self {
         Self {head: null_mut(), tail: null_mut(), alloc, marker:PhantomData, size: 0}
     }
 
@@ -270,7 +270,7 @@ impl<'a,T> STailq<'a,T> {
     }
 }
 
-impl<'a,T> STailq<'a,T> {
+impl<T> STailq<T> {
     fn push_front_node(&mut self, node: *mut Node<T>) -> Result<(),&'static str>{
         if node.is_null() {return Err("fail to allocate memory");}
         unsafe{
@@ -302,7 +302,7 @@ impl<'a,T> STailq<'a,T> {
     }
 }
 
-impl<'a,T> Drop for STailq<'a,T> {
+impl<T> Drop for STailq<T> {
     fn drop(&mut self) {
         self.clear();
     }
