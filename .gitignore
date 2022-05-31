@@ -11,3 +11,5 @@
 *.run.xml
 *.toc
 !/reference/*
+*.dtb
+*.dts
