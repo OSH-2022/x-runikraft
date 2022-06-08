@@ -110,7 +110,7 @@ impl RKsched for RKschedcoop {
         }
         Ok(())
     }
-    fn block_thread(&mut self, t: *const Thread) {
+    fn thread_blocked(&mut self, t: *const Thread) {
         debug_assert!(lcpu::irqs_disabled());
 
         unsafe {
