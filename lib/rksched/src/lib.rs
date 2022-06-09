@@ -2,6 +2,7 @@
 // rksched/lib.rs
 
 // Authors: 陈建绿 <2512674094@qq.com>
+//          张子辰 <zichen350@gmail.com>
 
 // Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
@@ -34,3 +35,35 @@ pub mod sched;
 pub mod thread;
 pub mod wait;
 
+/// 针对当前线程的操作
+pub mod this_thread {
+    use core::{time::Duration, panicking::panic};
+    use crate::thread::Thread;
+    use runikraft::config::STACK_SIZE;
+    ///返回当前线程的控制块
+    pub fn control_block() -> &'static mut Thread {
+        let thread_pointer = rkplat::lcpu::read_sp() / STACK_SIZE * STACK_SIZE;
+        unsafe{&mut *(thread_pointer as *mut Thread)}
+    }
+
+    pub fn r#yield() {
+        let current = control_block();
+        unsafe {
+            let s=current.sched;
+            assert!(!s.is_null());
+            (*s).r#yield();
+        }
+    }
+    pub fn sleep_for(duration: Duration) {
+        control_block().block_timeout(duration);
+    }
+    pub fn exit()->! {
+        let current = control_block();
+        unsafe {
+            let s=current.sched;
+            assert!(!s.is_null());
+            (*s).remove_thread(current);
+        }
+        panic!("should exit");
+    }
+}

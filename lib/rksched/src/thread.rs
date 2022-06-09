@@ -1,7 +1,62 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // thread.rs
-// Authors: 陈建绿 <2512674094@qq.com>
-// Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
+// Authors: Rolf Neugebauer
+//          Grzegorz Milos
+//          Costin Lupu <costin.lupu@cs.pub.ro>
+//          陈建绿 <2512674094@qq.com>
+//          张子辰 <zichen350@gmail.com>
+// Copyright (c) 2019, NEC Europe Ltd., NEC Corporation.
+// Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.  All rights reserved.
+
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+// 
+// 1. Redistributions of source code must retain the above copyright
+//    notice, this list of conditions and the following disclaimer.
+// 2. Redistributions in binary form must reproduce the above copyright
+//    notice, this list of conditions and the following disclaimer in the
+//    documentation and/or other materials provided with the distribution.
+// 3. Neither the name of the copyright holder nor the names of its
+//    contributors may be used to endorse or promote products derived from
+//    this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
+
+// Copyright (c) 2003-2005, Intel Research Cambridge
+// Copyright (c) 2017, NEC Europe Ltd., NEC Corporation. All rights reserved.
+
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to
+// deal in the Software without restriction, including without limitation the
+// rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+// sell copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
+
+// Thread definitions
+//  Ported from Mini-OS
 
 use super::{sched,wait};
 use sched::RKsched;
@@ -9,11 +64,13 @@ use rklist::Tailq;
 use runikraft::errno::Errno;
 use rkalloc::RKalloc;
 use core::mem::size_of;
-use core::ptr::null_mut;
+use core::ops::{Deref, DerefMut};
+use core::ptr::{null_mut,addr_of_mut, NonNull};
 use core::time::Duration;
+use core::sync::atomic::{AtomicI32,Ordering};
 use rkplat::thread::Context;
 use rkplat::time;
-use rkplat::constants::STACK_SIZE;
+use runikraft::config::STACK_SIZE;
 
 ////////////////////////////////////////////////////////////////////////
 // 线程属性 thread_attr 的结构体定义
@@ -108,6 +165,17 @@ extern "Rust" {
     static _rk_thread_inittab_end: *mut InittabEntry;
 }
 
+/// 线程的控制块
+/// 
+/// 线程的生命周期：
+/// 1. 分配线程栈空间（stack）和线程本地存储空间（tls）。
+///    栈空间必须满足对齐要求STACK_SIZE (默认是65536)。
+/// 2. 在栈的低地址调用`init`（`unsafe{*(stack as *mut Thread).init(...)}`，初始化控制块。
+/// 3. 用`add_thread`把线程加入调度器。
+/// 4. （调度器执行线程）
+/// 5. 当线程执行完毕或被kill时，调度器调用`exit`。
+/// 6. 调用`finish`。
+/// 7. 释放线程栈空间（stack）和线程本地存储空间（tls）。
 pub struct Thread {
     pub name: *const str, //Thread和WaitQ需要相互指，所以Thread不能含生命周期注记
     pub stack: *mut u8,
@@ -116,11 +184,15 @@ pub struct Thread {
     pub flags: u32,
     pub wakeup_time: Duration,
     pub detached: bool,
+    /// 等待self结束的线程
     pub waiting_threads: wait::WaitQ,
+    /// self所在的等待队列
+    pub waiting_for: Option<NonNull<wait::WaitQ>>,
     pub sched: *mut dyn RKsched,
     pub entry: unsafe fn(*mut u8)->!,
     pub arg: *mut u8,
     pub prv: *mut u8,
+    ref_cnt: AtomicI32,
 }
 
 fn stack_push(sp: &mut usize, value: usize) {
@@ -191,8 +263,9 @@ impl Thread {
         self.flags = 0;
         self.wakeup_time = Duration::ZERO;
         self.detached = false;
-        core::ptr::addr_of_mut!(self.waiting_threads).write(wait::WaitQ::new(allocator));
-        core::ptr::addr_of_mut!(self.sched).write_bytes(0, size_of::<*mut dyn RKsched>());
+        addr_of_mut!(self.waiting_threads).write(wait::WaitQ::new(allocator));
+        addr_of_mut!(self.sched).write_bytes(0, size_of::<*mut dyn RKsched>());
+        addr_of_mut!(self.waiting_for).write(None);
         self.prv = null_mut();
 
         let mut itr = _rk_thread_inittab_start;
@@ -225,6 +298,8 @@ impl Thread {
         //Platform specific context initialization
         //FIXME: ukarch_tls_pointer(tls)
         rkplat::thread::init(self.ctx, sp, self.tls as usize, self.entry, arg);
+
+        addr_of_mut!(self.ref_cnt).write(AtomicI32::new(0));
         Ok(())
     }
 
@@ -274,28 +349,33 @@ impl Thread {
 
     pub fn exit(&mut self) {
         self.set_exited();
+        if let Some(waitq) = self.waiting_for.as_mut() {
+            unsafe {waitq.as_mut().remove(self.as_ref());}
+            self.waiting_for = None;
+        }
         if !self.detached {
-            self.waiting_threads.wake_up();
+            self.waiting_threads.wakeup_all();
+        }
+        else {
+            debug_assert!(self.waiting_threads.empty());
         }
     }
 
-    pub fn wait(&mut self) -> Result<(),Errno>{
-        // TODO critical region
+    // pub fn wait(&mut self) -> Result<(),Errno>{
+    //     // TODO critical region
         
-        if self.detached {
-            return Err(Errno::Inval);
-        }
-
-        self.waiting_threads.wait_event(self.is_exited());
-        
-        self.detached = true;
-
-        unsafe {(*self.sched).__thread_destroy(self); }
-
-        Ok(())
-    }
+    //     if self.detached {
+    //         return Err(Errno::Inval);
+    //     }
+    //     self.waiting_threads.wait_event(self.is_exited());
+    //     self.detached = true;
+    //     unsafe {(*self.sched).__thread_destroy(self); }
+    //     Ok(())
+    // }
 
     pub fn detach(&mut self) {
+        assert!(!self.detached);
+        self.waiting_threads.wakeup_all();
         self.detached = true;
     }
 
@@ -316,6 +396,13 @@ impl Thread {
     }
 }
 
+pub type InitFunc = fn(&mut Thread)->bool;
+pub type FinishFunc = fn(&mut Thread);
+pub struct InittabEntry {
+    pub init: InitFunc,
+    pub finish: FinishFunc,
+}
+
 /// Registers a thread initialization function that is
 /// called during thread creation
 /// 
@@ -325,34 +412,26 @@ impl Thread {
 ///   Priority level (0 (earliest) to 9 (latest))
 ///   Use the UK_PRIO_AFTER() helper macro for computing priority dependencies.
 ///   Note: Any other value for level will be ignored
-pub type InitFunc = extern fn(&mut Thread)->bool;
-pub type FinishFunc = extern fn(&mut Thread);
-pub struct InittabEntry {
-    pub init: InitFunc,
-    pub finish: FinishFunc,
+/// 
+/// FIXME: Rust的宏不支持标识符拼接，所以使用者必须提供唯一的标识符，比如__rkthread_inittab_<uuid>
+#[macro_export]
+macro_rules! inittab_entry_prio {
+    ($init_fn:ident, $finish_fn:ident, $prio:literal, $unique_ident:ident) => {
+        #[no_mangle]
+        #[link_section = concat!(".text.thread_inittab.",$prio)]
+        static $unique_ident : $crate::thread::InittabEntry =
+            $crate::thread::InittabEntry{init: $init_fn, finish: $finish_fn};
+    };
 }
 
-//TODO:
-// #define __UK_THREAD_INITTAB_ENTRY(init_fn, fini_fn, prio)		\
-// 	static const struct uk_thread_inittab_entry			\
-// 	__used __section(".uk_thread_inittab" # prio) __align(8)	\
-// 		__uk_thread_inittab ## prio ## _ ## init_fn ## _ ## fini_fn = {\
-// 		.init = (init_fn),					\
-// 		.fini = (fini_fn)					\
-// 	}
-
-// #define _UK_THREAD_INITTAB_ENTRY(init_fn, fini_fn, prio)		\
-// 	__UK_THREAD_INITTAB_ENTRY(init_fn, fini_fn, prio)
-
-// #define UK_THREAD_INIT_PRIO(init_fn, fini_fn, prio)			\
-// 	_UK_THREAD_INITTAB_ENTRY(init_fn, fini_fn, prio)
-
-// #define UK_THREAD_INIT(init_fn, fini_fn)				\
-// 	_UK_THREAD_INITTAB_ENTRY(init_fn, fini_fn, UK_PRIO_LATEST)
-
-///返回当前线程的控制块
-pub fn current() -> &'static mut Thread {
-    todo!()//needs the function about stack(operations related to the bottom layer)
+#[macro_export]
+macro_rules! inittab_entry {
+    ($init_fn:ident, $finish_fn:ident, $prio:literal, $unique_ident:ident) => {
+        #[no_mangle]
+        #[link_section = ".text.thread_inittab.9"]
+        static $unique_ident : $crate::thread::InittabEntry =
+            $crate::thread::InittabEntry{init: $init_fn, finish: $finish_fn};
+    };
 }
 
 const RUNNABLE_FLAG: u32  = 0x00000001;
@@ -385,5 +464,86 @@ impl Thread {
     }
     pub fn clear_queueable(&mut self) {
         self.flags &= !QUEUEABLE_FLAG;
+    }
+}
+
+/// 线程的引用，用在等待队列
+pub struct ThreadRef {
+    ptr: *mut Thread,
+}
+
+impl Default for ThreadRef {
+    fn default() -> Self {
+        Self { ptr: null_mut() }
+    }
+}
+
+impl Deref for ThreadRef {
+    type Target = Thread;
+    fn deref(&self) -> &Self::Target {
+        assert!(!self.ptr.is_null());
+        unsafe {&*(self.ptr)}
+    }
+}
+
+impl DerefMut for ThreadRef {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        assert!(!self.ptr.is_null());
+        unsafe {&mut *(self.ptr)}
+    }
+}
+
+impl Clone for ThreadRef {
+    fn clone(&self) -> Self {
+        if self.ptr.is_null() {
+            Self {ptr: null_mut()}
+        }
+        else {
+            let old_ref = self.ref_cnt.fetch_add(1, Ordering::SeqCst);
+            if old_ref == -1 {
+                panic!("Attempt to clone ThreadRef when thread is dropping.");
+            }
+            Self { ptr: self.ptr }
+        }
+    }
+}
+
+impl Drop for ThreadRef {
+    fn drop(&mut self) {
+        if !self.ptr.is_null() {
+            self.ref_cnt.fetch_sub(1, Ordering::SeqCst);
+        }
+    }
+}
+
+impl PartialEq for ThreadRef {
+    fn eq(&self, other: &Self) -> bool {
+        self.ptr == other.ptr
+    }
+    fn ne(&self, other: &Self) -> bool {
+        self.ptr != other.ptr
+    }
+}
+
+impl Thread {
+    pub fn as_ref(&self) -> ThreadRef {
+        let old_ref = self.ref_cnt.fetch_add(1, Ordering::SeqCst);
+        if old_ref == -1 {
+            panic!("Attempt to create ThreadRef when thread is dropping.");
+        }
+        ThreadRef { ptr: self as *const Thread as *mut Thread}
+    }
+}
+
+impl Drop for Thread{
+    fn drop(&mut self) {
+        assert!(self.is_exited());
+        debug_assert!(self.waiting_for.is_none());
+        debug_assert!(self.waiting_threads.empty());
+        let old_ref = self.ref_cnt.swap(-1, Ordering::SeqCst);
+        if old_ref != 0 {
+            panic!("Attempt to drop thread when it is still referenced.");
+        }
+        assert!(self.sched.is_null());
     }
 }
