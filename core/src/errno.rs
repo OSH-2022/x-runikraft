@@ -4,6 +4,8 @@
 // Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
 pub enum Errno {
+    /// No error occurred
+    Ok=0,
     /// Operation not permitted
     Perm=1,
     /// No such file or directory

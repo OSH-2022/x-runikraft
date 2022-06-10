@@ -35,9 +35,11 @@ pub mod sched;
 pub mod thread;
 pub mod wait;
 
+pub use sched::RKsched;
+
 /// 针对当前线程的操作
 pub mod this_thread {
-    use core::{time::Duration, panicking::panic};
+    use core::time::Duration;
     use crate::thread::Thread;
     use runikraft::config::STACK_SIZE;
     ///返回当前线程的控制块

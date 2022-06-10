@@ -58,6 +58,8 @@
 // Thread definitions
 //  Ported from Mini-OS
 
+extern crate alloc;
+
 use super::{sched,wait};
 use sched::RKsched;
 use rklist::Tailq;
@@ -71,6 +73,7 @@ use core::sync::atomic::{AtomicI32,Ordering};
 use rkplat::thread::Context;
 use rkplat::time;
 use runikraft::config::STACK_SIZE;
+use alloc::string::String;
 
 ////////////////////////////////////////////////////////////////////////
 // 线程属性 thread_attr 的结构体定义
@@ -177,11 +180,11 @@ extern "Rust" {
 /// 6. 调用`finish`。
 /// 7. 释放线程栈空间（stack）和线程本地存储空间（tls）。
 pub struct Thread {
-    pub name: *const str, //Thread和WaitQ需要相互指，所以Thread不能含生命周期注记
-    pub stack: *mut u8,
-    pub tls: *mut u8,
-    pub ctx: *mut Context,
-    pub flags: u32,
+    name: String,
+    stack: *mut u8,
+    tls: *mut u8,
+    ctx: *mut Context,
+    flags: u32,
     pub wakeup_time: Duration,
     pub detached: bool,
     /// 等待self结束的线程
@@ -189,21 +192,25 @@ pub struct Thread {
     /// self所在的等待队列
     pub waiting_for: Option<NonNull<wait::WaitQ>>,
     pub sched: *mut dyn RKsched,
-    pub entry: unsafe fn(*mut u8)->!,
-    pub arg: *mut u8,
-    pub prv: *mut u8,
+    entry: unsafe fn(*mut u8)->!,
+    arg: *mut u8,
+    // prv: *mut u8,
     ref_cnt: AtomicI32,
+    alloc: *const dyn RKalloc,
+    _pinned_marker: core::marker::PhantomPinned,
 }
 
+#[allow(unused)]
 fn stack_push(sp: &mut usize, value: usize) {
     *sp -= size_of::<usize>();
     unsafe {(*sp as *mut usize).write(value);}
 }
 
+#[allow(unused_variables)]
 fn init_sp(sp: &mut usize, stack: *mut u8, function: unsafe fn(*mut u8)->!, data: *mut u8) {
     *sp = stack as usize + STACK_SIZE;
-    stack_push(sp, function as usize);
-    stack_push(sp, data as usize);
+    // stack_push(sp, function as usize);
+    // stack_push(sp, data as usize);
 }
 
 impl Thread {
@@ -215,32 +222,12 @@ impl Thread {
 
 impl Thread {
     // Thread没有new函数，不能用正常方法构造
-    // /// 构造Thread对象，返回值并没有被初始化，需要调用init完成初始化
-    // pub fn new(alloc: &'static dyn RKalloc) -> Self {
-    //     union Helper {
-    //         p: *mut dyn RKsched,
-    //         s: usize,
-    //     }
-    //     Self { 
-    //         name: "",
-    //         stack: null_mut(),
-    //         tls: null_mut(),
-    //         ctx: null_mut(),
-    //         flags: 0,
-    //         wakeup_time: Duration::default(),
-    //         detached: false,
-    //         waiting_threads: wait::WaitQ::new(alloc),
-    //         sched: unsafe{Helper{s:0}.p},
-    //         entry: null_entry,
-    //         arg: null_mut(),
-    //         prv: null_mut() }
-    // }
 
     ///线程初始化
     pub unsafe fn init(&mut self,
             allocator: &'static dyn RKalloc,
-            name:  &'static str, stack: *mut u8, tls: *mut u8,
-            function: unsafe fn(*mut u8)->!, arg: *mut u8) -> Result<(),()>{
+            name:  &str, stack: *mut u8, tls: *mut u8,
+            function: unsafe fn(*mut u8)->!, arg: *mut u8) -> Result<(),Errno>{
         assert!(!stack.is_null());
         assert!(!tls.is_null());
 
@@ -250,11 +237,11 @@ impl Thread {
         // Allocate thread context
         let ctx = rkalloc::alloc_type(allocator, Context::default());
         if ctx.is_null() {
-            return Err(());
+            return Err(Errno::NoMem);
         }
 
         self.ctx = ctx;
-        self.name = name;
+        self.name = String::from(name);
         self.stack = stack;
         self.tls = tls;
         self.entry = function;
@@ -266,7 +253,6 @@ impl Thread {
         addr_of_mut!(self.waiting_threads).write(wait::WaitQ::new(allocator));
         addr_of_mut!(self.sched).write_bytes(0, size_of::<*mut dyn RKsched>());
         addr_of_mut!(self.waiting_for).write(None);
-        self.prv = null_mut();
 
         let mut itr = _rk_thread_inittab_start;
         while itr != _rk_thread_inittab_end {
@@ -274,7 +260,7 @@ impl Thread {
                 continue;
             }
 
-            if !((*itr).init)(self) {
+            if let Err(errno) = ((*itr).init)(self) {
                 itr = itr.sub(1);
                 loop {
                     ((*itr).finish)(self);
@@ -283,7 +269,7 @@ impl Thread {
                 }
                 rkalloc::dealloc_type(allocator, ctx);
                 self.ctx = null_mut();
-                return Err(());
+                return Err(errno);
             }
             itr = itr.add(1);
         }
@@ -300,11 +286,12 @@ impl Thread {
         rkplat::thread::init(self.ctx, sp, self.tls as usize, self.entry, arg);
 
         addr_of_mut!(self.ref_cnt).write(AtomicI32::new(0));
+        self.alloc = allocator;
         Ok(())
     }
 
     ///线程完成
-    pub unsafe fn finish(&mut self, allocator: &dyn RKalloc) {
+    pub unsafe fn finish(&mut self) {
         let mut itr = _rk_thread_inittab_start;
         while itr!=_rk_thread_inittab_end {
             if (*itr).finish as usize == 0 {
@@ -313,7 +300,7 @@ impl Thread {
             ((*itr).finish)(self);
             itr = itr.add(1);
         }
-        rkalloc::dealloc_type(allocator, self.ctx);
+        rkalloc::dealloc_type(&*self.alloc, self.ctx);
         self.ctx = null_mut();
     }
 
@@ -344,7 +331,7 @@ impl Thread {
     }
 
     pub fn kill(&mut self) {
-        unsafe {(*self.sched).__thread_kill(self);}
+        self.sched_ref().remove_thread(self);
     }
 
     pub fn exit(&mut self) {
@@ -360,18 +347,6 @@ impl Thread {
             debug_assert!(self.waiting_threads.empty());
         }
     }
-
-    // pub fn wait(&mut self) -> Result<(),Errno>{
-    //     // TODO critical region
-        
-    //     if self.detached {
-    //         return Err(Errno::Inval);
-    //     }
-    //     self.waiting_threads.wait_event(self.is_exited());
-    //     self.detached = true;
-    //     unsafe {(*self.sched).__thread_destroy(self); }
-    //     Ok(())
-    // }
 
     pub fn detach(&mut self) {
         assert!(!self.detached);
@@ -396,7 +371,11 @@ impl Thread {
     }
 }
 
-pub type InitFunc = fn(&mut Thread)->bool;
+pub unsafe fn thread_switch(prev: *mut Thread, next: *mut Thread) {
+    rkplat::thread::switch((*prev).ctx, (*next).ctx);
+}
+
+pub type InitFunc = fn(&mut Thread)->Result<(),Errno>;
 pub type FinishFunc = fn(&mut Thread);
 pub struct InittabEntry {
     pub init: InitFunc,

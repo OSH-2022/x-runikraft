@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // rkschedcoop/lib.rs
 
-// Authors: 陈建绿 <2512674094@qq.com>
+// Authors: 张子辰 <zichen350@gmail.com>
 
 // Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
@@ -30,144 +30,88 @@
 
 #![no_std]
 
-use rksched::thread::{Thread, ThreadAttr, ThreadList};
-use rksched::sched::RKsched;
-use rklist::{TailqPosMut};
+use rksched::{RKsched,thread::{ThreadRef,ThreadAttr}};
 use rkalloc::RKalloc;
-use rkplat::{lcpu, thread};
-use core::time::Duration;
+use rklist::Tailq;
+
+type ThreadList = Tailq<(ThreadRef,ThreadAttr)>;
 
 pub struct RKschedcoop {
     threads_started: bool,
-    idle: Thread,
-    exited_threads: ThreadList,
     allocator: &'static dyn RKalloc,
-    next: *mut RKschedcoop,
-    // prv: &'a mut SchedPrivate<'a>,
+    ///就绪的线程
+    ready_thread: ThreadList,
+    ///已退出的线程
+    exited_thread: ThreadList,
+    next: Option<&'static mut dyn RKsched>,
 }
 
 impl RKschedcoop {
-    pub fn new() -> Self {
-        todo!()
+    pub fn new(allocator: &'static dyn RKalloc) -> Self {
+        Self { threads_started: false, allocator, next: None, 
+            ready_thread: ThreadList::new(allocator),
+            exited_thread: ThreadList::new(allocator) }
     }
     //important schedule function
-    pub fn schedcoop_schedule(&mut self) {
+    pub fn schedule(&mut self) {
         todo!()
     }
 }
 
 impl RKsched for RKschedcoop {
-    fn start(&self) {
-        unsafe {
-            thread::start(self.idle.ctx);
+    fn start(&mut self)->! {
+        self.threads_started = true;
+        loop {
+            self.schedule();
         }
     }
+
     fn started(&self) -> bool {
         self.threads_started
     }
+
     fn r#yield(&mut self) {
-        self.schedcoop_schedule();
+        self.schedule();
     }
-    fn add_thread(&mut self, mut t: Thread, attr: ThreadAttr) -> Result<(), &'static str> {
-        let mut flags: usize = 0;
-        t.set_runnable();
 
-        flags = lcpu::save_irqf();
-
-        self.prv.sleeping_threads.push_back(t);
-
-        lcpu::restore_irqf(flags);
-
-        Ok(())
+    fn add_thread(&mut self, t: *const rksched::thread::Thread, attr: rksched::thread::ThreadAttr) -> Result<(), runikraft::errno::Errno> {
+        todo!()
     }
-    fn remove_thread(&mut self, t: *mut Thread) -> Result<(), &'static str> {
-        let mut flags: usize = 0;
 
-        flags = lcpu::save_irqf();
-        unsafe {
-            let t_pos = TailqPosMut::from_ptr(t);
-            if t != rksched::thread::current() {
-                //Remove from the thread list
-                let mut thread = self.prv.thread_list.remove(t_pos).0;
-                thread.clear_runnable();
-                thread.exit();
-                // Put onto exited list
-                self.exited_threads.push_front(thread);
-                lcpu::restore_irqf(flags);
-            }
-            else {
-                //Remove from the thread list
-                let mut thread = self.prv.thread_list.remove(t_pos).0;
-                thread.clear_runnable();
-                thread.exit();
-                // Put onto exited list
-                self.exited_threads.push_front(thread);
-                lcpu::restore_irqf(flags);
-                // Schedule only if current thread is exiting
-                self.schedcoop_schedule();
-                //TODO：here need translate `rk_pr_warn("schedule() returned! Trying again\n");`
-            }
+    fn remove_thread(&mut self, t: *const rksched::thread::Thread) {
+        todo!()
+    }
+
+    fn thread_blocked(&mut self, t: *const rksched::thread::Thread) {
+        todo!()
+    }
+
+    fn thread_woken(&mut self, t: *const rksched::thread::Thread) {
+        todo!()
+    }
+
+    fn set_thread_prio(&mut self, t: *mut rksched::thread::Thread, prio: rksched::thread::Prio) -> Result<(),runikraft::errno::Errno> {
+        todo!()
+    }
+
+    fn get_thread_prio(&self, t: *const rksched::thread::Thread) -> Result<rksched::thread::Prio,runikraft::errno::Errno> {
+        todo!()
+    }
+
+    fn set_thread_timeslice(&mut self, t: *mut rksched::thread::Thread, tslice: core::time::Duration) -> Result<(),runikraft::errno::Errno> {
+        todo!()
+    }
+
+    fn get_thread_timeslice(&self, t: *const rksched::thread::Thread) -> Result<core::time::Duration,runikraft::errno::Errno> {
+        todo!()
+    }
+
+    unsafe fn __set_next_sheduler(&mut self, sched: &dyn RKsched) {
+        union Helper<'a> {
+            r: &'a dyn RKsched,
+            t: *mut dyn RKsched,
         }
-        Ok(())
-    }
-    fn thread_blocked(&mut self, t: *const Thread) {
-        debug_assert!(lcpu::irqs_disabled());
-
-        unsafe {
-            let t_pos = TailqPosMut::from_ptr(t);
-            if t != rksched::thread::current() {
-                let mut thread = self.prv.thread_list.remove(t_pos).0;
-                if !thread.wakeup_time.is_zero() {
-                    self.prv.sleeping_threads.push_back(thread);
-                }
-            }
-        }
-    }
-    fn wake_thread(&mut self, t: *const Thread) {
-        debug_assert!(lcpu::irqs_disabled());
-
-        unsafe {
-            let t_pos = TailqPosMut::from_ptr(t);
-            if !(*t).wakeup_time.is_zero() {
-                let mut thread = self.prv.sleeping_threads.remove(t_pos).0;
-                if t != rksched::thread::current() || thread.is_queueable() {
-                    thread.clear_queueable();
-                    self.prv.thread_list.push_back(thread);
-                }
-            }
-        }
-    }
-    fn sleep_thread(&mut self, nsec: Duration) {
-        let t = rksched::thread::current();
-        unsafe {
-            (*t).block_timeout(nsec);
-        }
-        self.r#yield();
-    }
-    fn exit_thread(&mut self) {
-        let t = rksched::thread::current();
-        self.remove_thread(t);
-        //TODO: need to translate `RK_CRASH("Failed to stop the thread\n");`
+        debug_assert!(self.next.is_none());
+        self.next = Some(&mut *Helper{r: sched}.t);
     }
 }
-
-// impl<'a> RKschedInternelFun for RKschedcoop<'a> {
-//     fn get_idle(&self) -> *mut RKthread {
-//         todo!()
-//     }
-//     fn idle_init(&mut self, stack: *mut u8, function: fn(*mut u8)) {
-//         todo!()
-//     }
-//     fn thread_create(&mut self, name: *const char, attr: &mut RKthreadAttr, function: fn(*mut u8), arg: *mut u8) -> *mut RKthread {
-//         todo!()
-//     }
-//     fn thread_destroy(&mut self, t: *mut RKthread) {
-//         todo!()
-//     }
-//     fn thread_kill(&mut self, t: *mut RKthread) {
-//         todo!()
-//     }
-//     fn thread_switch(&mut self, prev: *mut RKthread, next: *mut RKthread) {
-//         todo!()
-//     }
-// }
