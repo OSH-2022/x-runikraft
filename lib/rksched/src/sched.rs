@@ -33,7 +33,7 @@
 
 use core::{time::Duration, ptr::NonNull};
 use runikraft::errno::Errno;
-use crate::thread::{Thread,ThreadAttr,Prio};
+use crate::thread::{Thread,ThreadAttr,Prio,ThreadRef};
 use rkalloc::RKalloc;
 use runikraft::config::{STACK_SIZE,THREAD_LOCAL_SIZE};
 use core::sync::atomic::{AtomicU32,Ordering::SeqCst};
@@ -54,13 +54,11 @@ use core::sync::atomic::{AtomicU32,Ordering::SeqCst};
 /// 执行后，这个hart的调度器会把它交给下一个hart的调取器。等待队列独立于调取器，
 /// 在线程被放入等待队列时，`Thread::sched`会被指向随机的调取器（随机数的产生方式由
 /// 调度器的实现决定）。在等待的事件发送后，等待队列里的线程会被放入`Thread::sched`指向
-/// 的调度器。调度器通过`rkring::Ring`接受新线程。
+/// 的调度器。
 /// 
 /// 在系统启动时，只有一个hart活跃（这里称之为boot hart），而其他hart被挂起。
 /// boot hart负责初始化所有的调度器，构建调度器循环链表，启动其他harts，然后调用自己的
 /// 调度器的`start`。其他harts的初始化函数最终也会调用`start`。
-/// 
-/// TODO: 尝试把*const Thread改成引用
 pub trait RKsched {
     /// 把当前hart的控制权转交给调度器
     fn start(&mut self)->!;
@@ -68,22 +66,22 @@ pub trait RKsched {
     fn started(&self) -> bool;
     /// 挂起当前系统线程，要求调度器执行新线程
     fn r#yield(&mut self);
-    /// 异步地把线程加入调度器
-    fn add_thread(&mut self, t: *const Thread, attr: ThreadAttr) -> Result<(), Errno>;
+    /// 把线程加入调度器
+    fn add_thread(&mut self, t: ThreadRef, attr: ThreadAttr) -> Result<(), Errno>;
     /// 把线程从调取器中移除
-    fn remove_thread(&mut self, t: *const Thread);
+    fn remove_thread(&mut self, t: ThreadRef);
     /// 把线程的状态设置为不可执行
-    fn thread_blocked(&mut self, t: *const Thread);
+    fn thread_blocked(&mut self, t: ThreadRef);
     /// 把线程的状态设置为可以执行
-    fn thread_woken(&mut self, t: *const Thread);
+    fn thread_woken(&mut self, t: ThreadRef);
     /// 设置线程的优先级
-    fn set_thread_prio(&mut self, t: *mut Thread, prio: Prio) -> Result<(),Errno>;
+    fn set_thread_prio(&mut self, t: ThreadRef, prio: Prio) -> Result<(),Errno>;
     /// 获取线程的优先级
-    fn get_thread_prio(&self, t: *const Thread) -> Result<Prio,Errno>;
+    fn get_thread_prio(&self, t: ThreadRef) -> Result<Prio,Errno>;
     /// 设置线程的时间片
-    fn set_thread_timeslice(&mut self, t: *mut Thread, tslice: Duration) -> Result<(),Errno>;
+    fn set_thread_timeslice(&mut self, t: ThreadRef, tslice: Duration) -> Result<(),Errno>;
     /// 获取线程的时间片
-    fn get_thread_timeslice(&self, t: *const Thread) -> Result<Duration,Errno>;
+    fn get_thread_timeslice(&self, t: ThreadRef) -> Result<Duration,Errno>;
 
     //内部使用：
     //它们本应该被隐藏，但是Rust不支持protected和friend，所以只能把它们设置成公开接口
@@ -112,6 +110,7 @@ struct EntryData {
 unsafe fn thread_entry_point(arg: *mut u8) -> ! {
     let data = arg as *const EntryData;
     ((*data).function)((*data).arg);
+    super::this_thread::control_block().exit();
     (*super::this_thread::control_block().sched).r#yield();
     panic!("should exit");
 }
@@ -146,7 +145,7 @@ pub fn create_thread(name: &str, alloc: &'static dyn RKalloc, attr: ThreadAttr, 
                 Some(if x+1 == SCHED_CNT as u32 {0}
                 else {x+1})
             }).unwrap() as usize].unwrap().
-            as_mut().add_thread(thread_addr, attr) {
+            as_mut().add_thread((*thread_addr).as_ref(), attr) {
             alloc.dealloc(stack, STACK_SIZE, STACK_SIZE);
             alloc.dealloc(tls, THREAD_LOCAL_SIZE, 16);
             (*thread_addr).finish();

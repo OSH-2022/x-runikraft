@@ -69,7 +69,7 @@ use core::mem::size_of;
 use core::ops::{Deref, DerefMut};
 use core::ptr::{null_mut,addr_of_mut, NonNull};
 use core::time::Duration;
-use core::sync::atomic::{AtomicI32,Ordering};
+use core::sync::atomic::{AtomicI32,AtomicU32,Ordering};
 use rkplat::thread::Context;
 use rkplat::time;
 use runikraft::config::STACK_SIZE;
@@ -181,6 +181,7 @@ extern "Rust" {
 /// 7. 释放线程栈空间（stack）和线程本地存储空间（tls）。
 pub struct Thread {
     name: String,
+    id: u32,
     stack: *mut u8,
     tls: *mut u8,
     ctx: *mut Context,
@@ -196,7 +197,7 @@ pub struct Thread {
     arg: *mut u8,
     // prv: *mut u8,
     ref_cnt: AtomicI32,
-    alloc: *const dyn RKalloc,
+    pub alloc: *const dyn RKalloc,
     _pinned_marker: core::marker::PhantomPinned,
 }
 
@@ -220,6 +221,8 @@ impl Thread {
     }
 }
 
+static THREAD_ID: AtomicU32 = AtomicU32::new(0);
+
 impl Thread {
     // Thread没有new函数，不能用正常方法构造
 
@@ -242,6 +245,7 @@ impl Thread {
 
         self.ctx = ctx;
         self.name = String::from(name);
+        self.id = THREAD_ID.fetch_add(1, Ordering::SeqCst);
         self.stack = stack;
         self.tls = tls;
         self.entry = function;
@@ -308,7 +312,7 @@ impl Thread {
         let flag = rkplat::lcpu::save_irqf();
         self.wakeup_time = until;
         self.clear_runnable();
-        self.sched_ref().thread_blocked(self);
+        self.sched_ref().thread_blocked(self.as_ref());
         rkplat::lcpu::restore_irqf(flag);
     }
 
@@ -323,7 +327,7 @@ impl Thread {
     pub fn wake(&mut self) {
         let flag = rkplat::lcpu::save_irqf();
         if !self.is_runnable() {
-            self.sched_ref().thread_woken(self);
+            self.sched_ref().thread_woken(self.as_ref());
             self.wakeup_time = Duration::ZERO;
             self.set_runnable();
         }
@@ -331,7 +335,7 @@ impl Thread {
     }
 
     pub fn kill(&mut self) {
-        self.sched_ref().remove_thread(self);
+        self.sched_ref().remove_thread(self.as_ref());
     }
 
     pub fn exit(&mut self) {
@@ -355,19 +359,34 @@ impl Thread {
     }
 
     pub fn set_prio(&mut self, prio: Prio) -> Result<(), Errno>{
-        self.sched_ref().set_thread_prio(self, prio)
+        self.sched_ref().set_thread_prio(self.as_ref(), prio)
     }
 
     pub fn get_prio(&self) -> Result<Prio,Errno> {
-        self.sched_ref().get_thread_prio(self)
+        self.sched_ref().get_thread_prio(self.as_ref())
     }
 
     pub fn set_timeslice(&mut self, timeslice: Duration) -> Result<(),Errno> {
-        self.sched_ref().set_thread_timeslice(self, timeslice)
+        self.sched_ref().set_thread_timeslice(self.as_ref(), timeslice)
     }
 
     pub fn get_timeslice(&self) -> Result<Duration,Errno> {
-        self.sched_ref().get_thread_timeslice(self)
+        self.sched_ref().get_thread_timeslice(self.as_ref())
+    }
+}
+
+impl Thread {
+    pub fn name(&self) -> &str {
+        self.name.as_str()
+    }
+    pub fn base_addr(&self) -> *mut Thread {
+        self as *const Thread as *mut Thread
+    }
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+    pub fn tls(&self) -> *mut u8 {
+        self.tls
     }
 }
 

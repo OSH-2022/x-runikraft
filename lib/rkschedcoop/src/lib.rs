@@ -30,9 +30,15 @@
 
 #![no_std]
 
-use rksched::{RKsched,thread::{ThreadRef,ThreadAttr}};
+use rksched::RKsched;
+use rksched::thread::{ThreadRef,ThreadAttr,Prio};
+use rksched::this_thread;
 use rkalloc::RKalloc;
-use rklist::Tailq;
+use rklist::{Tailq,TailqPosMut};
+use rkplat::spinlock::SpinLock;
+use runikraft::errno::Errno;
+use core::time::Duration;
+use runikraft::config::{STACK_SIZE,THREAD_LOCAL_SIZE};
 
 type ThreadList = Tailq<(ThreadRef,ThreadAttr)>;
 
@@ -41,16 +47,17 @@ pub struct RKschedcoop {
     allocator: &'static dyn RKalloc,
     ///就绪的线程
     ready_thread: ThreadList,
-    ///已退出的线程
-    exited_thread: ThreadList,
+    // ///已退出的线程
+    // exited_thread: ThreadList,
     next: Option<&'static mut dyn RKsched>,
+    lock: SpinLock,
 }
 
 impl RKschedcoop {
     pub fn new(allocator: &'static dyn RKalloc) -> Self {
         Self { threads_started: false, allocator, next: None, 
-            ready_thread: ThreadList::new(allocator),
-            exited_thread: ThreadList::new(allocator) }
+            lock: SpinLock::new(),
+            ready_thread: ThreadList::new(allocator)}
     }
     //important schedule function
     pub fn schedule(&mut self) {
@@ -74,35 +81,64 @@ impl RKsched for RKschedcoop {
         self.schedule();
     }
 
-    fn add_thread(&mut self, t: *const rksched::thread::Thread, attr: rksched::thread::ThreadAttr) -> Result<(), runikraft::errno::Errno> {
+    fn add_thread(&mut self, t: ThreadRef, attr: ThreadAttr) -> Result<(), Errno> {
+        let _lock = self.lock.lock();
+        if self.ready_thread.push_back((t,attr)).is_err() {
+            return Err(Errno::NoMem);
+        }
+        Ok(())
+    }
+
+    fn remove_thread(&mut self, t: ThreadRef) {
+        let lock = self.lock.lock();
+        let mut pos = None;
+        for i in self.ready_thread.iter_mut() {
+            if i.0==t {
+                unsafe{pos = Some(TailqPosMut::from_ref(i));}
+                break;
+            }
+        }
+        let (mut t,_) = unsafe {self.ready_thread.remove(pos.unwrap()).0} ;
+        drop(lock);
+
+        if t==this_thread::control_block() {
+            panic!("A thread cannot remove itself. name={} base_addr={:?} id={}",t.name(),t.base_addr(),t.id());
+        }
+        t.exit();
+        unsafe {
+            t.finish();
+            let t_addr = t.base_addr();
+            let t_alloc = t.alloc;
+            let t_tls = t.tls();
+            drop(t);
+            t_addr.drop_in_place();
+            (*t_alloc).dealloc(t_addr as *mut u8, STACK_SIZE, STACK_SIZE);
+            (*t_alloc).dealloc(t_tls, THREAD_LOCAL_SIZE, 16);
+        }
+    }
+
+    fn thread_blocked(&mut self, t: ThreadRef) {
+        let i = self.ready_thread.iter_mut().find(|x| x.0 == t).unwrap();
+        
+    }
+
+    fn thread_woken(&mut self, t: ThreadRef) {
         todo!()
     }
 
-    fn remove_thread(&mut self, t: *const rksched::thread::Thread) {
+    fn set_thread_prio(&mut self, t: ThreadRef, prio: Prio) -> Result<(),Errno> {
         todo!()
     }
 
-    fn thread_blocked(&mut self, t: *const rksched::thread::Thread) {
+    fn get_thread_prio(&self, t: ThreadRef) -> Result<Prio,Errno> {
         todo!()
     }
 
-    fn thread_woken(&mut self, t: *const rksched::thread::Thread) {
+    fn set_thread_timeslice(&mut self, t: ThreadRef, tslice: Duration) -> Result<(),Errno> {
         todo!()
     }
 
-    fn set_thread_prio(&mut self, t: *mut rksched::thread::Thread, prio: rksched::thread::Prio) -> Result<(),runikraft::errno::Errno> {
-        todo!()
-    }
-
-    fn get_thread_prio(&self, t: *const rksched::thread::Thread) -> Result<rksched::thread::Prio,runikraft::errno::Errno> {
-        todo!()
-    }
-
-    fn set_thread_timeslice(&mut self, t: *mut rksched::thread::Thread, tslice: core::time::Duration) -> Result<(),runikraft::errno::Errno> {
-        todo!()
-    }
-
-    fn get_thread_timeslice(&self, t: *const rksched::thread::Thread) -> Result<core::time::Duration,runikraft::errno::Errno> {
+    fn get_thread_timeslice(&self, t: ThreadRef) -> Result<Duration,Errno> {
         todo!()
     }
 
