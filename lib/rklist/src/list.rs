@@ -3,25 +3,18 @@
 // Authors: 张子辰 <zichen350@gmail.com>
 // Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
-use rkalloc::RKalloc;
-use core::ops::{Deref, DerefMut};
-use core::ptr::null_mut;
-use core::marker::PhantomData;
-use core::iter::{Iterator,ExactSizeIterator};
+use core::ptr::NonNull;
 
 #[repr(C)]
-struct Node<T> {
-    element: Option<T>,     //为了pop_front方法能获取element
-    prev: *mut Node<T>,
-    next: *mut Node<T>,
+pub struct ListNode<T> {
+    pub element: T,
+    pub prev: Option<NonNull<ListNode<T>>>,
+    pub next: Option<NonNull<ListNode<T>>>,
 }
 
-impl<T> Node<T> {
-    fn new(element: T) -> Self {
-        Node { prev: null_mut(), next: null_mut(), element: Some(element)}
-    }
-    fn null() -> Self {
-        Node {prev: null_mut(), next: null_mut(), element: None}
+impl<T> ListNode<T> {
+    pub fn new(element: T) -> Self {
+        ListNode { prev: None, next: None, element}
     }
 }
 
@@ -30,559 +23,174 @@ impl<T> Node<T> {
 /// 支持的操作：
 /// - new                   创建新链表
 /// - is_empty              是否为空
-/// - len                   长度
-/// - front/front_mut       第一个元素
-/// - contains              是否包含某个元素
+/// - head                  头结点
 /// - push_front            头插入
 /// - pop_front             弹出头
-/// - clear                 清空
-/// - iter/iter_mut         迭代器
-/// - head/head_mut         头结点
 /// - insert_before         在指定位置前插入
 /// - insert_after          指定位置之后插入
 /// - remove_before         删除指定位置之前的元素
 /// - remove                删除指定位置的元素
 /// - remove_after          删除指定位置之后的元素
+#[derive(Default)]
 pub struct List<T> {
-    head: *mut Node<T>,
-    alloc: &'static dyn RKalloc,
-    marker: PhantomData<*const Node<T>>,
-    size: usize,
-}
-
-/// 不可变迭代器
-pub struct ListIter<'a, T:'a> {
-    head: *const Node<T>,
-    size: usize,
-    marker: PhantomData<&'a Node<T>>,
-}
-
-/// 可变迭代器
-pub struct ListIterMut<'a, T:'a> {
-    head: *mut Node<T>,
-    size: usize,
-    marker: PhantomData<&'a Node<T>>,
-}
-
-/// 位置
-pub struct ListPos<T> {
-    pos: *const Node<T>
-}
-
-pub struct ListPosMut<T> {
-    pos: *mut Node<T>
-}
-
-impl<T> Clone for ListPos<T> {
-    fn clone(&self) -> Self {
-        Self {pos: self.pos}
-    }
-}
-
-impl<T> Copy for ListPos<T> {
-
-}
-
-impl<T> Clone for ListPosMut<T> {
-    fn clone(&self) -> Self {
-        Self {pos: self.pos}
-    }
-}
-
-impl<T> Copy for ListPosMut<T> {
-
+    head: Option<NonNull<ListNode<T>>>,
 }
 
 impl<T> List<T> {
-    /// 构造双链表
-    pub fn new (alloc: &'static dyn RKalloc) -> Self {
-        Self {head: null_mut(), alloc, marker:PhantomData, size: 0}
+    pub const fn new() -> Self {
+        Self { head: None }
     }
 
     /// 链表是否为空
-    #[inline]
+    #[inline] #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.head.is_null()
+        self.head.is_none()
     }
 
-    /// 长度
-    #[inline]
-    pub fn len(&self) -> usize {
-        self.size
-    }
-
-    /// 是否包含`x`
-    #[inline]
-    pub fn contains(&self, x: &T) -> bool
-    where T: PartialEq<T>
-        {
-            self.iter().any(|e| e == x)
-        }
-
-    /// 链表首个元素的引用
+    /// 头结点
     #[inline] #[must_use]
-    pub fn front<'b>(&'b self) -> Option<&'b T> {
-        unsafe {self.head.as_ref().map(|node| node.element.as_ref().unwrap())}
-    }
-
-    /// 链表首个元素的可变引用
-    #[inline] #[must_use]
-    pub fn front_mut<'b>(&'b mut self) -> Option<&'b mut T> {
-        unsafe {self.head.as_mut().map(|node| node.element.as_mut().unwrap())}
+    pub fn head(&self) -> Option<NonNull<ListNode<T>>> {
+        self.head
     }
 
     /// 在头部插入新结点
     #[inline]
-    pub fn push_front(&mut self, element: T) -> Result<(),&'static str>{
-        self.push_front_node(unsafe{rkalloc::alloc_type(self.alloc,Node::new(element))})?;
-        self.size += 1;
-        Ok(())
+    pub fn push_front(&mut self, mut node: NonNull<ListNode<T>>) {
+        unsafe {
+            node.as_mut().prev = None;
+            node.as_mut().next = self.head;
+            if let Some(mut p) = self.head {
+                p.as_mut().prev = Some(node);
+            }
+            self.head = Some(node);
+        }
     }
 
     /// 弹出头部的结点
-    pub fn pop_front(&mut self) -> Option<T> {
-        if self.head.is_null() {
-            None
-        }
-        else {
-            self.size -= 1;
-            let ptr = self.head;
-            unsafe{
-                self.head = (*ptr).next;
-                // 删除最后一个结点后，head is null
-                if !self.head.is_null() {
-                    debug_assert!(!(*self.head).prev.is_null());
-                    (*self.head).prev = null_mut();
+    pub fn pop_front(&mut self) -> Option<NonNull<ListNode<T>>> {
+        self.head.map(|x| {
+            unsafe {
+                self.head = x.as_ref().next;
+                if let Some(mut p) = self.head {
+                    debug_assert_eq!(p.as_ref().prev.unwrap(),x);
+                    p.as_mut().prev = None;
                 }
+                x
             }
-            let old_head = unsafe{ptr.replace(Node::null())};
-            unsafe{rkalloc::dealloc_type(self.alloc, ptr);}
-            old_head.element
-        }
+        })
     }
+}
 
-    /// 清空链表
-    pub fn clear(&mut self){
+impl<T> ListNode<T> {
+    /// 在结点之前插入
+    pub fn insert_before(&mut self, mut node: NonNull<ListNode<T>>, owner: Option<&mut List<T>>) {
         unsafe {
-            let mut ptr = self.head;
-            while !ptr.is_null() {
-                let next = (*ptr).next;
-                rkalloc::dealloc_type(self.alloc, ptr);
-                ptr = next;
-            }
-        }
-        self.size = 0;
-    }
-
-    /// 不可变迭代器
-    #[inline]
-    pub fn iter<'b>(&'b self) -> ListIter<'b,T> {
-        ListIter { head: self.head, size: self.size, marker: PhantomData }
-    }
-
-    /// 可变迭代器
-    #[inline]
-    pub fn iter_mut<'b>(&'b mut self) -> ListIterMut<'b,T> {
-        ListIterMut { head: self.head, size: self.size, marker: PhantomData}
-    }
-
-    /// 头结点
-    /// 
-    /// 与`iter`不同，`head`产生的位置不会被视为self的引用
-    #[inline]
-    pub fn head(&self) -> ListPos<T> {
-        ListPos { pos: self.head }
-    }
-
-    /// 头结点
-    #[inline]
-    pub fn head_mut(&mut self) -> ListPosMut<T> {
-        ListPosMut { pos: self.head }
-    }
-
-    /// 在迭代器指向的位置之前插入
-    /// 
-    /// # 安全性
-    /// 
-    /// `pos`必须和`self`属于同一个链表
-    pub unsafe fn insert_before(&mut self, pos: ListPosMut<T>, element: T) -> Result<(),&'static str>{
-        if pos.pos.is_null() {
-            return Err("invalid position");
-        }
-        let node = rkalloc::alloc_type(self.alloc, Node::new(element));
-        if node.is_null() {return Err("fail to allocate memory");}
-        (*node).prev=(*pos.pos).prev;
-        (*node).next=pos.pos;
-        (*(pos.pos)).prev = node;
-        if !(*node).prev.is_null() {
-            (*(*node).prev).next=node;
-        }
-        else {
-            debug_assert!(self.head == pos.pos);
-            self.head = node;
-        }
-        self.size += 1;
-        Ok(())
-    }
-
-    /// 在迭代器指向的位置之后插入
-    /// 
-    /// # 安全性
-    /// 
-    /// `pos`必须和`self`属于同一个链表
-    pub unsafe fn insert_after(&mut self, pos: ListPosMut<T>, element: T) -> Result<(),&'static str>{
-        if pos.pos.is_null() {
-            return Err("invalid position");
-        }
-        let node = rkalloc::alloc_type(self.alloc, Node::new(element));
-        if node.is_null() {return Err("fail to allocate memory");}
-        (*node).next=(*pos.pos).next;
-        (*node).prev=pos.pos;
-        (*(pos.pos)).next = node;
-        if !(*node).next.is_null() {
-            (*(*node).next).prev=node;
-        }
-        self.size += 1;
-        Ok(())
-    }
-
-    /// 在迭代器指向的位置之前删除
-    /// 
-    /// # 安全性
-    /// 
-    /// `pos`必须和`self`属于同一个链表
-    pub unsafe fn remove_before(&mut self, pos: ListPosMut<T>) -> Option<T> {
-        assert!(!pos.pos.is_null());
-        if (*pos.pos).prev.is_null() {
-            None
-        }
-        else {
-            self.size -= 1;
-            let ptr = (*pos.pos).prev;
-            (*(pos.pos)).prev = (*ptr).prev;
-            if !(*ptr).prev.is_null() {
-                (*(*ptr).prev).next = pos.pos;
+            node.as_mut().prev = self.prev;
+            node.as_mut().next = NonNull::new(self);
+            if let Some(mut prev) = self.prev {
+                prev.as_mut().next = Some(node);
             }
             else {
-                debug_assert!(self.head == ptr);
-                self.head = pos.pos;
+                owner.unwrap().head = Some(node);
             }
-            let old_head = ptr.replace(Node::null());
-            rkalloc::dealloc_type(self.alloc, ptr);
-            old_head.element
+            self.prev = Some(node);
         }
     }
 
-    /// 删除迭代器指向的位置
-    /// 
-    /// 返回值：(被删除的元素, pos.next()或pos.prev()或空位置)
-    /// 
-    /// # 安全性
-    /// 
-    /// - `pos`必须和`self`属于同一个链表
-    /// - 成功删除后，ListPosMut<T>将无效
-    pub unsafe fn remove(&mut self, pos: ListPosMut<T>) -> (T,ListPosMut<T>) {
-        assert!(!pos.pos.is_null());
-        self.size -= 1;
-        let ptr = pos.pos;
-        if !(*ptr).next.is_null() {
-            (*(*ptr).next).prev = (*ptr).prev;
-            if !(*ptr).prev.is_null() {
-                (*(*ptr).prev).next = (*ptr).next;
+    /// 在结点之后插入
+    pub fn insert_after(&mut self, mut node: NonNull<ListNode<T>>) {
+        unsafe {
+            node.as_mut().next = self.next;
+            node.as_mut().prev = NonNull::new(self);
+            if let Some(mut next) = self.next {
+                next.as_mut().prev = Some(node);
+            }
+            self.next = Some(node);
+        }
+    }
+
+    /// 在结点之前删除，不修改被删除的结点的prev和next指针
+    pub fn remove_before(&mut self, owner: Option<&mut List<T>>) -> Option<NonNull<ListNode<T>>> {
+        unsafe {
+            if let Some(prev) = self.prev {
+                self.prev = prev.as_ref().prev;
+                if let Some(mut prev_prev) = self.prev {
+                    prev_prev.as_mut().next = NonNull::new(self);
+                }
+                else {
+                    owner.unwrap().head = NonNull::new(self);
+                }
+                Some(prev)
+            }
+            //self是头结点
+            else {None}
+        }
+    }
+
+    /// 将self从链表中删除，不修改self的prev和next指针
+    pub fn remove(&mut self, owner: Option<&mut List<T>>) {
+        unsafe {
+            if let Some(mut prev) = self.prev {
+                prev.as_mut().next = self.next;
             }
             else {
-                debug_assert!(self.head == ptr);
-                self.head = (*ptr).next;
+                owner.unwrap().head = self.next;
             }
-            let old_head = ptr.replace(Node::null());
-            rkalloc::dealloc_type(self.alloc, ptr);
-            (old_head.element.unwrap(), ListPosMut{pos: old_head.next})
-        }
-        else if !(*ptr).prev.is_null() {
-            (*(*ptr).prev).next = (*ptr).next;
-            let old_head = ptr.replace(Node::null());
-            rkalloc::dealloc_type(self.alloc, ptr);
-            (old_head.element.unwrap(), ListPosMut{pos: old_head.prev})
-        }
-        else {
-            self.head = null_mut();
-            let old_head = ptr.replace(Node::null());
-            (old_head.element.unwrap(), ListPosMut{pos: null_mut()})
+            if let Some(mut next) = self.next {
+                next.as_mut().prev = self.prev;
+            }
         }
     }
 
     /// 在迭代器指向的位置之后删除
-    /// 
-    /// # 安全性
-    /// 
-    /// `pos`必须和`self`属于同一个链表
-    pub unsafe fn remove_after(&mut self, pos: ListPosMut<T>) -> Option<T> {
-        assert!(!pos.pos.is_null());
-        if (*pos.pos).next.is_null() {
-            None
-        }
-        else {
-            self.size -= 1;
-            let ptr = (*pos.pos).next;
-            (*(pos.pos)).next = (*ptr).next;
-            if !(*ptr).next.is_null() {
-                (*(*ptr).next).prev = pos.pos;
-            }
-            let old_head = ptr.replace(Node::null());
-            rkalloc::dealloc_type(self.alloc, ptr);
-            old_head.element
+    pub fn remove_after(&mut self) -> Option<NonNull<ListNode<T>>> {
+        unsafe {
+            self.next.map(|next| {
+                self.next = next.as_ref().next;
+                if let Some(mut next_next) = self.next {
+                    next_next.as_mut().prev = NonNull::new(self);
+                }
+                next
+            })
         }
     }
-}
 
-impl<T> List<T> {
-    fn push_front_node(&mut self, node: *mut Node<T>) -> Result<(),&'static str>{
-        if node.is_null() {return Err("fail to allocate memory");}
-        unsafe{
-            debug_assert!((*node).prev.is_null());
-            (*node).next = self.head;
-            if !self.head.is_null() {
-                (*self.head).prev = node;
-            }
-            self.head = node;
-        }
-        Ok(())
+    pub fn is_tail(&self) -> bool {
+        self.next.is_none()
+    }
+
+    pub fn is_head(&self) -> bool {
+        self.prev.is_none()
     }
 }
 
 impl<T> Drop for List<T> {
     fn drop(&mut self) {
-        self.clear();
+        assert!(self.is_empty());
     }
 }
 
-impl<'a,T> Iterator for ListIter<'a,T> {
-    type Item = &'a T;
-    fn next(&mut self) -> Option<&'a T> {
-        let ret = self.head;
-        if ret.is_null() {None}
-        else {
-            self.size -= 1;
-            unsafe{
-                self.head = (*self.head).next;
-                (*ret).element.as_ref()
-            }
-        }
+use core::iter::Iterator;
+
+/// 迭代器
+pub struct ListIter<T> {
+    pub node: Option<NonNull<ListNode<T>>>,
+}
+
+impl<T> List<T> {
+    /// 不可变迭代器
+    #[inline]
+    pub fn iter(&self) -> ListIter<T> {
+        ListIter { node: self.head }
     }
 }
 
-impl<'a,T> ListIter<'a,T> {
-    /// 与next相对，返回当前元素，并把迭代器向靠近表头的方向移动
-    pub fn prev(&mut self) -> Option<&'a T> {
-        let ret = self.head;
-        if ret.is_null() {None}
-        else {
-            self.size += 1;
-            unsafe{
-                self.head = (*self.head).prev;
-                (*ret).element.as_ref()
-            }
-        }
-    }
-}
-
-impl<T> ExactSizeIterator for ListIter<'_,T> {
-    fn len(&self) -> usize {
-        self.size
-    }
-}
-
-impl<'a,T> Iterator for ListIterMut<'a,T> {
-    type Item = &'a mut T;
-    fn next(&mut self) -> Option<&'a mut T> {
-        let ret = self.head;
-        if ret.is_null() {None}
-        else {
-            self.size -= 1;
-            unsafe{
-                self.head = (*self.head).next;
-                (*ret).element.as_mut()
-            }
-        }
-    }
-}
-
-impl<'a,T> ListIterMut<'a,T> {
-    /// 与next相对，返回当前元素，并把迭代器向靠近表头的方向移动
-    pub fn prev(&mut self) -> Option<&'a mut T> {
-        let ret = self.head;
-        if ret.is_null() {None}
-        else {
-            self.size += 1;
-            unsafe{
-                self.head = (*self.head).prev;
-                (*ret).element.as_mut()
-            }
-        }
-    }
-}
-
-impl<T> ExactSizeIterator for ListIterMut<'_,T> {
-    fn len(&self) -> usize {
-        self.size
-    }
-}
-
-impl<T> ListIter<'_,T> {
-    /// 转换为`ListPos`
-    pub fn as_pos(&self) -> ListPos<T> {
-        ListPos { pos: self.head }
-    }
-}
-
-impl<T> ListIterMut<'_,T> {
-    /// 转换为`ListPosMut`
-    pub fn as_pos(&self) -> ListPosMut<T> {
-        ListPosMut { pos: self.head }
-    }
-}
-
-impl<T> ListPos<T> {
-    /// 由元素的引用创建
-    pub unsafe fn from_ref(elem: &T) -> Self {
-        Self { pos: elem as *const T as *const Node<T> }
-    }
-
-    /// 由元素的指针创建
-    pub unsafe fn from_ptr(elem: *const T) -> Self {
-        Self { pos: elem as *const Node<T> }
-    }
-
-    /// 移动到下一个位置
-    pub fn next(&mut self)->Result<(),()>{
-        if self.pos.is_null() {return Err(());}
-        unsafe {
-            self.pos = (*self.pos).next;
-            Ok(())
-        }
-    }
-    /// 移动到上一个位置
-    pub fn prev(&mut self)->Result<(),()>{
-        if self.pos.is_null() {return Err(());}
-        unsafe {
-            self.pos = (*self.pos).prev;
-            Ok(())
-        }
-    }
-    /// 移动多个位置
-    pub fn advance(&mut self, dis: isize) -> Result<(),()> {
-        if dis > 0 {
-            for _ in 0..dis {
-                self.next()?
-            }
-        }
-        else if dis < 0 {
-            for _ in 0..-dis {
-                self.prev()?
-            }
-        }
-        Ok(())
-    }
-
-    pub fn is_head(&self) -> bool {
-        unsafe {(*self.pos).prev.is_null()}
-    }
-
-    pub fn is_tail(&self) -> bool {
-        unsafe {(*self.pos).next.is_null()}
-    }
-    
-    pub fn is_null(&self) -> bool{
-        self.pos.is_null()
-    }
-}
-
-impl<T> Deref for ListPos<T> {
-    type Target = T;
-    fn deref(&self) -> &Self::Target {
-        assert!(!self.pos.is_null());
-        unsafe {(*self.pos).element.as_ref().unwrap()}
-    }
-}
-
-impl<T> ListPosMut<T> {
-    /// 由元素的引用创建
-    pub unsafe fn from_ref(elem: &mut T) -> Self {
-        Self { pos: elem as *mut T as *mut Node<T> }
-    }
-
-    /// 由元素的指针创建
-    pub unsafe fn from_ptr(elem: *mut T) -> Self {
-        Self { pos: elem as *mut Node<T> }
-    }
-
-    /// 移动到下一个位置
-    pub fn next(&mut self)->Result<(),()>{
-        if self.pos.is_null() {return Err(());}
-        unsafe {
-            self.pos = (*self.pos).next;
-            Ok(())
-        }
-    }
-    /// 移动到上一个位置
-    pub fn prev(&mut self)->Result<(),()>{
-        if self.pos.is_null() {return Err(());}
-        unsafe {
-            self.pos = (*self.pos).prev;
-            Ok(())
-        }
-    }
-    /// 移动多个位置
-    pub fn advance(&mut self, dis: isize) -> Result<(),()> {
-        if dis > 0 {
-            for _ in 0..dis {
-                self.next()?
-            }
-        }
-        else if dis < 0 {
-            for _ in 0..-dis {
-                self.prev()?
-            }
-        }
-        Ok(())
-    }
-
-    pub fn is_head(&self) -> bool {
-        unsafe {(*self.pos).prev.is_null()}
-    }
-
-    pub fn is_tail(&self) -> bool {
-        unsafe {(*self.pos).next.is_null()}
-    }
-
-    pub fn is_null(&self) -> bool{
-        self.pos.is_null()
-    }
-}
-
-impl<T> Deref for ListPosMut<T> {
-    type Target = T;
-    fn deref(&self) -> &Self::Target {
-        assert!(!self.pos.is_null());
-        unsafe {(*self.pos).element.as_ref().unwrap()}
-    }
-}
-
-impl<T> DerefMut for ListPosMut<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        assert!(!self.pos.is_null());
-        unsafe {(*self.pos).element.as_mut().unwrap()}
-    }
-}
-
-impl<T> Default for ListPos<T> {
-    fn default() -> Self {
-        Self { pos: core::ptr::null() }
-    }
-}
-
-impl<T> Default for ListPosMut<T> {
-    fn default() -> Self {
-        Self { pos: core::ptr::null_mut() }
+impl<T> Iterator for ListIter<T> {
+    type Item = NonNull<ListNode<T>>;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.node.map(|mut node| {
+            self.node = unsafe{node.as_mut().next};
+            node
+        })
     }
 }

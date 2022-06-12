@@ -6,7 +6,7 @@
 // 等待队列*没有*修改自Unikraft
 
 use crate::thread::ThreadRef;
-use rklist::{STailq,STailqPosMut};
+use rklist::{Stailq,STailqPosMut};
 use rkalloc::RKalloc;
 use rkplat::spinlock::SpinLock;
 
@@ -15,13 +15,13 @@ use rkplat::spinlock::SpinLock;
 /// - 线程等待队列：在线程结束时，等待队列里的线程会被全部唤醒
 /// 一个线程至多位于一个等待队列，在线程退出时，它必须主动将自己从等待队列中移除
 pub struct WaitQ {
-    q: STailq<ThreadRef>,
+    q: Stailq<ThreadRef>,
     mutex: SpinLock,
 }
 
 impl WaitQ {
     pub fn new(alloc: &'static dyn RKalloc)->Self {
-        Self { q: STailq::new(alloc), mutex: SpinLock::new()}
+        Self { q: Stailq::new(), mutex: SpinLock::new()}
     }
 
     pub fn empty(&self) -> bool {

@@ -43,7 +43,6 @@ dependencies = [
 name = "rklist"
 version = "0.1.0"
 dependencies = [
- "rkalloc",
  "runikraft",
 ]
 
