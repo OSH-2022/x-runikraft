@@ -31,20 +31,19 @@
 #![no_std]
 
 use rksched::RKsched;
-use rksched::thread::{ThreadRef,ThreadAttr,Prio};
+use rksched::thread::{ThreadRef,ThreadAttr,Prio, ThreadData};
 use rksched::this_thread;
 use rkalloc::RKalloc;
-use rklist::{Tailq,TailqPosMut};
+use rklist::Tailq;
 use rkplat::spinlock::SpinLock;
 use runikraft::errno::Errno;
 use core::time::Duration;
 use runikraft::config::{STACK_SIZE,THREAD_LOCAL_SIZE};
 
-type ThreadList = Tailq<(ThreadRef,ThreadAttr)>;
+type ThreadList = Tailq<ThreadData>;
 
 pub struct RKschedcoop {
     threads_started: bool,
-    allocator: &'static dyn RKalloc,
     ///就绪的线程
     ready_thread: ThreadList,
     // ///已退出的线程
@@ -54,10 +53,10 @@ pub struct RKschedcoop {
 }
 
 impl RKschedcoop {
-    pub fn new(allocator: &'static dyn RKalloc) -> Self {
-        Self { threads_started: false, allocator, next: None, 
+    pub fn new() -> Self {
+        Self { threads_started: false, next: None, 
             lock: SpinLock::new(),
-            ready_thread: ThreadList::new(allocator)}
+            ready_thread: ThreadList::new()}
     }
     //important schedule function
     pub fn schedule(&mut self) {
@@ -81,24 +80,16 @@ impl RKsched for RKschedcoop {
         self.schedule();
     }
 
-    fn add_thread(&mut self, t: ThreadRef, attr: ThreadAttr) -> Result<(), Errno> {
+    fn add_thread(&mut self, mut t: ThreadRef, attr: ThreadAttr) -> Result<(), Errno> {
         let _lock = self.lock.lock();
-        if self.ready_thread.push_back((t,attr)).is_err() {
-            return Err(Errno::NoMem);
-        }
+        t.attr = attr;
+        self.ready_thread.push_back(t.as_non_null());
         Ok(())
     }
 
-    fn remove_thread(&mut self, t: ThreadRef) {
+    fn remove_thread(&mut self, mut t: ThreadRef) {
         let lock = self.lock.lock();
-        let mut pos = None;
-        for i in self.ready_thread.iter_mut() {
-            if i.0==t {
-                unsafe{pos = Some(TailqPosMut::from_ref(i));}
-                break;
-            }
-        }
-        let (mut t,_) = unsafe {self.ready_thread.remove(pos.unwrap()).0} ;
+        unsafe {t.as_non_null().as_mut().remove(Some(&mut self.ready_thread));}
         drop(lock);
 
         if t==this_thread::control_block() {
@@ -118,8 +109,7 @@ impl RKsched for RKschedcoop {
     }
 
     fn thread_blocked(&mut self, t: ThreadRef) {
-        let i = self.ready_thread.iter_mut().find(|x| x.0 == t).unwrap();
-        
+        todo!()
     }
 
     fn thread_woken(&mut self, t: ThreadRef) {

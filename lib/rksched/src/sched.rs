@@ -33,7 +33,7 @@
 
 use core::{time::Duration, ptr::NonNull};
 use runikraft::errno::Errno;
-use crate::thread::{Thread,ThreadAttr,Prio,ThreadRef};
+use crate::thread::{ThreadData,ThreadAttr,Prio,ThreadRef};
 use rkalloc::RKalloc;
 use runikraft::config::{STACK_SIZE,THREAD_LOCAL_SIZE};
 use core::sync::atomic::{AtomicU32,Ordering::SeqCst};
@@ -130,7 +130,7 @@ pub fn create_thread(name: &str, alloc: &'static dyn RKalloc, attr: ThreadAttr, 
             return Err(Errno::NoMem);
         }
 
-        let thread_addr = stack as *mut Thread;
+        let thread_addr = stack as *mut ThreadData;
         let entry_data = tls as *mut EntryData;
         (*entry_data).function = function;
         (*entry_data).arg = arg;

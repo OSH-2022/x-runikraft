@@ -62,7 +62,7 @@ extern crate alloc;
 
 use super::{sched,wait};
 use sched::RKsched;
-use rklist::Tailq;
+use rklist::TailqNode;
 use runikraft::errno::Errno;
 use rkalloc::RKalloc;
 use core::mem::size_of;
@@ -161,12 +161,12 @@ impl ThreadAttr {
 ////////////////////////////////////////////////////////////////////////
 // 线程 thread 的结构体定义
 ////////////////////////////////////////////////////////////////////////
-pub type ThreadList = Tailq<Thread>;
-
 extern "Rust" {
     static _rk_thread_inittab_start: *mut InittabEntry;
     static _rk_thread_inittab_end: *mut InittabEntry;
 }
+
+pub type Thread = TailqNode<ThreadData>;
 
 /// 线程的控制块
 /// 
@@ -179,7 +179,7 @@ extern "Rust" {
 /// 5. 当线程执行完毕或被kill时，调度器调用`exit`。
 /// 6. 调用`finish`。
 /// 7. 释放线程栈空间（stack）和线程本地存储空间（tls）。
-pub struct Thread {
+pub struct ThreadData {
     name: String,
     id: u32,
     stack: *mut u8,
@@ -198,6 +198,7 @@ pub struct Thread {
     // prv: *mut u8,
     ref_cnt: AtomicI32,
     pub alloc: *const dyn RKalloc,
+    pub attr: ThreadAttr,
     _pinned_marker: core::marker::PhantomPinned,
 }
 
@@ -214,7 +215,7 @@ fn init_sp(sp: &mut usize, stack: *mut u8, function: unsafe fn(*mut u8)->!, data
     // stack_push(sp, data as usize);
 }
 
-impl Thread {
+impl ThreadData {
     #[inline(always)]
     fn sched_ref(&self) -> &'static mut dyn RKsched {
         unsafe {&mut *self.sched}
@@ -223,7 +224,7 @@ impl Thread {
 
 static THREAD_ID: AtomicU32 = AtomicU32::new(0);
 
-impl Thread {
+impl ThreadData {
     // Thread没有new函数，不能用正常方法构造
 
     ///线程初始化
@@ -235,7 +236,7 @@ impl Thread {
         assert!(!tls.is_null());
 
         // Save pointer to the thread on the stack to get current thread
-        (stack as *mut usize).write(self as *mut Thread as usize);
+        (stack as *mut usize).write(self as *mut ThreadData as usize);
 
         // Allocate thread context
         let ctx = rkalloc::alloc_type(allocator, Context::default());
@@ -254,6 +255,7 @@ impl Thread {
         self.flags = 0;
         self.wakeup_time = Duration::ZERO;
         self.detached = false;
+        self.attr = ThreadAttr::default();
         addr_of_mut!(self.waiting_threads).write(wait::WaitQ::new(allocator));
         addr_of_mut!(self.sched).write_bytes(0, size_of::<*mut dyn RKsched>());
         addr_of_mut!(self.waiting_for).write(None);
@@ -375,12 +377,12 @@ impl Thread {
     }
 }
 
-impl Thread {
+impl ThreadData {
     pub fn name(&self) -> &str {
         self.name.as_str()
     }
-    pub fn base_addr(&self) -> *mut Thread {
-        self as *const Thread as *mut Thread
+    pub fn base_addr(&self) -> *mut ThreadData {
+        self as *const ThreadData as *mut ThreadData
     }
     pub fn id(&self) -> u32 {
         self.id
@@ -390,12 +392,12 @@ impl Thread {
     }
 }
 
-pub unsafe fn thread_switch(prev: *mut Thread, next: *mut Thread) {
+pub unsafe fn thread_switch(prev: *mut ThreadData, next: *mut ThreadData) {
     rkplat::thread::switch((*prev).ctx, (*next).ctx);
 }
 
-pub type InitFunc = fn(&mut Thread)->Result<(),Errno>;
-pub type FinishFunc = fn(&mut Thread);
+pub type InitFunc = fn(&mut ThreadData)->Result<(),Errno>;
+pub type FinishFunc = fn(&mut ThreadData);
 pub struct InittabEntry {
     pub init: InitFunc,
     pub finish: FinishFunc,
@@ -436,7 +438,7 @@ const RUNNABLE_FLAG: u32  = 0x00000001;
 const EXITED_FLAG: u32    = 0x00000002;
 const QUEUEABLE_FLAG: u32 = 0x00000004;
 
-impl Thread {
+impl ThreadData {
     pub fn is_runnable(&self) -> bool {
         self.flags & RUNNABLE_FLAG !=0
     }
@@ -467,7 +469,7 @@ impl Thread {
 
 /// 线程的引用，用在等待队列
 pub struct ThreadRef {
-    ptr: *mut Thread,
+    ptr: *mut ThreadData,
 }
 
 impl Default for ThreadRef {
@@ -477,7 +479,7 @@ impl Default for ThreadRef {
 }
 
 impl Deref for ThreadRef {
-    type Target = Thread;
+    type Target = ThreadData;
     fn deref(&self) -> &Self::Target {
         assert!(!self.ptr.is_null());
         unsafe {&*(self.ptr)}
@@ -523,17 +525,21 @@ impl PartialEq for ThreadRef {
     }
 }
 
-impl Thread {
+impl ThreadData {
     pub fn as_ref(&self) -> ThreadRef {
         let old_ref = self.ref_cnt.fetch_add(1, Ordering::SeqCst);
         if old_ref == -1 {
             panic!("Attempt to create ThreadRef when thread is dropping.");
         }
-        ThreadRef { ptr: self as *const Thread as *mut Thread}
+        ThreadRef { ptr: self as *const ThreadData as *mut ThreadData}
+    }
+
+    pub fn as_non_null(&self) -> NonNull<Thread> {
+        NonNull::new(self as *const ThreadData as *mut Thread).unwrap()
     }
 }
 
-impl Drop for Thread{
+impl Drop for ThreadData{
     fn drop(&mut self) {
         assert!(self.is_exited());
         debug_assert!(self.waiting_for.is_none());
