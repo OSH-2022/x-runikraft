@@ -9,8 +9,8 @@ SECTIONS
 
     stext = .;
     .text : {
-        *(.text.entry)
-        _rk_thread_inittab_start = .
+        *(.text.entry) ;
+        _rk_thread_inittab_start = . ;
         *(.text.thread_inittab.0)
         *(.text.thread_inittab.1)
         *(.text.thread_inittab.2)
@@ -21,7 +21,7 @@ SECTIONS
         *(.text.thread_inittab.7)
         *(.text.thread_inittab.8)
         *(.text.thread_inittab.9)
-        _rk_thread_inittab_end = .
+        _rk_thread_inittab_end = . ;
         *(.text .text.*)
     }
 
