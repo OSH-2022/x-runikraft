@@ -65,6 +65,7 @@ use rkalloc::{RKalloc, RKallocState, RKallocExt};
 use rkplat::spinlock;
 use core::cmp::max;
 use core::ptr::null_mut;
+use runikraft::config::PAGE_SIZE;
 
 //最小的内存块大小
 const MIN_SIZE: usize = 1usize << MIN_ORDER;
@@ -73,7 +74,7 @@ const MAX_SIZE: usize = 1usize << MAX_ORDER;
 const MIN_ORDER: usize = 4;
 const MAX_ORDER: usize = 48;
 //页的对齐要求
-const PAGE_ALIGNMENT: usize = 4096;
+const PAGE_ALIGNMENT: usize = PAGE_SIZE;
 
 pub struct RKallocBuddy<'a> {
     //空闲区块列表(双向循环链表)，order-MIN_ORDER才是free_list_head的索引
@@ -385,7 +386,7 @@ unsafe impl Sync for RKallocBuddy<'_>{}
 unsafe impl RKalloc for RKallocBuddy<'_> {
     unsafe fn alloc(&self, size: usize, align: usize) -> *mut u8 {
         debug_assert!(align.is_power_of_two());
-        debug_assert!(align <= PAGE_ALIGNMENT);
+        // debug_assert!(align <= PAGE_ALIGNMENT);
         //实际上需要分配的内存大小
         let size = min_power2(max(max(size, align), MIN_SIZE));
         //剩余空间不足
@@ -399,7 +400,7 @@ unsafe impl RKalloc for RKallocBuddy<'_> {
     unsafe fn dealloc(&self, ptr: *mut u8, size: usize, align: usize) {
         if ptr.is_null() { return; }
         debug_assert!(align.is_power_of_two());
-        debug_assert!(align <= PAGE_ALIGNMENT);
+        // debug_assert!(align <= PAGE_ALIGNMENT);
         let size = min_power2(max(max(size, align), MIN_SIZE));
         let _lock = self.lock.lock();
         let mut_self = &mut *(self as *const Self as *mut Self);

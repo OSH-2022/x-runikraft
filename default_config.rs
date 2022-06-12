@@ -7,3 +7,9 @@
 
 pub const RK_NETDEV_SCRATCH_SIZE: usize = 0;
 pub const LIBUKNETDEV_MAXNBQUEUES: usize = 1; 
+
+pub const PAGE_SIZE: usize = 4096;
+pub const STACK_SIZE_PAGE_ORDER: usize = 4;
+
+pub const STACK_SIZE: usize = PAGE_SIZE*(1<<config::STACK_SIZE_PAGE_ORDER);
+

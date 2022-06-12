@@ -342,6 +342,7 @@ impl<T> SListPos<T> {
 impl<T> Deref for SListPos<T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
+        assert!(!self.pos.is_null());
         unsafe {(*self.pos).element.as_ref().unwrap()}
     }
 }
@@ -388,12 +389,26 @@ impl<T> SListPosMut<T> {
 impl<T> Deref for SListPosMut<T> {
     type Target = T;
     fn deref(&self) -> &Self::Target {
+        assert!(!self.pos.is_null());
         unsafe {(*self.pos).element.as_ref().unwrap()}
     }
 }
 
 impl<T> DerefMut for SListPosMut<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
+        assert!(!self.pos.is_null());
         unsafe {(*self.pos).element.as_mut().unwrap()}
+    }
+}
+
+impl<T> Default for SListPos<T> {
+    fn default() -> Self {
+        Self { pos: core::ptr::null() }
+    }
+}
+
+impl<T> Default for SListPosMut<T> {
+    fn default() -> Self {
+        Self { pos: core::ptr::null_mut() }
     }
 }

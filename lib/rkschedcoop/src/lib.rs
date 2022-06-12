@@ -30,22 +30,23 @@
 
 #![no_std]
 
-use rksched::{RKsched, RKschedInternelFun, RKthread, RKthreadAttr, RKthreadList, SchedPrivate};
+use rksched::thread::{Thread, ThreadAttr, ThreadList};
+use rksched::sched::RKsched;
 use rklist::{TailqPosMut};
 use rkalloc::RKalloc;
 use rkplat::{lcpu, thread};
 use core::time::Duration;
 
-pub struct RKschedcoop<'a> {
+pub struct RKschedcoop {
     threads_started: bool,
-    idle: RKthread<'a>,
-    exited_threads: RKthreadList<'a>,
-    allocator: &'a dyn RKalloc,
-    next: *mut RKschedcoop<'a>,
-    prv: &'a mut SchedPrivate<'a>,
+    idle: Thread,
+    exited_threads: ThreadList,
+    allocator: &'static dyn RKalloc,
+    next: *mut RKschedcoop,
+    // prv: &'a mut SchedPrivate<'a>,
 }
 
-impl<'a> RKschedcoop<'a> {
+impl RKschedcoop {
     pub fn new() -> Self {
         todo!()
     }
@@ -55,19 +56,19 @@ impl<'a> RKschedcoop<'a> {
     }
 }
 
-impl<'a> RKsched<'a> for RKschedcoop<'a> {
-    fn sched_start(&self) {
+impl RKsched for RKschedcoop {
+    fn start(&self) {
         unsafe {
             thread::start(self.idle.ctx);
         }
     }
-    fn sched_started(&self) -> bool {
+    fn started(&self) -> bool {
         self.threads_started
     }
-    fn yield_sched(&mut self) {
+    fn r#yield(&mut self) {
         self.schedcoop_schedule();
     }
-    fn add_thread(&mut self, mut t: RKthread<'a>, attr: RKthreadAttr) -> Result<(), &'static str> {
+    fn add_thread(&mut self, mut t: Thread, attr: ThreadAttr) -> Result<(), &'static str> {
         let mut flags: usize = 0;
         t.set_runnable();
 
@@ -79,13 +80,13 @@ impl<'a> RKsched<'a> for RKschedcoop<'a> {
 
         Ok(())
     }
-    fn remove_thread(&mut self, t: *mut RKthread<'a>) -> Result<(), &'static str> {
+    fn remove_thread(&mut self, t: *mut Thread) -> Result<(), &'static str> {
         let mut flags: usize = 0;
 
         flags = lcpu::save_irqf();
         unsafe {
             let t_pos = TailqPosMut::from_ptr(t);
-            if t != rksched::thread_current() {
+            if t != rksched::thread::current() {
                 //Remove from the thread list
                 let mut thread = self.prv.thread_list.remove(t_pos).0;
                 thread.clear_runnable();
@@ -109,12 +110,12 @@ impl<'a> RKsched<'a> for RKschedcoop<'a> {
         }
         Ok(())
     }
-    fn block_thread(&mut self, t: *mut RKthread<'a>) {
+    fn thread_blocked(&mut self, t: *const Thread) {
         debug_assert!(lcpu::irqs_disabled());
 
         unsafe {
             let t_pos = TailqPosMut::from_ptr(t);
-            if t != rksched::thread_current() {
+            if t != rksched::thread::current() {
                 let mut thread = self.prv.thread_list.remove(t_pos).0;
                 if !thread.wakeup_time.is_zero() {
                     self.prv.sleeping_threads.push_back(thread);
@@ -122,14 +123,14 @@ impl<'a> RKsched<'a> for RKschedcoop<'a> {
             }
         }
     }
-    fn wake_thread(&mut self, t: *mut RKthread<'a>) {
+    fn wake_thread(&mut self, t: *const Thread) {
         debug_assert!(lcpu::irqs_disabled());
 
         unsafe {
             let t_pos = TailqPosMut::from_ptr(t);
             if !(*t).wakeup_time.is_zero() {
                 let mut thread = self.prv.sleeping_threads.remove(t_pos).0;
-                if t != rksched::thread_current() || thread.is_queueable() {
+                if t != rksched::thread::current() || thread.is_queueable() {
                     thread.clear_queueable();
                     self.prv.thread_list.push_back(thread);
                 }
@@ -137,36 +138,36 @@ impl<'a> RKsched<'a> for RKschedcoop<'a> {
         }
     }
     fn sleep_thread(&mut self, nsec: Duration) {
-        let t = rksched::thread_current();
+        let t = rksched::thread::current();
         unsafe {
             (*t).block_timeout(nsec);
         }
-        self.yield_sched();
+        self.r#yield();
     }
     fn exit_thread(&mut self) {
-        let t = rksched::thread_current();
+        let t = rksched::thread::current();
         self.remove_thread(t);
         //TODO: need to translate `RK_CRASH("Failed to stop the thread\n");`
     }
 }
 
-impl<'a> RKschedInternelFun for RKschedcoop<'a> {
-    fn get_idle(&self) -> *mut RKthread {
-        todo!()
-    }
-    fn idle_init(&mut self, stack: *mut u8, function: fn(*mut u8)) {
-        todo!()
-    }
-    fn thread_create(&mut self, name: *const char, attr: &mut RKthreadAttr, function: fn(*mut u8), arg: *mut u8) -> *mut RKthread {
-        todo!()
-    }
-    fn thread_destroy(&mut self, t: *mut RKthread) {
-        todo!()
-    }
-    fn thread_kill(&mut self, t: *mut RKthread) {
-        todo!()
-    }
-    fn thread_switch(&mut self, prev: *mut RKthread, next: *mut RKthread) {
-        todo!()
-    }
-}
+// impl<'a> RKschedInternelFun for RKschedcoop<'a> {
+//     fn get_idle(&self) -> *mut RKthread {
+//         todo!()
+//     }
+//     fn idle_init(&mut self, stack: *mut u8, function: fn(*mut u8)) {
+//         todo!()
+//     }
+//     fn thread_create(&mut self, name: *const char, attr: &mut RKthreadAttr, function: fn(*mut u8), arg: *mut u8) -> *mut RKthread {
+//         todo!()
+//     }
+//     fn thread_destroy(&mut self, t: *mut RKthread) {
+//         todo!()
+//     }
+//     fn thread_kill(&mut self, t: *mut RKthread) {
+//         todo!()
+//     }
+//     fn thread_switch(&mut self, prev: *mut RKthread, next: *mut RKthread) {
+//         todo!()
+//     }
+// }

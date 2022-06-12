@@ -11,7 +11,7 @@ pub mod thread;
 mod intctrl;
 mod exception;
 
-mod constants;
+pub mod constants;
 
 // supervisor binary interface
 mod sbi;

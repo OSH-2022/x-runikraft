@@ -10,6 +10,18 @@ SECTIONS
     stext = .;
     .text : {
         *(.text.entry)
+        _rk_thread_inittab_start = .
+        *(.text.thread_inittab.0)
+        *(.text.thread_inittab.1)
+        *(.text.thread_inittab.2)
+        *(.text.thread_inittab.3)
+        *(.text.thread_inittab.4)
+        *(.text.thread_inittab.5)
+        *(.text.thread_inittab.6)
+        *(.text.thread_inittab.7)
+        *(.text.thread_inittab.8)
+        *(.text.thread_inittab.9)
+        _rk_thread_inittab_end = .
         *(.text .text.*)
     }
 

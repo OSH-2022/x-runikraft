@@ -3,3 +3,4 @@
 /// 
 /// 只处理中断，不处理异常。
 pub const MAX_IRQ: usize = 64;
+
