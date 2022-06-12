@@ -19,10 +19,6 @@ __runikraft_start:
     # 初始化中断响应函数
     la t0, __rkplat_int_except_entry
     csrw stvec, t0
-    #加载栈指针
+    #加载栈指针（现在的写法仅适用于OpenSBI：开机时只有一个核会执行，而其他核暂停）
     la sp,boot_stack_top
     call __runikraft_entry_point
-
-.section .bss.stack
-    .space 4096
-boot_stack_top:

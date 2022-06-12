@@ -7,6 +7,7 @@ pub mod irq;
 pub mod spinlock;
 //pub mod memory;
 pub mod thread;
+pub mod device;
 
 mod intctrl;
 mod exception;
@@ -24,7 +25,19 @@ mod reg;
 // 导入所有的汇编代码
 use core::arch::global_asm;
 
-global_asm!(include_str!("entry.asm"));
+
+#[cfg(debug_assertions)]
+global_asm!(concat!(include_str!("entry.asm"),
+".section .bss.stack
+.align 3
+.space 40960
+boot_stack_top:"));
+#[cfg(not(debug_assertions))]
+global_asm!(concat!(include_str!("entry.asm"),
+".section .bss.stack
+.align 3
+.space 4096
+boot_stack_top:"));
 global_asm!(include_str!("int_entry.asm"));
 global_asm!(include_str!("new_stack.asm"));
 global_asm!(include_str!("thread.asm"));

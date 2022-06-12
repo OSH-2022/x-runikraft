@@ -1,9 +1,10 @@
 use core::time::Duration;
 use core::arch;
-use crate::riscv64::sbi::sbi_call;
-
-use super::time;
 use core::sync::atomic;
+use core::ptr::addr_of;
+
+use super::{bootstrap,time,spinlock};
+use super::sbi::sbi_call;
 
 /// 中断标志，具体格式由平台决定
 pub type IRQFlag = usize;
@@ -64,12 +65,16 @@ pub fn irqs_disabled() -> bool {
 }
 
 /// 挂起当前的逻辑处理器
-pub fn halt() {
+pub fn halt() -> !{
     disable_irq();
     //Hart State Management-
     //sbi_hart_suspend(suspend_type,resume_addr,opaque)
     //suspend_type=Default retentive suspend
+    unsafe {
+        bootstrap::hart_local().is_running = false;
+    }
     sbi_call(0x48534D, 3, 0, 0, 0).expect("Fail to suspend.");
+    panic!("Fail to suspend.");
 }
 
 /// 挂起当前处理器一段时间，
@@ -86,44 +91,78 @@ pub fn halt_irq() {
     let flag = save_irqf();
     restore_irqf(0xFFFF);//开启所有中断
     enable_irq();
+    unsafe {
+        bootstrap::hart_local().is_running = false;
+    }
     sbi_call(0x48534D, 3, 0, 0, 0).expect("Fail to suspend.");
+    unsafe {
+        bootstrap::hart_local().is_running = true;
+    }
     restore_irqf(flag);
 }
 
-pub type ID = u32;
+pub type ID = usize;
 
 #[cfg(feature = "has_smp")]
 mod smp {
     use super::*;
 
+    extern "C" {
+        fn __rkplat_hart_entry();
+    }
+
     pub type Entry = fn() -> !;
     pub type StackPointer = *mut u8;
 
+    static LOCK: spinlock::SpinLock = spinlock::SpinLock::new();
+    arch::global_asm!(include_str!("hart_entry.asm"));
+
     /// 返回当前的逻辑处理器的ID
     pub fn id() -> ID {
-        todo!();
+        unsafe{bootstrap::hart_local().hartid} 
     }
 
     /// 返回逻辑处理器的数量
     pub fn count() -> ID {
-        todo!();
+        unsafe{bootstrap::HART_NUMBER}
     }
 
-    /// 启动若干逻辑处理器。逻辑处理器将从给定的其实位置开始执行，
-    /// 为执行的逻辑处理器会进入低功耗状态。
+    /// 启动逻辑处理器。逻辑处理器将从给定的其实位置开始执行，
+    /// 未执行的逻辑处理器会进入低功耗状态。
     ///
     /// 参数是若干要启动的逻辑处理机的slice：
-    /// - `lcpuid.0`: 逻辑处理器ID
-    /// - `lcpuid.1`: 栈指针
-    /// - `lcpuid.2`: 入口函数
-    pub fn start(_lcpu_id_sp_entry: &[(ID, StackPointer, Entry)]) -> Result<(), i32> {
-        todo!();
+    /// - `lcpuid`: 逻辑处理器ID
+    /// - `sp`: 栈指针
+    /// - `entry`: 入口函数
+    pub fn start(lcpuid: ID, sp: StackPointer, entry: Entry) -> Result<(), i32> {
+        let _lock = match LOCK.try_lock() {
+            Some(x) => x,
+            None => {return Err(0);}
+        };
+        rmb();
+        unsafe {
+            if !bootstrap::HART_LOCAL[lcpuid].is_running {
+                bootstrap::HART_LOCAL[lcpuid].start_sp = sp as usize;
+                bootstrap::HART_LOCAL[lcpuid].start_entry = entry as usize;
+            }
+            //sbi_hart_start
+            //unsigned long hartid
+            //unsigned long start_addr
+            //unsigned long opaque
+            if let Err(err) = sbi_call(0x48534D, 0, lcpuid, 
+                __rkplat_hart_entry as usize, 
+                addr_of!(bootstrap::HART_LOCAL[lcpuid]) as usize)
+            {
+                return Err(err as i32);
+            }
+        }
+        Ok(())
     }
 
-    /// 让`lcpuid`中的逻辑处理器等待`timeout`
+    /// 让编号为`lcpuid`的逻辑处理器等待`timeout`
     ///
     /// 可以用`timeout`=0等待不确定的时间
-    pub fn wait(_lcpuid: &[ID], _timeout: Duration) -> Result<(), i32> {
+    pub fn wait(_lcpuid: ID, _timeout: Duration) -> Result<(), i32> {
         todo!();
     }
 
@@ -131,7 +170,7 @@ mod smp {
     // fn run()
 
     /// 唤醒被挂起或处在低功耗状态的逻辑处理器
-    pub fn wakeup(_lcpuid: &[ID]) -> Result<(), i32> {
+    pub fn wakeup(_lcpuid: ID) -> Result<(), i32> {
         todo!();
     }
 }
