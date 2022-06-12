@@ -3,24 +3,17 @@
 // Authors: 张子辰 <zichen350@gmail.com>
 // Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
-use rkalloc::RKalloc;
-use core::ops::{Deref, DerefMut};
-use core::ptr::null_mut;
-use core::marker::PhantomData;
-use core::iter::{Iterator,ExactSizeIterator};
+use core::ptr::NonNull;
 
 #[repr(C)]
-struct Node<T> {
-    element: Option<T>,     //为了pop_front方法能获取element
-    next: *mut Node<T>,
+pub struct SlistNode<T> {
+    pub element: T,     //为了pop_front方法能获取element
+    pub next: Option<NonNull<SlistNode<T>>>,
 }
 
-impl<T> Node<T> {
-    fn new(element: T) -> Self {
-        Node { next: null_mut(), element: Some(element)}
-    }
-    fn null() -> Self {
-        Node { next: null_mut(), element: None}
+impl<T> SlistNode<T> {
+    pub fn new(element: T) -> Self {
+        SlistNode { next: None, element}
     }
 }
 
@@ -29,386 +22,101 @@ impl<T> Node<T> {
 /// 支持的操作：
 /// - new                   创建新链表
 /// - is_empty              是否为空
-/// - len                   长度
-/// - front/front_mut       第一个元素
-/// - contains              是否包含某个元素
+/// - head                  头结点
 /// - push_front            头插入
 /// - pop_front             弹出头
-/// - clear                 清空
-/// - iter/iter_mut         迭代器
-/// - head/head_mut         头结点
 /// - insert_after          指定位置之后插入
 /// - remove_after          删除指定位置之后的元素
-pub struct SList<T> {
-    head: *mut Node<T>,
-    alloc: &'static dyn RKalloc,
-    marker: PhantomData<*const Node<T>>,
-    size: usize,
+#[derive(Default)]
+pub struct Slist<T> {
+    head: Option<NonNull<SlistNode<T>>>,
 }
 
-/// 不可变迭代器
-pub struct SListIter<'a, T:'a> {
-    head: *const Node<T>,
-    size: usize,
-    marker: PhantomData<&'a Node<T>>,
-}
-
-/// 可变迭代器
-pub struct SListIterMut<'a, T:'a> {
-    head: *mut Node<T>,
-    size: usize,
-    marker: PhantomData<&'a Node<T>>,
-}
-
-/// 位置
-pub struct SListPos<T> {
-    pos: *const Node<T>
-}
-
-pub struct SListPosMut<T> {
-    pos: *mut Node<T>
-}
-
-impl<T> Clone for SListPos<T> {
-    fn clone(&self) -> Self {
-        Self {pos: self.pos}
-    }
-}
-
-impl<T> Copy for SListPos<T> {
-
-}
-
-impl<T> Clone for SListPosMut<T> {
-    fn clone(&self) -> Self {
-        Self {pos: self.pos}
-    }
-}
-
-impl<T> Copy for SListPosMut<T> {
-
-}
-
-impl<T> SList<T> {
-    /// 构造单链表
-    pub fn new (alloc: &'static dyn RKalloc) -> Self {
-        Self {head: null_mut(), alloc, marker:PhantomData, size: 0}
+impl<T> Slist<T> {
+    pub const fn new() -> Self {
+        Self { head: None }
     }
 
     /// 链表是否为空
-    #[inline]
+    #[inline] #[must_use]
     pub fn is_empty(&self) -> bool {
-        self.head.is_null()
+        self.head.is_none()
     }
 
-    /// 长度
-    #[inline]
-    pub fn len(&self) -> usize {
-        self.size
-    }
-
-    /// 是否包含`x`
-    #[inline]
-    pub fn contains(&self, x: &T) -> bool
-    where T: PartialEq<T>
-        {
-            self.iter().any(|e| e == x)
-        }
-
-    /// 链表首个元素的引用
+    /// 头结点
     #[inline] #[must_use]
-    pub fn front<'b>(&'b self) -> Option<&'b T> {
-        unsafe {self.head.as_ref().map(|node| node.element.as_ref().unwrap())}
-    }
-
-    /// 链表首个元素的可变引用
-    #[inline] #[must_use]
-    pub fn front_mut<'b>(&'b mut self) -> Option<&'b mut T> {
-        unsafe {self.head.as_mut().map(|node| node.element.as_mut().unwrap())}
+    pub fn head(&self) -> Option<NonNull<SlistNode<T>>> {
+        self.head
     }
 
     /// 在头部插入新结点
-    #[inline]
-    pub fn push_front(&mut self, element: T) -> Result<(),&'static str>{
-        self.push_front_node(unsafe{rkalloc::alloc_type(self.alloc,Node::new(element))})?;
-        self.size += 1;
-        Ok(())
+    pub fn push_front(&mut self, mut node: NonNull<SlistNode<T>>){
+        unsafe{
+            node.as_mut().next = self.head;
+            self.head = Some(node);
+        }
     }
 
     /// 弹出头部的结点
-    pub fn pop_front(&mut self) -> Option<T> {
-        if self.head.is_null() {
-            None
-        }
-        else {
-            self.size -= 1;
-            let ptr = self.head;
-            unsafe{self.head = (*ptr).next;}
-            let old_head = unsafe{ptr.replace(Node::null())};
-            unsafe{rkalloc::dealloc_type(self.alloc, ptr);}
-            old_head.element
-        }
+    pub fn pop_front(&mut self) -> Option<NonNull<SlistNode<T>>> {
+        self.head.map(|x| {
+            self.head = unsafe{x.as_ref().next};
+            x
+        })
     }
+}
 
-    /// 清空链表
-    pub fn clear(&mut self){
+impl<T> SlistNode<T> {
+    /// 在结点之后插入
+    pub fn insert_after(&mut self, mut node: NonNull<SlistNode<T>>) {
         unsafe {
-            let mut ptr = self.head;
-            while !ptr.is_null() {
-                let next = (*ptr).next;
-                rkalloc::dealloc_type(self.alloc, ptr);
-                ptr = next;
-            }
+            node.as_mut().next = self.next;
+            self.next = Some(node)
         }
-        self.size = 0;
     }
 
+    /// 在结点之后删除，不修改被删除的结点的next指针
+    pub fn remove_after(&mut self) -> Option<NonNull<SlistNode<T>>> {
+        unsafe {
+            self.next.map(|x| {
+                self.next = x.as_ref().next;
+                x
+            })
+        }
+    }
+
+    pub fn is_tail(&self) -> bool{
+        self.next.is_none()
+    }
+}
+
+impl<T> Drop for Slist<T> {
+    fn drop(&mut self) {
+        assert!(self.is_empty());
+    }
+}
+
+use core::iter::Iterator;
+
+/// 迭代器
+pub struct SlistIter<T> {
+    pub node: Option<NonNull<SlistNode<T>>>,
+}
+
+impl<T> Slist<T> {
     /// 不可变迭代器
     #[inline]
-    pub fn iter<'b>(&'b self) -> SListIter<'b,T> {
-        SListIter { head: self.head, size: self.size, marker: PhantomData }
-    }
-
-    /// 可变迭代器
-    #[inline]
-    pub fn iter_mut<'b>(&'b mut self) -> SListIterMut<'b,T> {
-        SListIterMut { head: self.head, size: self.size, marker: PhantomData}
-    }
-
-    /// 头结点
-    /// 
-    /// 与`iter`不同，`head`产生的位置不会被视为self的引用
-    #[inline]
-    pub fn head(&self) -> SListPos<T> {
-        SListPos { pos: self.head }
-    }
-
-    /// 头结点
-    #[inline]
-    pub fn head_mut(&mut self) -> SListPosMut<T> {
-        SListPosMut { pos: self.head }
-    }
-
-    /// 在迭代器指向的位置之后插入
-    /// 
-    /// # 安全性
-    /// 
-    /// `pos`必须和`self`属于同一个链表
-    pub unsafe fn insert_after(&mut self, pos: SListPosMut<T>, element: T) -> Result<(),&'static str>{
-        if pos.pos.is_null() {
-            return Err("invalid position");
-        }
-        let node = rkalloc::alloc_type(self.alloc, Node::new(element));
-        if node.is_null() {return Err("fail to allocate memory");}
-        (*node).next=(*pos.pos).next;
-        (*(pos.pos)).next = node;
-        self.size += 1;
-        Ok(())
-    }
-
-    /// 在迭代器指向的位置之后删除
-    /// 
-    /// # 安全性
-    /// 
-    /// `pos`必须和`self`属于同一个链表
-    pub unsafe fn remove_after(&mut self, pos: SListPosMut<T>) -> Option<T> {
-        assert!(!pos.pos.is_null());
-        if (*pos.pos).next.is_null() {
-            None
-        }
-        else {
-            self.size -= 1;
-            let ptr = (*pos.pos).next;
-            (*(pos.pos)).next = (*ptr).next;
-            let old_head = ptr.replace(Node::null());
-            rkalloc::dealloc_type(self.alloc, ptr);
-            old_head.element
-        }
+    pub fn iter(&self) -> SlistIter<T> {
+        SlistIter { node: self.head }
     }
 }
 
-impl<T> SList<T> {
-    fn push_front_node(&mut self, node: *mut Node<T>) -> Result<(),&'static str>{
-        if node.is_null() {return Err("fail to allocate memory");}
-        unsafe{
-            (*node).next = self.head;
-            self.head = node;
-        }
-        Ok(())
-    }
-}
-
-impl<T> Drop for SList<T> {
-    fn drop(&mut self) {
-        self.clear();
-    }
-}
-
-impl<'a,T> Iterator for SListIter<'a,T> {
-    type Item = &'a T;
-    fn next(&mut self) -> Option<&'a T> {
-        let ret = self.head;
-        if ret.is_null() {None}
-        else {
-            self.size -= 1;
-            unsafe{
-                self.head = (*self.head).next;
-                (*ret).element.as_ref()
-            }
-        }
-    }
-}
-
-impl<T> ExactSizeIterator for SListIter<'_,T> {
-    fn len(&self) -> usize {
-        self.size
-    }
-}
-
-impl<'a,T> Iterator for SListIterMut<'a,T> {
-    type Item = &'a mut T;
-    fn next(&mut self) -> Option<&'a mut T> {
-        let ret = self.head;
-        if ret.is_null() {None}
-        else {
-            self.size -= 1;
-            unsafe{
-                self.head = (*self.head).next;
-                (*ret).element.as_mut()
-            }
-        }
-    }
-}
-
-impl<T> ExactSizeIterator for SListIterMut<'_,T> {
-    fn len(&self) -> usize {
-        self.size
-    }
-}
-
-impl<T> SListIter<'_,T> {
-    /// 转换为`SListPos`
-    pub fn as_pos(&self) -> SListPos<T> {
-        SListPos { pos: self.head }
-    }
-}
-
-impl<T> SListIterMut<'_,T> {
-    /// 转换为`SListPosMut`
-    pub fn as_pos(&self) -> SListPosMut<T> {
-        SListPosMut { pos: self.head }
-    }
-}
-
-impl<T> SListPos<T> {
-    /// 由元素的引用创建
-    pub unsafe fn from_ref(elem: &T) -> Self {
-        Self { pos: elem as *const T as *const Node<T> }
-    }
-
-    /// 由元素的指针创建
-    pub unsafe fn from_ptr(elem: *const T) -> Self {
-        Self { pos: elem as *const Node<T> }
-    }
-
-    /// 移动到下一个位置
-    pub fn next(&mut self)->Result<(),()>{
-        if self.pos.is_null() {return Err(());}
-        unsafe {
-            self.pos = (*self.pos).next;
-            Ok(())
-        }
-    }
-    /// 移动多个位置
-    pub fn advance(&mut self, dis: isize) -> Result<(),()> {
-        if dis < 0 {
-            return Err(());
-        }
-        for _ in 0..dis {
-            self.next()?
-        }
-        Ok(())
-    }
-
-    pub fn is_tail(&self) -> bool {
-        unsafe {(*self.pos).next.is_null()}
-    }
-
-    pub fn is_null(&self) -> bool{
-        self.pos.is_null()
-    }
-}
-
-impl<T> Deref for SListPos<T> {
-    type Target = T;
-    fn deref(&self) -> &Self::Target {
-        assert!(!self.pos.is_null());
-        unsafe {(*self.pos).element.as_ref().unwrap()}
-    }
-}
-
-impl<T> SListPosMut<T> {
-    /// 由元素的引用创建
-    pub unsafe fn from_ref(elem: &mut T) -> Self {
-        Self { pos: elem as *mut T as *mut Node<T> }
-    }
-
-    /// 由元素的指针创建
-    pub unsafe fn from_ptr(elem: *mut T) -> Self {
-        Self { pos: elem as *mut Node<T> }
-    }
-
-    /// 移动到下一个位置
-    pub fn next(&mut self)->Result<(),()>{
-        if self.pos.is_null() {return Err(());}
-        unsafe {
-            self.pos = (*self.pos).next;
-            Ok(())
-        }
-    }
-    /// 移动多个位置
-    pub fn advance(&mut self, dis: isize) -> Result<(),()> {
-        if dis < 0 {
-            return Err(());
-        }
-        for _ in 0..dis {
-            self.next()?
-        }
-        Ok(())
-    }
-
-    pub fn is_tail(&self) -> bool {
-        unsafe {(*self.pos).next.is_null()}
-    }
-
-    pub fn is_null(&self) -> bool{
-        self.pos.is_null()
-    }
-}
-
-impl<T> Deref for SListPosMut<T> {
-    type Target = T;
-    fn deref(&self) -> &Self::Target {
-        assert!(!self.pos.is_null());
-        unsafe {(*self.pos).element.as_ref().unwrap()}
-    }
-}
-
-impl<T> DerefMut for SListPosMut<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        assert!(!self.pos.is_null());
-        unsafe {(*self.pos).element.as_mut().unwrap()}
-    }
-}
-
-impl<T> Default for SListPos<T> {
-    fn default() -> Self {
-        Self { pos: core::ptr::null() }
-    }
-}
-
-impl<T> Default for SListPosMut<T> {
-    fn default() -> Self {
-        Self { pos: core::ptr::null_mut() }
+impl<T> Iterator for SlistIter<T> {
+    type Item = NonNull<SlistNode<T>>;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.node.map(|mut node| {
+            self.node = unsafe{node.as_mut().next};
+            node
+        })
     }
 }

@@ -1,5 +1,8 @@
+use core::ptr::NonNull;
+
 use rkalloc::RKalloc;
-use rklist::SList;
+use rkalloc::alloc_type;
+use rklist::{Slist,SlistNode};
 use super::constants::*;
 use super::{lcpu,intctrl};
 
@@ -13,7 +16,7 @@ struct IRQHandler {
 }
 
 /// 直接[None;64]会报 E0277
-static mut IRQ_HANDLERS:[Option<SList<IRQHandler>>;MAX_IRQ] = include!("64None.txt");
+static mut IRQ_HANDLERS:[Option<Slist<IRQHandler>>;MAX_IRQ] = include!("64None.txt");
 
 fn allocator() -> &'static dyn RKalloc {
     unsafe {
@@ -32,7 +35,7 @@ pub unsafe fn init(a: *const dyn RKalloc) -> Result<(), i32> {
     assert!(ALLOCATOR.is_none());
     ALLOCATOR = Some(a);
     for i in &mut IRQ_HANDLERS{
-        *i = Some(SList::new(allocator()));
+        *i = Some(Slist::new());
     }
     Ok(())
 }
@@ -53,7 +56,7 @@ pub unsafe fn register(irq: usize, func: IRQHandlerFunc, arg: *mut u8) -> Result
     let handler = IRQHandler{func,arg};
     let flags =lcpu::save_irqf(); 
     //interruption
-    IRQ_HANDLERS[irq].as_mut().unwrap().push_front(handler).unwrap();
+    IRQ_HANDLERS[irq].as_mut().unwrap().push_front(NonNull::new(alloc_type(allocator(),SlistNode::new(handler))).unwrap());
     lcpu::restore_irqf(flags);
     if irq&1<<63 !=0 { intctrl::clear_irq(irq&0x3F); }
     Ok(())
@@ -63,7 +66,7 @@ pub unsafe fn register(irq: usize, func: IRQHandlerFunc, arg: *mut u8) -> Result
 #[no_mangle]
 unsafe extern "C" fn __rkplat_irq_handle(irq: usize) {
     for i in IRQ_HANDLERS[irq].as_ref().unwrap().iter() {
-        if (i.func)(i.arg) {
+        if (i.as_ref().element.func)(i.as_ref().element.arg) {
             intctrl::ack_irq(irq);
             return;
         }
