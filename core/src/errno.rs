@@ -3,6 +3,8 @@
 // Authors: 陈建绿 <2512674094@qq.com>
 // Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
+#[derive(Debug)]
+#[repr(C)]
 pub enum Errno {
     /// No error occurred
     Ok=0,

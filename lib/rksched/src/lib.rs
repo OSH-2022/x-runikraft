@@ -40,12 +40,12 @@ pub use sched::RKsched;
 /// 针对当前线程的操作
 pub mod this_thread {
     use core::time::Duration;
-    use crate::thread::{ThreadData,ThreadRef};
+    use crate::thread::ThreadData;
     use runikraft::config::STACK_SIZE;
     ///返回当前线程的控制块
-    pub fn control_block() -> ThreadRef {
+    pub fn control_block() -> &'static mut ThreadData {
         let thread_pointer = rkplat::lcpu::read_sp() / STACK_SIZE * STACK_SIZE;
-        unsafe{(*(thread_pointer as *mut ThreadData)).as_ref()}
+        unsafe {&mut *(thread_pointer as *mut ThreadData)}
     }
 
     pub fn r#yield() {
@@ -64,7 +64,7 @@ pub mod this_thread {
         unsafe {
             let s=current.sched;
             assert!(!s.is_null());
-            (*s).remove_thread(current);
+            (*s).remove_thread(current.as_non_null());
         }
         panic!("should exit");
     }

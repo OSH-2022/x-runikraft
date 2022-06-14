@@ -31,6 +31,8 @@ impl<T> ListNode<T> {
 /// - remove_before         删除指定位置之前的元素
 /// - remove                删除指定位置的元素
 /// - remove_after          删除指定位置之后的元素
+/// - set_alone             清空结点的指针信息，调用后is_alone=true
+/// - is_alone              结点是否不位于任何队列
 #[derive(Default)]
 pub struct List<T> {
     head: Option<NonNull<ListNode<T>>>,
@@ -162,6 +164,15 @@ impl<T> ListNode<T> {
     pub fn is_head(&self) -> bool {
         self.prev.is_none()
     }
+
+    pub fn is_alone(&self) -> bool {
+        self.prev.is_none() && self.next.is_none()
+    }
+
+    pub fn set_alone(&mut self) {
+        self.prev = None;
+        self.next = None;
+    }
 }
 
 impl<T> Drop for List<T> {
@@ -178,7 +189,7 @@ pub struct ListIter<T> {
 }
 
 impl<T> List<T> {
-    /// 不可变迭代器
+    /// 迭代器
     #[inline]
     pub fn iter(&self) -> ListIter<T> {
         ListIter { node: self.head }

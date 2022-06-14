@@ -60,6 +60,8 @@
 
 extern crate alloc;
 
+use crate::wait::WaitQ;
+
 use super::{sched,wait};
 use sched::RKsched;
 use rklist::TailqNode;
@@ -67,7 +69,7 @@ use runikraft::errno::Errno;
 use rkalloc::RKalloc;
 use core::mem::size_of;
 use core::ops::{Deref, DerefMut};
-use core::ptr::{null_mut,addr_of_mut, NonNull};
+use core::ptr::{null_mut,addr_of_mut,addr_of,NonNull};
 use core::time::Duration;
 use core::sync::atomic::{AtomicI32,AtomicU32,Ordering};
 use rkplat::thread::Context;
@@ -310,26 +312,48 @@ impl ThreadData {
         self.ctx = null_mut();
     }
 
+    /// 阻塞到特定的时刻
     pub fn block_until(&mut self, until: Duration) {
+        assert!(self.is_runnable());
         let flag = rkplat::lcpu::save_irqf();
         self.wakeup_time = until;
         self.clear_runnable();
-        self.sched_ref().thread_blocked(self.as_ref());
+        self.sched_ref().thread_blocked(self.as_non_null());
         rkplat::lcpu::restore_irqf(flag);
     }
 
+    /// 阻塞一段时间
     pub fn block_timeout(&mut self, duration: Duration) {
         self.block_until(rkplat::time::monotonic_clock()+duration);
     }
 
+    /// 阻塞不确定的时间，它的含义是把线程放入等待队列，但是并不实际等待任何事件
     pub fn block(&mut self) {
         self.block_until(Duration::ZERO);
+    }
+
+    /// 等待，直到某个事件发生
+    pub fn block_for_event(&mut self, mut event: NonNull<WaitQ>) {
+        assert!(self.waiting_for.is_none());
+        self.waiting_for = Some(event);
+        unsafe {
+            let flag = rkplat::lcpu::save_irqf();
+            event.as_mut().add(self.as_ref());
+            rkplat::lcpu::restore_irqf(flag);
+        }
+        self.block();
+    }
+
+    /// 等待，直到某个线程终止
+    pub fn block_for_thread(&mut self, thread: ThreadRef) {
+        let event = NonNull::new( addr_of!(thread.waiting_threads) as *mut WaitQ);
+        self.block_for_event(event.unwrap());
     }
 
     pub fn wake(&mut self) {
         let flag = rkplat::lcpu::save_irqf();
         if !self.is_runnable() {
-            self.sched_ref().thread_woken(self.as_ref());
+            self.sched_ref().thread_woken(self.as_non_null());
             self.wakeup_time = Duration::ZERO;
             self.set_runnable();
         }
@@ -337,7 +361,7 @@ impl ThreadData {
     }
 
     pub fn kill(&mut self) {
-        self.sched_ref().remove_thread(self.as_ref());
+        self.sched_ref().remove_thread(self.as_non_null());
     }
 
     pub fn exit(&mut self) {
@@ -361,19 +385,19 @@ impl ThreadData {
     }
 
     pub fn set_prio(&mut self, prio: Prio) -> Result<(), Errno>{
-        self.sched_ref().set_thread_prio(self.as_ref(), prio)
+        self.sched_ref().set_thread_prio(self.as_non_null(), prio)
     }
 
-    pub fn get_prio(&self) -> Result<Prio,Errno> {
-        self.sched_ref().get_thread_prio(self.as_ref())
+    pub fn get_prio(&self) -> Prio {
+        self.attr.prio
     }
 
     pub fn set_timeslice(&mut self, timeslice: Duration) -> Result<(),Errno> {
-        self.sched_ref().set_thread_timeslice(self.as_ref(), timeslice)
+        self.sched_ref().set_thread_timeslice(self.as_non_null(), timeslice)
     }
 
-    pub fn get_timeslice(&self) -> Result<Duration,Errno> {
-        self.sched_ref().get_thread_timeslice(self.as_ref())
+    pub fn get_timeslice(&self) -> Duration {
+        self.attr.timeslice
     }
 }
 
@@ -536,6 +560,10 @@ impl ThreadData {
 
     pub fn as_non_null(&self) -> NonNull<Thread> {
         NonNull::new(self as *const ThreadData as *mut Thread).unwrap()
+    }
+
+    pub fn as_node(&self) -> &mut Thread {
+        unsafe {self.as_non_null().as_mut()}
     }
 }
 

@@ -31,9 +31,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-use core::{time::Duration, ptr::NonNull};
+use core::time::Duration;
+use core::ptr::NonNull;
 use runikraft::errno::Errno;
-use crate::thread::{ThreadData,ThreadAttr,Prio,ThreadRef};
+use crate::thread::{ThreadData,ThreadAttr,Prio,Thread};
 use rkalloc::RKalloc;
 use runikraft::config::{STACK_SIZE,THREAD_LOCAL_SIZE};
 use core::sync::atomic::{AtomicU32,Ordering::SeqCst};
@@ -67,27 +68,28 @@ pub trait RKsched {
     /// 挂起当前系统线程，要求调度器执行新线程
     fn r#yield(&mut self);
     /// 把线程加入调度器
-    fn add_thread(&mut self, t: ThreadRef, attr: ThreadAttr) -> Result<(), Errno>;
+    fn add_thread(&mut self, t: NonNull<Thread>) -> Result<(), Errno>;
     /// 把线程从调取器中移除
-    fn remove_thread(&mut self, t: ThreadRef);
+    fn remove_thread(&mut self, t: NonNull<Thread>);
     /// 把线程的状态设置为不可执行
-    fn thread_blocked(&mut self, t: ThreadRef);
+    fn thread_blocked(&mut self, t: NonNull<Thread>);
     /// 把线程的状态设置为可以执行
-    fn thread_woken(&mut self, t: ThreadRef);
+    fn thread_woken(&mut self, t: NonNull<Thread>);
     /// 设置线程的优先级
-    fn set_thread_prio(&mut self, t: ThreadRef, prio: Prio) -> Result<(),Errno>;
-    /// 获取线程的优先级
-    fn get_thread_prio(&self, t: ThreadRef) -> Result<Prio,Errno>;
+    fn set_thread_prio(&mut self, t: NonNull<Thread>, prio: Prio) -> Result<(),Errno>;
     /// 设置线程的时间片
-    fn set_thread_timeslice(&mut self, t: ThreadRef, tslice: Duration) -> Result<(),Errno>;
-    /// 获取线程的时间片
-    fn get_thread_timeslice(&self, t: ThreadRef) -> Result<Duration,Errno>;
+    fn set_thread_timeslice(&mut self, t: NonNull<Thread>, tslice: Duration) -> Result<(),Errno>;
 
     //内部使用：
     //它们本应该被隐藏，但是Rust不支持protected和friend，所以只能把它们设置成公开接口
 
     ///**安全性**：只能在初始化调度器的环形链表时使用
     unsafe fn __set_next_sheduler(&mut self, sched: &dyn RKsched);
+
+    /// 调度器的负载程度，一般是就绪队列的大小，用于负载均衡。
+    /// 目前，如果self.workload()*2>=next.workload()*3，则将线程加入下一个调取器
+    /// TODO: 使这个参数可配置
+    fn __workload(&self) -> usize;
 }
 
 ///TODO: 在合并后应该改成rkplat::LCPU_MAXCOUNT
@@ -96,9 +98,10 @@ static mut SCHED_CNT: usize = 0;
 static ADD_NEW_THEAD_TO: AtomicU32 = AtomicU32::new(0);
 
 ///注册调度器
-pub unsafe fn register(sched: &mut dyn RKsched) {
+pub unsafe fn register(sched: &mut dyn RKsched) -> usize {
     SCHED_LIST[SCHED_CNT] = NonNull::new(sched as *const dyn RKsched as *mut dyn RKsched);
     SCHED_CNT += 1;
+    SCHED_CNT-1
 }
 
 #[repr(C)]
@@ -116,7 +119,7 @@ unsafe fn thread_entry_point(arg: *mut u8) -> ! {
 }
 
 /// 创建新线程，并且把它添加到调度器
-pub fn create_thread(name: &str, alloc: &'static dyn RKalloc, attr: ThreadAttr, function: fn(*mut u8), arg: *mut u8) -> Result<(),Errno> {
+pub fn create_thread_on_sched(name: &str, alloc: &'static dyn RKalloc,sched_id: usize, attr: ThreadAttr, function: fn(*mut u8), arg: *mut u8) -> Result<(),Errno> {
     unsafe {
         assert!(SCHED_CNT!=0);
         let stack = alloc.alloc(STACK_SIZE, STACK_SIZE);
@@ -139,13 +142,10 @@ pub fn create_thread(name: &str, alloc: &'static dyn RKalloc, attr: ThreadAttr, 
             alloc.dealloc(tls, THREAD_LOCAL_SIZE, 16);
             return Err(errno);
         }
+        (*thread_addr).attr = attr;
 
-        if let Err(errno) = SCHED_LIST[ADD_NEW_THEAD_TO.fetch_update(SeqCst, SeqCst, 
-            |x| {
-                Some(if x+1 == SCHED_CNT as u32 {0}
-                else {x+1})
-            }).unwrap() as usize].unwrap().
-            as_mut().add_thread((*thread_addr).as_ref(), attr) {
+        if let Err(errno) = SCHED_LIST[sched_id].unwrap().
+            as_mut().add_thread((*thread_addr).as_non_null()) {
             alloc.dealloc(stack, STACK_SIZE, STACK_SIZE);
             alloc.dealloc(tls, THREAD_LOCAL_SIZE, 16);
             (*thread_addr).finish();
@@ -154,4 +154,13 @@ pub fn create_thread(name: &str, alloc: &'static dyn RKalloc, attr: ThreadAttr, 
 
     }
     Ok(())
+}
+
+/// 创建新线程，并且把它添加到调度器
+pub fn create_thread(name: &str, alloc: &'static dyn RKalloc, attr: ThreadAttr, function: fn(*mut u8), arg: *mut u8) -> Result<(),Errno> {
+    create_thread_on_sched(name, alloc, ADD_NEW_THEAD_TO.fetch_update(SeqCst, SeqCst, 
+        |x| {
+            Some(if x+1 == unsafe{SCHED_CNT} as u32 {0}
+            else {x+1})
+        }).unwrap() as usize, attr, function, arg)
 }

@@ -11,8 +11,6 @@ use rklist::{Stailq,StailqNode};
 use rkalloc::alloc_type;
 use rkalloc::RKalloc;
 use rkplat::spinlock::SpinLock;
-use core::mem::align_of;
-use core::mem::size_of;
 use core::ptr::NonNull;
 
 /// 等待队列
@@ -50,7 +48,7 @@ impl WaitQ {
                 find = true;
                 break;
             }
-            unsafe {pos = Some(i)}
+            pos = Some(i);
         }
         if find { unsafe {
             let x =if let Some(mut pos) = pos {

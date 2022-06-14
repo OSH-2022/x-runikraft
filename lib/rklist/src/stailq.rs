@@ -144,7 +144,7 @@ pub struct StailqIter<T> {
 }
 
 impl<T> Stailq<T> {
-    /// 不可变迭代器
+    /// 迭代器
     #[inline]
     pub fn iter(&self) -> StailqIter<T> {
         StailqIter { node: self.head }
