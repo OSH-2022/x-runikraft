@@ -200,8 +200,9 @@ impl RKschedcoop {
 impl RKsched for RKschedcoop {
     fn start(&mut self)->! {
         self.threads_started = true;
-        loop {
-            self.schedule();
+        let mut t = self.ready_thread.pop_front().unwrap();
+        unsafe {
+            rksched::thread::thread_start(&mut t.as_mut().element);
         }
     }
 
@@ -277,13 +278,9 @@ impl RKsched for RKschedcoop {
         Err(Errno::NotSup)//本调度器不支持线程时间片
     }
 
-    unsafe fn __set_next_sheduler(&mut self, sched: &dyn RKsched) {
-        union Helper<'a> {
-            r: &'a dyn RKsched,
-            t: *mut dyn RKsched,
-        }
+    unsafe fn __set_next_sheduler(&mut self, sched: *const dyn RKsched) {
         debug_assert!(self.next.is_none());
-        self.next = Some(&mut *Helper{r: sched}.t);
+        self.next = Some(&mut *(sched as *mut dyn RKsched));
     }
 
     fn __workload(&self) -> usize {

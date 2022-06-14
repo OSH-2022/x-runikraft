@@ -36,6 +36,8 @@ dependencies = [
  "rkalloc",
  "rkalloc_buddy",
  "rkplat",
+ "rksched",
+ "rkschedcoop",
  "runikraft",
 ]
 

@@ -259,7 +259,7 @@ impl ThreadData {
         self.detached = false;
         self.attr = ThreadAttr::default();
         addr_of_mut!(self.waiting_threads).write(wait::WaitQ::new(allocator));
-        addr_of_mut!(self.sched).write_bytes(0, size_of::<*mut dyn RKsched>());
+        addr_of_mut!(self.sched).write_bytes(0, 1);
         addr_of_mut!(self.waiting_for).write(None);
 
         let mut itr = _rk_thread_inittab_start;
@@ -414,6 +414,11 @@ impl ThreadData {
     pub fn tls(&self) -> *mut u8 {
         self.tls
     }
+}
+
+/// 安全性：必须在启动调度器时调用，用来启动一个硬件线程上的第一个内核线程
+pub unsafe fn thread_start(init_thread: *mut ThreadData) ->! {
+    rkplat::thread::start((*init_thread).ctx);
 }
 
 pub unsafe fn thread_switch(prev: *mut ThreadData, next: *mut ThreadData) {

@@ -84,7 +84,7 @@ pub trait RKsched {
     //它们本应该被隐藏，但是Rust不支持protected和friend，所以只能把它们设置成公开接口
 
     ///**安全性**：只能在初始化调度器的环形链表时使用
-    unsafe fn __set_next_sheduler(&mut self, sched: &dyn RKsched);
+    unsafe fn __set_next_sheduler(&mut self, sched: *const dyn RKsched);
 
     /// 调度器的负载程度，一般是就绪队列的大小，用于负载均衡。
     /// 目前，如果self.workload()*2>=next.workload()*3，则将线程加入下一个调取器
