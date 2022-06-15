@@ -1,9 +1,11 @@
-/*
-    对 CSR mcause 的抽象
+// SPDX-License-Identifier: BSD-3-Clause
+// mcause.rs
+// Authors: 吴骏东 <1904346407@qq.com>
+// Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
-    Author: Jundong Wu
-    Last edit: 2022.4.30
-*/
+// 对 CSR mcause 的抽象
+// Author: Jundong Wu
+// Last edit: 2022.4.30
 use core::arch;
 
 // RISCV interrupt

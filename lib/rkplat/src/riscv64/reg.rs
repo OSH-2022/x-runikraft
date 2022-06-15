@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// reg.rs
+// Authors: 张子辰 <zichen350@gmail.com>
+// Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
+
 /// 发生异常时需要保存的所有的通用寄存器
 /// size=152
 #[repr(C)]

@@ -31,7 +31,7 @@
 #![no_std]
 
 use rksched::{RKsched, RKschedInternelFun, RKthread, RKthreadAttr, Prio};
-use rklist::{Tailq, TailqPosMut};
+use runikraft::compat_list::{Tailq, TailqPosMut};
 use rkalloc::RKalloc;
 use core::time::Duration;
 

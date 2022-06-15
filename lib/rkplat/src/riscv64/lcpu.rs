@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// lcpu.rs
+// Authors: 张子辰 <zichen350@gmail.com>
+// Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
+
 use core::time::Duration;
 use core::arch;
 use core::sync::atomic;
@@ -90,10 +95,10 @@ pub fn halt_to(until: Duration) {
 pub fn halt_irq() {
     let flag = save_irqf();
     restore_irqf(0xFFFF);//开启所有中断
-    enable_irq();
     unsafe {
         bootstrap::hart_local().is_running = false;
     }
+    enable_irq();
     sbi_call(0x48534D, 3, 0, 0, 0).expect("Fail to suspend.");
     unsafe {
         bootstrap::hart_local().is_running = true;

@@ -31,7 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 use rksched::{RKsched, RKthread};
-use rklist::Tailq;
+use runikraft::compat_list::Tailq;
 use crate::blkfront::RkBlkdevQueue;
 use crate::blkreq::{RkBlkreq, RkBlkreqOp,Sector};
 use crate::CONFIG_LIBUKBLKDEV_MAXNBQUEUES;

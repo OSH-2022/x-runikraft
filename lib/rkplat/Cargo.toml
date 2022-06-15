@@ -1,7 +1,15 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# rkplat/Cargo.toml
+# Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
+
 [package]
 name = "rkplat"
 version = "0.1.0"
 edition = "2021"
+authors = [
+    "张子辰 <zichen350@gmail.com>",
+    "吴骏东 <1904346407@qq.com>",
+]
 
 [features]
     default = ["has_smp"]
@@ -10,5 +18,4 @@ edition = "2021"
 
 [dependencies]
     rkalloc = {path = "../rkalloc"}
-    rklist = {path = "../rklist"}
     runikraft = {path = "../../core"}

@@ -7,7 +7,7 @@
 
 use crate::thread::ThreadRef;
 use rkalloc::dealloc_type;
-use rklist::{Stailq,StailqNode};
+use runikraft::compat_list::{Stailq,StailqNode};
 use rkalloc::alloc_type;
 use rkalloc::RKalloc;
 use rkplat::spinlock::SpinLock;

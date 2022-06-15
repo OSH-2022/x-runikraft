@@ -1,12 +1,13 @@
-/*
-    对 CSR mstatus 的抽象
+// SPDX-License-Identifier: BSD-3-Clause
+// mstatus.rs
+// Authors: 吴骏东 <1904346407@qq.com>
+// Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
-    支持外部对 mstauts 的更改
-    支持内部与 RISCV 的联系 
-
-    Author: Jundong Wu
-    Last edit: 2022.4.30
-*/
+// 对 CSR mstatus 的抽象
+// 支持外部对 mstauts 的更改
+// 支持内部与 RISCV 的联系 
+// Author: Jundong Wu
+// Last edit: 2022.4.30
 
 #![feature(asm)]
 

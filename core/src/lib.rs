@@ -33,3 +33,4 @@ pub mod bitcount;
 pub mod align_as;
 pub mod errno;
 pub mod config;
+pub mod compat_list;

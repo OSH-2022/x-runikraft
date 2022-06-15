@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// spinlock.rs
+// Authors: 张子辰 <zichen350@gmail.com>
+// Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
+
 #[cfg(feature = "has_smp")]
 mod inner {
     use core::arch;

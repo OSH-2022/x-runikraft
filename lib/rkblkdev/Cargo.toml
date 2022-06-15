@@ -14,7 +14,6 @@ runikraft = {path = "../../core"}
 rkalloc = { path = "../rkalloc" }
 rksched = { path = "../rksched" }
 rkplat = {path = "../rkplat"}
-rklist = {path = "../rklist"}
 
 [features]
 dispatcherthreads = []

@@ -33,7 +33,7 @@
 use rksched::RKsched;
 use rksched::thread::{Prio,Thread,ThreadData};
 use rksched::this_thread;
-use rklist::Tailq;
+use runikraft::compat_list::Tailq;
 use rkplat::spinlock::SpinLock;
 use runikraft::errno::Errno;
 use core::ptr::{NonNull,addr_of_mut};

@@ -1,8 +1,13 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// irq.rs
+// Authors: 张子辰 <zichen350@gmail.com>
+// Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
+
 use core::ptr::NonNull;
 
 use rkalloc::RKalloc;
 use rkalloc::alloc_type;
-use rklist::{Slist,SlistNode};
+use runikraft::compat_list::{Slist,SlistNode};
 use super::constants::*;
 use super::{lcpu,intctrl};
 

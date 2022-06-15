@@ -1,3 +1,8 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# int_entry.asm
+# Authors: 张子辰 <zichen350@gmail.com>
+# Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
+
 .text
 .globl __rkplat_int_except_entry
 .align 2

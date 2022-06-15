@@ -5,7 +5,10 @@
 [package]
 name = "rksched"
 version = "0.1.0"
-authors = [ "陈建绿 <2512674094@qq.com>" ]
+authors = [
+    "陈建绿 <2512674094@qq.com>",
+    "张子辰 <zichen350@gmail.com>",
+]
 license = "BSD-3-Clause"
 edition = "2021"
 
@@ -13,4 +16,3 @@ edition = "2021"
     runikraft = {path = "../../core"}
     rkalloc = {path = "../rkalloc"}
     rkplat = {path = "../rkplat"}
-    rklist = {path = "../rklist"}

@@ -14,4 +14,3 @@ edition = "2021"
     rkalloc = {path = "../rkalloc"}
     rksched = {path = "../rksched"}
     rkplat = {path = "../rkplat"}
-    rklist = {path = "../rklist"}

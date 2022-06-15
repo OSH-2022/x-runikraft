@@ -33,7 +33,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 // Translated from unikraft/lib/uknetdev/include/uk/netdev_core.h.
 
-use rklist::Tailq;
+use runikraft::compat_list::Tailq;
 use rkalloc::RKalloc;
 use runikraft::config;
 #[cfg(feature="dispatcherthreads")]

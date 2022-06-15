@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: BSD-3-Clause
+// bootstrap.rs
+// Authors: 张子辰 <zichen350@gmail.com>
+// Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
+
 //TODO: arg
 
 use core::ptr::{null_mut, addr_of, addr_of_mut};

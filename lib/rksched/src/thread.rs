@@ -64,7 +64,7 @@ use crate::wait::WaitQ;
 
 use super::{sched,wait};
 use sched::RKsched;
-use rklist::TailqNode;
+use runikraft::compat_list::TailqNode;
 use runikraft::errno::Errno;
 use rkalloc::RKalloc;
 use core::mem::size_of;
