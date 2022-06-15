@@ -29,14 +29,17 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #![no_std]
+use core::time::Duration;
 use core::{slice,str};
 use core::mem::{align_of, size_of};
 use core::ptr::addr_of;
 use rkalloc::RKalloc;
-use rkplat::{irq,time,bootstrap, device};
+use rkplat::{irq,time,bootstrap,device};
+#[cfg(feature="have_scheduler")]
+use rksched::RKsched;
 use runikraft::align_as;
 
-const HEAP_SIZE: usize = 65536;
+const HEAP_SIZE: usize = 1<<20;
 
 static mut HEAP:align_as::A4096<[u8;HEAP_SIZE]> = align_as::A4096::new([0;HEAP_SIZE]);
 
@@ -69,11 +72,43 @@ pub unsafe extern "C" fn rkplat_entry(argc: i32, argv: *mut *mut u8) -> ! {
     rkboot_entry(&a, args);
 }
 
+struct ArgWrapper<'a> {
+    base: *mut &'a str,
+    size: usize,
+}
+
+#[cfg(feature="have_scheduler")]
+fn thread_main(arg: *mut u8) {
+    let arg = arg as *mut ArgWrapper;
+    let arg = unsafe {
+        slice::from_raw_parts_mut((*arg).base, (*arg).size)
+    };
+    let ret = unsafe {main(arg)};
+    rkplat::println!("main returned {}, halting system", ret);
+    bootstrap::halt();
+}
+
 unsafe fn rkboot_entry(alloc: &dyn RKalloc, args: &mut [&str]) -> ! {
     irq::init(alloc).unwrap();
     device::init(alloc).unwrap();
     time::init();
-    let ret = main(args);
-    rkplat::println!("main returned {}, halting system", ret);
-    bootstrap::halt();
+    #[cfg(feature="have_scheduler")]
+    {
+        let wrapper = ArgWrapper{base: args.as_mut_ptr(), size: args.len()};
+        #[cfg(feature="sched_coop")]
+        let mut sched = rkschedcoop::RKschedcoop::new();
+        //TODO: 暂不支持SMP
+        sched.__set_next_sheduler(addr_of!(sched));
+        rksched::sched::register(&mut sched);
+        rksched::sched::create_thread("main", rkalloc::make_static(alloc), 
+            rksched::thread::ThreadAttr::new(true, 5, Duration::from_millis(100)), 
+            thread_main, addr_of!(wrapper) as *mut u8).expect("Fail to create main thread");
+        sched.start();
+    }
+    #[cfg(not(feature="have_scheduler"))]
+    {
+        let ret = main(args);
+        rkplat::println!("main returned {}, halting system", ret);
+        bootstrap::halt();
+    }
 }

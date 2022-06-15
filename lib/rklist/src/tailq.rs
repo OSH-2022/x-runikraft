@@ -34,6 +34,8 @@ impl<T> TailqNode<T> {
 /// - remove_before         删除指定位置之前的元素
 /// - remove                删除指定位置的元素
 /// - remove_after          删除指定位置之后的元素
+/// - set_alone             清空结点的指针信息，调用后is_alone=true
+/// - is_alone              结点是否不位于任何队列
 #[derive(Default)]
 pub struct Tailq<T> {
     head: Option<NonNull<TailqNode<T>>>,
@@ -218,6 +220,15 @@ impl<T> TailqNode<T> {
     pub fn is_head(&self) -> bool {
         self.prev.is_none()
     }
+
+    pub fn is_alone(&self) -> bool {
+        self.prev.is_none() && self.next.is_none()
+    }
+
+    pub fn set_alone(&mut self) {
+        self.prev = None;
+        self.next = None;
+    }
 }
 
 
@@ -235,19 +246,19 @@ pub struct TailqIter<T> {
 }
 
 impl<T> Tailq<T> {
-    /// 不可变迭代器
+    /// 迭代器
     #[inline]
     pub fn iter(&self) -> TailqIter<T> {
         TailqIter { node: self.head }
     }
 }
 
-impl<T> Iterator for TailqIter<T> {
-    type Item = NonNull<TailqNode<T>>;
+impl<T:'static> Iterator for TailqIter<T> {
+    type Item = &'static mut TailqNode<T>;
     fn next(&mut self) -> Option<Self::Item> {
         self.node.map(|mut node| {
-            self.node = unsafe{node.as_mut().next};
-            node
+            unsafe{self.node = node.as_mut().next;
+            node.as_mut()}
         })
     }
 }

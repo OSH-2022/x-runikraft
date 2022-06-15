@@ -6,9 +6,12 @@
 // 等待队列*没有*修改自Unikraft
 
 use crate::thread::ThreadRef;
-use rklist::{Stailq,STailqPosMut};
+use rkalloc::dealloc_type;
+use rklist::{Stailq,StailqNode};
+use rkalloc::alloc_type;
 use rkalloc::RKalloc;
 use rkplat::spinlock::SpinLock;
+use core::ptr::NonNull;
 
 /// 等待队列
 /// - 资源的等待队列：在资源可用时，等待队列里的第一个线程会被唤醒
@@ -16,12 +19,13 @@ use rkplat::spinlock::SpinLock;
 /// 一个线程至多位于一个等待队列，在线程退出时，它必须主动将自己从等待队列中移除
 pub struct WaitQ {
     q: Stailq<ThreadRef>,
+    alloc: &'static dyn RKalloc,
     mutex: SpinLock,
 }
 
 impl WaitQ {
     pub fn new(alloc: &'static dyn RKalloc)->Self {
-        Self { q: Stailq::new(), mutex: SpinLock::new()}
+        Self { q: Stailq::new(), mutex: SpinLock::new(), alloc}
     }
 
     pub fn empty(&self) -> bool {
@@ -30,30 +34,45 @@ impl WaitQ {
 
     pub fn add(&mut self, entry: ThreadRef) {
         let _lock = self.mutex.lock();
-        self.q.push_back(entry).unwrap();
+        unsafe {
+            self.q.push_back(NonNull::new(alloc_type(self.alloc, StailqNode::new(entry))).unwrap());
+        }
     }
 
     pub fn remove(&mut self, entry: ThreadRef) -> Option<ThreadRef>{
-        let mut pos = STailqPosMut::default();
+        let mut pos = None;
         let mut find = false;
         let _lock = self.mutex.lock();
-        for i in self.q.iter_mut() {
-            if *i == entry {
+        for i in self.q.iter() {
+            if unsafe{i.as_ref().element == entry} {
                 find = true;
                 break;
             }
-            unsafe {pos = STailqPosMut::from_ref(i);}
+            pos = Some(i);
         }
         if find { unsafe {
-            if pos.is_null() { self.q.pop_front() }
-            else { self.q.remove_after(pos)}
+            let x =if let Some(mut pos) = pos {
+                pos.as_mut().remove_after(Some(&mut self.q))
+            }
+            else {
+                self.q.pop_front()
+            }.unwrap();
+            let thread_ref = x.as_ref().element.clone();
+            dealloc_type(self.alloc, x.as_ptr());
+            Some(thread_ref)
         }}
         else { None }
     }
 
     pub fn remove_first(&mut self) -> Option<ThreadRef>{
         let _lock = self.mutex.lock();
-        self.q.pop_front()
+        self.q.pop_front().map(|node| {
+            unsafe {
+                let thread_ref = node.as_ref().element.clone();
+                dealloc_type(self.alloc, node.as_ptr());
+                thread_ref
+            }
+        })
     }
 
     pub fn wakeup_all(&mut self) {

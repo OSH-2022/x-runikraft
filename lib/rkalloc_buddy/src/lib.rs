@@ -386,7 +386,7 @@ unsafe impl Sync for RKallocBuddy<'_>{}
 unsafe impl RKalloc for RKallocBuddy<'_> {
     unsafe fn alloc(&self, size: usize, align: usize) -> *mut u8 {
         debug_assert!(align.is_power_of_two());
-        // debug_assert!(align <= PAGE_ALIGNMENT);
+        debug_assert!(align <= PAGE_ALIGNMENT);
         //实际上需要分配的内存大小
         let size = min_power2(max(max(size, align), MIN_SIZE));
         //剩余空间不足

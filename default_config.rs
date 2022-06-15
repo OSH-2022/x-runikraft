@@ -27,3 +27,4 @@ pub const PAGE_SIZE: usize = 4096;
 pub const STACK_SIZE_PAGE_ORDER: usize = 4;
 
 pub const STACK_SIZE: usize = PAGE_SIZE*(1<<STACK_SIZE_PAGE_ORDER);
+pub const THREAD_LOCAL_SIZE: usize = STACK_SIZE;

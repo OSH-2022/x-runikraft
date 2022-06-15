@@ -3,7 +3,7 @@ use core::arch;
 
 extern "C" {
     fn __thread_starter();
-    fn __thread_context_start(sp: usize, pc: usize)->!;
+    fn __thread_context_start(sp: usize, pc: usize);
     fn __thread_context_switch(prevctx: *mut Context, nextctx: *mut Context);
 }
 
@@ -52,7 +52,7 @@ pub unsafe fn init(ctx: *mut Context, sp: usize, tp: usize, entry: unsafe fn(*mu
 pub unsafe fn start(ctx: *mut Context) -> ! {
     set_tp((*ctx).tp);
     __thread_context_start((*ctx).sp,(*ctx).pc);
-    //panic!("Thread did not start.");
+    panic!("Thread did not start.");
 }
 
 /// 切换线程

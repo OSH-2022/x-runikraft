@@ -104,7 +104,7 @@ pub struct SlistIter<T> {
 }
 
 impl<T> Slist<T> {
-    /// 不可变迭代器
+    /// 迭代器
     #[inline]
     pub fn iter(&self) -> SlistIter<T> {
         SlistIter { node: self.head }

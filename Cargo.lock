@@ -10,6 +10,7 @@ dependencies = [
  "rkalloc_buddy",
  "rkboot",
  "rkplat",
+ "rksched",
  "runikraft",
 ]
 
@@ -36,6 +37,8 @@ dependencies = [
  "rkalloc",
  "rkalloc_buddy",
  "rkplat",
+ "rksched",
+ "rkschedcoop",
  "runikraft",
 ]
 
