@@ -38,6 +38,7 @@ use crate::thread::{ThreadData,ThreadAttr,Prio,Thread};
 use rkalloc::RKalloc;
 use runikraft::config::{STACK_SIZE,THREAD_LOCAL_SIZE};
 use core::sync::atomic::{AtomicU32,Ordering::SeqCst};
+use core::mem::{size_of,align_of};
 
 // extern "C" {
 //     static mut __tls_start: *mut u8;
@@ -119,26 +120,27 @@ unsafe fn thread_entry_point(arg: *mut u8) -> ! {
 }
 
 /// 创建新线程，并且把它添加到调度器
-pub fn create_thread_on_sched(name: &str, alloc: &'static dyn RKalloc,sched_id: usize, attr: ThreadAttr, function: fn(*mut u8), arg: *mut u8) -> Result<(),Errno> {
+pub fn create_thread_on_sched(name: &str, alloc: &'static dyn RKalloc,sched_id: usize, attr: ThreadAttr, function: fn(*mut u8), arg: *mut u8) -> Result<&'static mut Thread,Errno> {
     unsafe {
         assert!(SCHED_CNT!=0);
-        let stack = alloc.alloc(STACK_SIZE, STACK_SIZE);
+        let stack = alloc.alloc(STACK_SIZE, 16);
         if stack.is_null() {
             return Err(Errno::NoMem);
         }
-        //栈空间有严格的对齐要求，但线程本地空间没有
+
         let tls = alloc.alloc(THREAD_LOCAL_SIZE, 16);
         if tls.is_null() {
-            alloc.dealloc(stack, STACK_SIZE, STACK_SIZE);
+            alloc.dealloc(stack, STACK_SIZE, 16);
             return Err(Errno::NoMem);
         }
 
-        let thread_addr = stack as *mut ThreadData;
-        let entry_data = tls as *mut EntryData;
+        let thread_addr = tls as *mut ThreadData;
+        let tmp = tls.add(size_of::<Thread>());
+        let entry_data = tmp.add(tmp.align_offset(align_of::<Thread>())) as *mut EntryData;
         (*entry_data).function = function;
         (*entry_data).arg = arg;
         if let Err(errno) = (*thread_addr).init(alloc, name, stack, tls, thread_entry_point, entry_data as *mut u8) {
-            alloc.dealloc(stack, STACK_SIZE, STACK_SIZE);
+            alloc.dealloc(stack, STACK_SIZE, 16);
             alloc.dealloc(tls, THREAD_LOCAL_SIZE, 16);
             return Err(errno);
         }
@@ -146,21 +148,37 @@ pub fn create_thread_on_sched(name: &str, alloc: &'static dyn RKalloc,sched_id: 
 
         if let Err(errno) = SCHED_LIST[sched_id].unwrap().
             as_mut().add_thread((*thread_addr).as_non_null()) {
-            alloc.dealloc(stack, STACK_SIZE, STACK_SIZE);
+            alloc.dealloc(stack, STACK_SIZE, 16);
             alloc.dealloc(tls, THREAD_LOCAL_SIZE, 16);
             (*thread_addr).finish();
             return Err(errno);
         }
 
+        Ok(&mut *(thread_addr as *mut Thread))
     }
-    Ok(())
+    
 }
 
 /// 创建新线程，并且把它添加到调度器
-pub fn create_thread(name: &str, alloc: &'static dyn RKalloc, attr: ThreadAttr, function: fn(*mut u8), arg: *mut u8) -> Result<(),Errno> {
+pub fn create_thread(name: &str, alloc: &'static dyn RKalloc, attr: ThreadAttr, function: fn(*mut u8), arg: *mut u8) -> Result<&'static mut Thread,Errno> {
     create_thread_on_sched(name, alloc, ADD_NEW_THEAD_TO.fetch_update(SeqCst, SeqCst, 
         |x| {
             Some(if x+1 == unsafe{SCHED_CNT} as u32 {0}
             else {x+1})
         }).unwrap() as usize, attr, function, arg)
+}
+
+/// 与create_thread配对，销毁线程的控制块（只能对未分离的线程使用）
+pub fn destroy_thread(t: &mut Thread) {
+    let t = &mut t.element;
+    unsafe {
+        t.finish();
+        let t_addr = t.base_addr();
+        let t_alloc = t.alloc;
+        let t_tls = t.tls();
+
+        t_addr.drop_in_place();
+        (*t_alloc).dealloc(t_addr as *mut u8, STACK_SIZE, 16);
+        (*t_alloc).dealloc(t_tls, THREAD_LOCAL_SIZE, 16);
+    }
 }

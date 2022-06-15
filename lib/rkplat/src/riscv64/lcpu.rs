@@ -180,3 +180,15 @@ pub fn read_sp() -> usize{
     }
     sp
 }
+
+#[inline(always)]
+pub fn read_tp() -> usize{
+    let tp: usize;
+    unsafe{
+        arch::asm!(
+            "mv {tp},tp",
+            tp=out(reg)tp
+        );
+    }
+    tp
+}

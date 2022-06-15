@@ -41,10 +41,9 @@ pub use sched::RKsched;
 pub mod this_thread {
     use core::time::Duration;
     use crate::thread::ThreadData;
-    use runikraft::config::STACK_SIZE;
     ///返回当前线程的控制块
     pub fn control_block() -> &'static mut ThreadData {
-        let thread_pointer = rkplat::lcpu::read_sp() / STACK_SIZE * STACK_SIZE;
+        let thread_pointer = rkplat::lcpu::read_tp();
         unsafe {&mut *(thread_pointer as *mut ThreadData)}
     }
 

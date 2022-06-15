@@ -132,7 +132,7 @@ impl ThreadAttr {
     }
 
     pub fn set_prio(&mut self, prio: Prio) -> Result<(),Errno>{
-        if self.prio >= PRIO_MIN && self.prio <= PRIO_MAX {
+        if prio >= PRIO_MIN && prio <= PRIO_MAX {
             self.prio = prio;
             Ok(())
         }
@@ -189,7 +189,6 @@ pub struct ThreadData {
     ctx: *mut Context,
     flags: u32,
     pub wakeup_time: Duration,
-    pub detached: bool,
     /// 等待self结束的线程
     pub waiting_threads: wait::WaitQ,
     /// self所在的等待队列
@@ -256,7 +255,6 @@ impl ThreadData {
 
         self.flags = 0;
         self.wakeup_time = Duration::ZERO;
-        self.detached = false;
         self.attr = ThreadAttr::default();
         addr_of_mut!(self.waiting_threads).write(wait::WaitQ::new(allocator));
         addr_of_mut!(self.sched).write_bytes(0, 1);
@@ -346,7 +344,9 @@ impl ThreadData {
 
     /// 等待，直到某个线程终止
     pub fn block_for_thread(&mut self, thread: ThreadRef) {
+        if thread.is_exited() {return;}
         let event = NonNull::new( addr_of!(thread.waiting_threads) as *mut WaitQ);
+        drop(thread);
         self.block_for_event(event.unwrap());
     }
 
@@ -370,7 +370,7 @@ impl ThreadData {
             unsafe {waitq.as_mut().remove(self.as_ref());}
             self.waiting_for = None;
         }
-        if !self.detached {
+        if !self.attr.detached {
             self.waiting_threads.wakeup_all();
         }
         else {
@@ -379,9 +379,9 @@ impl ThreadData {
     }
 
     pub fn detach(&mut self) {
-        assert!(!self.detached);
+        assert!(!self.attr.detached);
         self.waiting_threads.wakeup_all();
-        self.detached = true;
+        self.attr.detached = true;
     }
 
     pub fn set_prio(&mut self, prio: Prio) -> Result<(), Errno>{
@@ -579,8 +579,7 @@ impl Drop for ThreadData{
         debug_assert!(self.waiting_threads.empty());
         let old_ref = self.ref_cnt.swap(-1, Ordering::SeqCst);
         if old_ref != 0 {
-            panic!("Attempt to drop thread when it is still referenced.");
+            panic!("Attempt to drop thread when it is still referenced. self={:?}, name={}, stack={:?}, tls={:?}, ref_cnt={}",self as *mut ThreadData,self.name,self.stack,self.tls,old_ref);
         }
-        assert!(self.sched.is_null());
     }
 }

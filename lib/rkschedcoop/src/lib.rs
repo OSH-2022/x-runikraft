@@ -38,7 +38,7 @@ use rkplat::spinlock::SpinLock;
 use runikraft::errno::Errno;
 use core::ptr::{NonNull,addr_of_mut};
 use core::time::Duration;
-use runikraft::config::{STACK_SIZE,THREAD_LOCAL_SIZE};
+use rksched::sched::destroy_thread;
 
 type ThreadList = Tailq<ThreadData>;
 
@@ -72,15 +72,20 @@ impl RKschedcoop {
             waiting_thread: ThreadList::new(),
             exit_thread: ThreadList::new()}
     }
-    //important schedule function
+ 
     fn schedule(&mut self) {
+        loop {
         let current = rksched::this_thread::control_block();
         if current.is_exited() {
-            let _lock = self.lock.lock();
-            self.exit_thread.push_back(current.as_non_null());
+            //未分离的线程由创建者负责清理
+            if current.attr.get_detachstate() {
+                self.exit_thread.push_back(current.as_non_null());
+                //防止一个线程被两次加入exit thread（如果当前线程退出了，但是没有新的能执行的线程，会发生这种情况）
+                current.attr.set_detachstate(false);
+            }
         }
         //把当前线程放入就绪队列（由线程主动调用yield导致）
-        else if current.as_node().is_alone() {
+        else if current.is_runnable() && current.as_node().is_alone() {
             //如果只有一个调度器，则直接放回自己的就绪队列
             //如果有多个调度器而且self的负载大于next的1.5倍，则将current加入下一个hart的调度器
             if *self.next.as_mut().unwrap() as *mut dyn RKsched == self ||
@@ -93,6 +98,13 @@ impl RKschedcoop {
             else {
                 self.next.as_mut().unwrap().add_thread(current.as_non_null()).unwrap();
             }
+        }
+
+        //处理退出队列中的线程
+        for t in self.exit_thread.iter() {
+            if t.element.as_non_null()==current.as_non_null() {continue;}
+            t.remove(Some(&mut self.exit_thread));
+            destroy_thread(t);
         }
 
         //处理就绪队列里的线程
@@ -118,7 +130,7 @@ impl RKschedcoop {
                 //remove之后不能立即加入新的队列，因为迭代器需要依靠t原来的指针移到下一个位置
                 t.remove(Some(&mut self.waiting_thread));
                 if t.element.is_exited() { last_removed = Exit(t.element.as_non_null()); }
-                else {last_removed = Ready(t.element.as_non_null());}
+                else {t.element.set_runnable(); last_removed = Ready(t.element.as_non_null());}
             }
             else if sleep_until>t.element.wakeup_time{
                 sleep_until = t.element.wakeup_time;
@@ -133,27 +145,25 @@ impl RKschedcoop {
         else if let Exit(node) = last_removed {
             self.exit_thread.push_back(node);
         }
-
-        //处理退出队列中的线程
-        while !self.exit_thread.is_empty() {
-            unsafe{
-                let t = self.exit_thread.pop_front().unwrap().as_mut();
-                Self::clean_thread(&mut t.element);
-            }
-        }
         
         if !self.ready_thread.is_empty() {
             let lock = self.lock.lock();
             let mut front = self.ready_thread.pop_front().unwrap();
             self.ready_thread_size-=1;
             drop(lock);
+            unsafe{front.as_mut().set_alone();}
             if front != current.as_non_null() {
                 unsafe{rksched::thread::thread_switch(current, addr_of_mut!(front.as_mut().element))};
             }
             return;
         }
         
-        rkplat::lcpu::halt_to(sleep_until);
+        //TODO: 目前时钟中断的处理有些问题
+        while rkplat::time::monotonic_clock()<sleep_until {
+            rkplat::lcpu::spinwait();
+        }
+        // rkplat::lcpu::halt_to(sleep_until);
+        }
     }
 
     /// 原子地把线程从就绪队列中移除，但不清理
@@ -182,25 +192,13 @@ impl RKschedcoop {
             t.as_mut().set_alone();
         }
     }
-
-    fn clean_thread(t: &mut ThreadData) {
-        unsafe {
-            t.finish();
-            let t_addr = t.base_addr();
-            let t_alloc = t.alloc;
-            let t_tls = t.tls();
-            drop(t);
-            t_addr.drop_in_place();
-            (*t_alloc).dealloc(t_addr as *mut u8, STACK_SIZE, STACK_SIZE);
-            (*t_alloc).dealloc(t_tls, THREAD_LOCAL_SIZE, 16);
-        }
-    }
 }
 
 impl RKsched for RKschedcoop {
     fn start(&mut self)->! {
         self.threads_started = true;
         let mut t = self.ready_thread.pop_front().unwrap();
+        self.ready_thread_size-=1;
         unsafe {
             rksched::thread::thread_start(&mut t.as_mut().element);
         }
@@ -218,9 +216,10 @@ impl RKsched for RKschedcoop {
         let tt;
         unsafe {tt = &mut t.as_mut().element;}
         tt.sched = self;
-        let _lock = self.lock.lock();
         tt.attr.set_prio(0).unwrap();
         tt.attr.set_timeslice(Duration::MAX).unwrap();
+        tt.set_runnable();
+        let _lock = self.lock.lock();
         self.ready_thread.push_back(t);
         self.ready_thread_size+=1;
         Ok(())
@@ -241,7 +240,7 @@ impl RKsched for RKschedcoop {
             panic!("A thread cannot remove itself. name={} base_addr={:?} id={}",tt.name(),tt.base_addr(),tt.id());
         }
         tt.exit();
-        Self::clean_thread(tt);
+        unsafe {destroy_thread(t.as_mut());}
     }
 
     fn thread_blocked(&mut self, mut t: NonNull<Thread>) {
@@ -249,6 +248,9 @@ impl RKsched for RKschedcoop {
         let tt = unsafe {&mut t.as_mut().element};
         if tt.waiting_for.is_none() {
             self.waiting_thread.push_back(t);
+        }
+        else {
+            tt.as_node().set_alone();
         }
         if t==this_thread::control_block().as_non_null() {
             self.schedule();
