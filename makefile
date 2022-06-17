@@ -88,10 +88,10 @@ $(MAKE_ROOT_DIR)/report/makefile: makefiles/report.mk
 
 .PHONY: run run_debug run_gdb
 run:
-	qemu-system-riscv64 -machine virt -nographic -bios $$RISCV_BIOS -device loader,file=$(RUST_OUTPUT_DIR)/dev-test.bin,addr=0x80200000
+	qemu-system-riscv64 -machine virt -nographic -bios $$RISCV_BIOS -kernel $(RUST_OUTPUT_DIR)/dev-test.bin
 
 run_debug:
-	qemu-system-riscv64 -machine virt -nographic -bios $$RISCV_BIOS -device loader,file=$(RUST_OUTPUT_DIR)/dev-test.bin,addr=0x80200000 -s -S
+	qemu-system-riscv64 -machine virt -nographic -bios $$RISCV_BIOS -kernel $(RUST_OUTPUT_DIR)/dev-test.bin -s -S
 
 run_gdb:
 	riscv64-unknown-elf-gdb -ex 'file $(RUST_OUTPUT_DIR)/dev-test' -ex 'set arch riscv:rv64' -ex 'target remote localhost:1234'

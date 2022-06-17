@@ -27,7 +27,10 @@
 use core::mem::size_of;
 use core::{str,slice};
 use core::ptr::addr_of;
+#[cfg(feature="driver_uart")]
 use super::uart;
+#[cfg(feature="driver_virtio")]
+use super::virtio;
 use rkalloc::{RKalloc,alloc_type};
 use crate::console;
 
@@ -265,11 +268,33 @@ fn load_node(a: &dyn RKalloc, buffer: &[u8], start: usize, off_dt_strings: usize
 fn parse_device(a: &dyn RKalloc, name: &str, props: &[(&str,&[u8])], props_size: usize) -> Result<(), DeviceTreeError> {
     if let Some(compatible) = prop_str(props, props_size, "compatible") {
         match compatible {
+            #[cfg(feature="driver_uart")]
             "ns16550a" | "ns16550" => {
                 unsafe {
                     console::UART_DEIVCE = Some(&*alloc_type(a,uart::ns16550::Ns16550::new(name,
                         prop_u64(props,props_size,"reg").unwrap() as usize, 
                         prop_u32(props,props_size,"interrupts").unwrap() as usize)));
+                }
+            },
+            #[cfg(feature="driver_virtio")]
+            "virtio,mmio" => {
+                let header = unsafe {
+                    &mut *(prop_u64(props, props_size, "reg").
+                    unwrap() as *mut virtio::VirtIOHeader)
+                };
+                println_bios!("Detected virtio device with vendor id {:#X}",header.vendor_id());
+                match header.device_type() {
+                    #[cfg(feature="driver_virtio_blk")]
+                    virtio::DeviceType::Block => {todo!()},
+                    #[cfg(feature="driver_virtio_console")]
+                    virtio::DeviceType::Console => {todo!()},
+                    #[cfg(feature="driver_virtio_gpu")]
+                    virtio::DeviceType::GPU => {todo!()},
+                    #[cfg(feature="driver_virtio_input")]
+                    virtio::DeviceType::Input => {todo!()},
+                    #[cfg(feature="driver_virtio_net")]
+                    virtio::DeviceType::Network => {todo!()},
+                    t => println_bios!("WARNING: Unrecognized virtio device: {:?}",t),
                 }
             },
             _ => {}
@@ -278,40 +303,32 @@ fn parse_device(a: &dyn RKalloc, name: &str, props: &[(&str,&[u8])], props_size:
     Ok(())
 }
 
-fn prop_str<'a>(props: &[(&str,&'a [u8])], props_size: usize, prop_name: &str) -> Option<&'a str> {
+fn prop_raw<'a>(props: &[(&str,&'a [u8])], props_size: usize, prop_name: &str) -> Option<&'a [u8]> {
     for i in 0..props_size {
         let val = props[i].1;
         if props[i].0 == prop_name {
-            if let Ok(s) = str::from_utf8(&val[0..(val.len()-1)]) {
-                return Some(s);
-            }
+            return Some(val);
         }
     }
     None
+}
+
+fn prop_str<'a>(props: &[(&str,&'a [u8])], props_size: usize, prop_name: &str) -> Option<&'a str> {
+    prop_raw(props,props_size,prop_name).map(|val| {
+        str::from_utf8(&val[0..(val.len()-1)]).unwrap()
+    })
 }
 
 fn prop_u32(props: &[(&str,&[u8])], props_size: usize, prop_name: &str) -> Option<u32> {
-    for i in 0..props_size {
-        let val = props[i].1;
-        if props[i].0 == prop_name {
-            if let Ok(s) = val.read_be_u32(0) {
-                return Some(s);
-            }
-        }
-    }
-    None
+    prop_raw(props,props_size,prop_name).map(|val| {
+        val.read_be_u32(0).unwrap()
+    })
 }
 
 fn prop_u64(props: &[(&str,&[u8])], props_size: usize, prop_name: &str) -> Option<u64> {
-    for i in 0..props_size {
-        let val = props[i].1;
-        if props[i].0 == prop_name {
-            if let Ok(s) = val.read_be_u64(0) {
-                return Some(s);
-            }
-        }
-    }
-    None
+    prop_raw(props,props_size,prop_name).map(|val| {
+        val.read_be_u64(0).unwrap()
+    })
 }
 
 #[allow(unused)]

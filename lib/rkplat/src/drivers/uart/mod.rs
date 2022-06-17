@@ -12,4 +12,5 @@ pub trait UartDevice: Device {
     fn getc(&self)->Option<u8>;
 }
 
+#[cfg(feature="driver_ns16550")]
 pub mod ns16550;

@@ -46,10 +46,10 @@ fn main(_args: &mut [&str])->i32 {
         t.element.detach();
     }
 
-    let time_begin = rkplat::time::wall_clock();
+    let time_begin = rkplat::time::monotonic_clock();
     println!("begin to sleep time={:?}",time_begin);
     this_thread::sleep_for(Duration::from_secs(15));
-    let time_end = rkplat::time::wall_clock();
+    let time_end = rkplat::time::monotonic_clock();
     println!("end sleeping time={:?}, actually slept for {:?}",time_end,time_end-time_begin);
 
     0

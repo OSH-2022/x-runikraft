@@ -1,4 +1,6 @@
+#[cfg(feature="driver_uart")]
 pub mod uart;
+#[cfg(feature="driver_virtio")]
 pub mod virtio;
 pub mod device_tree;
 
