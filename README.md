@@ -30,7 +30,7 @@ As different parts of this project were written in different languages, we use `
 
 To build everything without reports and documentations, install all the dependencies:
 
-- Rust compiler (`rustc >= 1.57`+`cargo`): `apt install rust-all` or follow the official guidance using `rustup`.
+- Rust compiler (`rustc >= 1.59`+`cargo`): `apt install rust-all` or follow the official guidance using `rustup`.
 - objcopy supporting RISC-V elf (either riscv64-linux-gnu-objcopy or rust-objcopy):
     - riscv64-linux-gnu-objcopy: `sudo apt install binutils-riscv64-linux-gnu`;
     - rust-objcopy: `cargo install cargo-binutils`.
