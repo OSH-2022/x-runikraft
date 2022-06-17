@@ -48,7 +48,8 @@ pub fn save_irqf() -> IRQFlag {
 pub fn restore_irqf(flag: IRQFlag) {
     unsafe {
         arch::asm!(
-            "csrw sie,{flag}",
+            "csrw sip,0
+            csrw sie,{flag}",
             flag=in(reg)flag
         );
     }
@@ -71,14 +72,14 @@ pub fn irqs_disabled() -> bool {
 
 /// 挂起当前的逻辑处理器
 pub fn halt() -> !{
-    disable_irq();
+    save_irqf();
     //Hart State Management-
     //sbi_hart_suspend(suspend_type,resume_addr,opaque)
     //suspend_type=Default retentive suspend
     unsafe {
         bootstrap::hart_local().is_running = false;
+        arch::asm!("wfi");
     }
-    sbi_call(0x48534D, 3, 0, 0, 0).expect("Fail to suspend.");
     panic!("Fail to suspend.");
 }
 
@@ -94,13 +95,16 @@ pub fn halt_to(until: Duration) {
 /// 处理将在中断/信号到来时重启
 pub fn halt_irq() {
     let flag = save_irqf();
-    restore_irqf(0xFFFF);//开启所有中断
     unsafe {
         bootstrap::hart_local().is_running = false;
     }
-    enable_irq();
-    sbi_call(0x48534D, 3, 0, 0, 0).expect("Fail to suspend.");
+
+    //wfi指令在全局IRQ被禁用时仍然有效，如果不这么做，假如在执行完restore_irqf后但在执行wfi前，
+    //出现了中断，wfi仍然会被执行，但是中断不会再来，于是处理器将长时间等待
+    disable_irq();
+    restore_irqf(0xFFFF);//开启所有中断
     unsafe {
+        arch::asm!("wfi");
         bootstrap::hart_local().is_running = true;
     }
     restore_irqf(flag);

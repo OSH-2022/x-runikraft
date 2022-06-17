@@ -158,11 +158,7 @@ impl RKschedcoop {
             return;
         }
         
-        //TODO: 目前时钟中断的处理有些问题
-        while rkplat::time::monotonic_clock()<sleep_until {
-            rkplat::lcpu::spinwait();
-        }
-        // rkplat::lcpu::halt_to(sleep_until);
+        rkplat::lcpu::halt_to(sleep_until);
         }
     }
 

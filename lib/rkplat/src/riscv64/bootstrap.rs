@@ -55,11 +55,12 @@ pub(crate) struct HartLocal {
     pub(crate) is_running: bool,// offset 24
     pub(crate) start_sp: usize, // 启动新的内核时使用的栈指针 (offset 32)
     pub(crate) start_entry: usize,// 启动新的内核时跳转到的位置 (offset 40)
+    pub(crate) recovery_pc: usize,//从中断返回时的pc，如果=0，则返回中断发生的位置
 }
 
 impl HartLocal {
     const fn new()->Self {
-        Self { _reg_space: 0, hartid: 0, hartsp: 0, start_entry:0, start_sp: 0, is_running: false}
+        Self { _reg_space: 0, hartid: 0, hartsp: 0, start_entry:0, start_sp: 0, is_running: false, recovery_pc: 0}
     }
 }
 

@@ -8,8 +8,11 @@ use core::ptr::NonNull;
 use rkalloc::RKalloc;
 use rkalloc::alloc_type;
 use runikraft::compat_list::{Slist,SlistNode};
+use crate::bootstrap;
+
 use super::constants::*;
 use super::{lcpu,intctrl};
+use super::reg::RegGenInt;
 
 
 static mut ALLOCATOR: Option<&dyn RKalloc> = None;
@@ -62,21 +65,27 @@ pub unsafe fn init(a: &dyn RKalloc) -> Result<(), i32> {
 /// - `func`需要将`arg`转换成合适的类型
 pub unsafe fn register(irq: usize, func: IRQHandlerFunc, arg: *mut u8) -> Result<(), i32> 
 {   
+    assert!(irq<MAX_IRQ);
     let handler = IRQHandler{func,arg};
     let flags =lcpu::save_irqf(); 
     //interruption
     IRQ_HANDLERS[irq].as_mut().unwrap().push_front(NonNull::new(alloc_type(allocator(),SlistNode::new(handler))).unwrap());
     lcpu::restore_irqf(flags);
-    if irq&1<<63 !=0 { intctrl::clear_irq(irq&0x3F); }
+    if irq&1<<63 !=0 { intctrl::clear_irq(irq); }
     Ok(())
 }
 
 //TODO: 
 #[no_mangle]
-unsafe extern "C" fn __rkplat_irq_handle(irq: usize) {
+unsafe extern "C" fn __rkplat_irq_handle(regs: &mut RegGenInt, irq: usize) {
     for i in IRQ_HANDLERS[irq].as_ref().unwrap().iter() {
         if (i.as_ref().element.func)(i.as_ref().element.arg) {
             intctrl::ack_irq(irq);
+            let rpc = bootstrap::hart_local().recovery_pc;
+            if rpc !=0 {
+                regs.pc = rpc;
+                bootstrap::hart_local().recovery_pc = 0;
+            }
             return;
         }
     }

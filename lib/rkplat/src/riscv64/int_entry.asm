@@ -38,8 +38,9 @@ __rkplat_int_except_entry:
     csrr t1,sstatus
     sd t0,128(sp)
     sd t1,136(sp)
-    csrr a0,scause
-    andi a0,a0,63
+    mv a0,sp
+    csrr a1,scause
+    andi a1,a1,63
     call __rkplat_irq_handle #调用用Rust编写的中断处理函数
     ld t5,128(sp)
     ld t6,136(sp)

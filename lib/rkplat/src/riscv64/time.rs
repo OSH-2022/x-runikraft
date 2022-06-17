@@ -12,7 +12,7 @@ pub const SEC: Duration = Duration::new(1, 0);
 /// 1纳秒
 pub const NSEC: Duration = Duration::new(0, 1);
 
-use core::arch;
+use core::{arch, ptr::null_mut};
 
 //1tick的长度
 pub const TICK_NANOSEC: u64 = 100;
@@ -20,26 +20,34 @@ pub const TICK_NANOSEC: u64 = 100;
 //初始化时的time寄存器的值
 static mut INIT_TIME: u64 = 0;
 
-//time寄存器的起点
-static mut TIME_START: Duration = Duration::new(0, 0);
+fn timer_irq_handler(_: *mut u8) -> bool {
+    unsafe {arch::asm!("
+        li t0,32
+        csrc sie, t0");}
+    true
+}
 
 /// 初始化时钟和时钟中断
 //TODO: 未完成
 pub fn init() {
     // OpenSBI启动时的输出 Platform Timer Device     : aclint-mtimer @ 10000000Hz
     // unsafe { TICK_NANOSEC = 100 };
+    unsafe {
+        INIT_TIME = get_time_counter();
+        super::irq::register(get_irq(), timer_irq_handler, null_mut()).unwrap();
+    }
 }
 
 //获取时钟中断号
 pub const fn get_irq() -> usize {
-    0x8000_0000_0000_0005
+    0x5
 }
 
 fn get_time_counter() -> u64 {
     let time: u64;
     unsafe {
-        arch::asm!("rdtime t0",
-        out("t0")time);
+        arch::asm!("rdtime {r}",
+        r=out(reg)time);
     }
     time
 }
@@ -56,16 +64,15 @@ pub fn monotonic_clock() -> Duration {
 
 /// 获取UNIX时间
 pub fn wall_clock() -> Duration {
-    get_ticks() + unsafe { TIME_START }
+    todo!("用rtc实现");
 }
 
 fn block(until: Duration) {
     assert!(lcpu::irqs_disabled());
     let time_now = monotonic_clock();
     if until <= time_now {return;}
-    let duration = (until.as_nanos() - time_now.as_nanos()) as u64;
     //Set Timer
-    sbi::sbi_call(0x54494D45, 0, (duration/TICK_NANOSEC) as usize, 0, 0).unwrap();
+    sbi::sbi_call(0x54494D45, 0, ((until.as_nanos() as u64 + unsafe{INIT_TIME})/TICK_NANOSEC) as usize, 0, 0).unwrap();
     lcpu::halt_irq();
 }
 

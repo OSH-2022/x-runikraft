@@ -6,12 +6,13 @@
 use core::arch;
 
 /// 确认已处理IRQ
-pub(crate) fn ack_irq(_irq: usize) {
-    //nop
+pub(crate) fn ack_irq(irq: usize) {
+    clear_irq(irq);
 }
 
+/// 强制触发IRQ
 #[allow(unused)]
-pub(crate) fn mask_irq(irq: usize) {
+pub(crate) fn raise_irq(irq: usize) {
     let irq = 1usize<<irq;
     unsafe {
         arch::asm!("csrs sip, {irq}",
