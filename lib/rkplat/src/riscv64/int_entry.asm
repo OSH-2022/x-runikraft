@@ -1,3 +1,4 @@
+# -*- assembly -*-
 # SPDX-License-Identifier: BSD-3-Clause
 # int_entry.asm
 # Authors: 张子辰 <zichen350@gmail.com>
