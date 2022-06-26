@@ -33,8 +33,10 @@ fn main(_args: &mut [&str])->i32 {
     let mut threads = Vec::new();
     for i in 0..5 {
         data[i].id = i+1;
-        match rksched::sched::create_thread(format!("thread #{}",i).as_str(), rkalloc::get_default().unwrap(), 
-            rksched::thread::ThreadAttr::default(), thread_main, addr_of!(data[i]) as *mut u8)
+        println!("创建线程 #{}",i+1);
+        match rksched::sched::create_thread(format!("thread #{}",i+1).as_str(), rkalloc::get_default().unwrap(), 
+            rksched::thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(), 
+            thread_main, addr_of!(data[i]) as *mut u8)
         {
             Ok(t) =>threads.push(t),
             Err(err) => panic!("无法创建线程: {:?}",err),

@@ -40,10 +40,11 @@ pub use sched::RKsched;
 /// 针对当前线程的操作
 pub mod this_thread {
     use core::time::Duration;
-    use crate::thread::ThreadData;
+    use crate::thread::{ThreadData,Thread};
+    use core::mem::size_of;
     ///返回当前线程的控制块
     pub fn control_block() -> &'static mut ThreadData {
-        let thread_pointer = rkplat::lcpu::read_tp();
+        let thread_pointer = rkplat::lcpu::read_tp()-size_of::<Thread>();
         unsafe {&mut *(thread_pointer as *mut ThreadData)}
     }
 

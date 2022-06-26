@@ -65,7 +65,7 @@ use rkalloc::{RKalloc, RKallocState, RKallocExt};
 use rkplat::spinlock;
 use core::cmp::max;
 use core::ptr::null_mut;
-use runikraft::config::PAGE_SIZE;
+use runikraft::config::rkplat::PAGE_SIZE;
 
 //最小的内存块大小
 const MIN_SIZE: usize = 1usize << MIN_ORDER;

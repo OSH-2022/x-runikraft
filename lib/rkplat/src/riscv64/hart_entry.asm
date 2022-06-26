@@ -14,4 +14,5 @@ __rkplat_hart_entry:
     sb t0, 24(a1) #is_running
     ld sp, 32(a1) #start_sp
     ld ra, 40(a1) #start_entry
+    ld a0, 56(a1) #start_entry_arg
     ret

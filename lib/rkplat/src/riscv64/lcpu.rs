@@ -87,7 +87,7 @@ pub fn halt() -> !{
 /// 处理将在`deadline`到达(`get_ticks()>=deadline`)或中断/信号到来时重启
 pub fn halt_to(until: Duration) {
     let flag = save_irqf();
-    time::block_until(until);
+    time::block(until);
     restore_irqf(flag);
 }
 
@@ -104,8 +104,10 @@ pub fn halt_irq() {
     disable_irq();
     restore_irqf(0xFFFF);//开启所有中断
     unsafe {
+        println!("hart #{} wfi",bootstrap::hart_local().hartid);
         arch::asm!("wfi");
         bootstrap::hart_local().is_running = true;
+        println!("hart #{} wfi end",bootstrap::hart_local().hartid);
     }
     restore_irqf(flag);
 }
@@ -120,7 +122,7 @@ mod smp {
         fn __rkplat_hart_entry();
     }
 
-    pub type Entry = fn() -> !;
+    pub type Entry = fn(*mut u8) -> !;
     pub type StackPointer = *mut u8;
 
     static LOCK: spinlock::SpinLock = spinlock::SpinLock::new();
@@ -143,7 +145,7 @@ mod smp {
     /// - `lcpuid`: 逻辑处理器ID
     /// - `sp`: 栈指针
     /// - `entry`: 入口函数
-    pub fn start(lcpuid: ID, sp: StackPointer, entry: Entry) -> Result<(), i32> {
+    pub fn start(lcpuid: ID, sp: StackPointer, entry: Entry, arg: *mut u8) -> Result<(), i32> {
         let _lock = match LOCK.try_lock() {
             Some(x) => x,
             None => {return Err(0);}
@@ -153,13 +155,14 @@ mod smp {
             if !bootstrap::HART_LOCAL[lcpuid].is_running {
                 bootstrap::HART_LOCAL[lcpuid].start_sp = sp as usize;
                 bootstrap::HART_LOCAL[lcpuid].start_entry = entry as usize;
+                bootstrap::HART_LOCAL[lcpuid].start_entry_arg = arg;
             }
             //sbi_hart_start
             //unsigned long hartid
             //unsigned long start_addr
             //unsigned long opaque
-            if let Err(err) = sbi_call(0x48534D, 0, lcpuid, 
-                __rkplat_hart_entry as usize, 
+            if let Err(err) = sbi_call(0x48534D, 0, lcpuid,
+                __rkplat_hart_entry as usize,
                 addr_of!(bootstrap::HART_LOCAL[lcpuid]) as usize)
             {
                 return Err(err as i32);
@@ -179,8 +182,17 @@ mod smp {
     // fn run()
 
     /// 唤醒被挂起或处在低功耗状态的逻辑处理器
-    pub fn wakeup(_lcpuid: ID) -> Result<(), i32> {
-        todo!();
+    pub fn wakeup(lcpuid: ID) -> Result<(), i32> {
+        //sbi_send_ipi
+        //unsigned long hart_mask
+        //unsigned long hart_mask_base
+        println!("wakeup {}",lcpuid);
+        if let Err(err) = sbi_call(0x735049, 0, 1<<lcpuid,
+            0,0)
+        {
+            return Err(err as i32);
+        }
+        Ok(())
     }
 }
 

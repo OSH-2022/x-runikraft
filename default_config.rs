@@ -14,6 +14,7 @@ pub mod rkplat{
     pub const LCPU_MAXCOUNT: usize = 16;
     /// 主线程的栈的大小
     pub const MAIN_STACK_SIZE: usize = 65536;
+    pub const PAGE_SIZE: usize = 4096;
 }
 
 //相比C语言，Rust需要巨大的栈空间，而且debug模式所需的栈空间大约是release模式下的10倍
@@ -23,8 +24,14 @@ pub const STACK_SIZE_SCALE: usize = 10;
 #[cfg(not(debug_assertions))]
 pub const STACK_SIZE_SCALE: usize = 1;
 
-pub const PAGE_SIZE: usize = 4096;
-pub const STACK_SIZE_PAGE_ORDER: usize = 4;
-
-pub const STACK_SIZE: usize = PAGE_SIZE*(1<<STACK_SIZE_PAGE_ORDER);
-pub const THREAD_LOCAL_SIZE: usize = STACK_SIZE;
+pub mod rksched {
+    pub const STACK_SIZE_PAGE_ORDER: usize = 4;
+    pub const STACK_SIZE: usize = super::rkplat::PAGE_SIZE*(1<<STACK_SIZE_PAGE_ORDER);
+    pub mod limit {
+        use core::time::Duration;
+        pub const MEMORY_SIZE: usize = usize::MAX;
+        pub const OPEN_FILES: usize = 1024;
+        pub const PIPE_SIZE: usize = 4096;
+        pub const CPU_TIME: Duration = Duration::MAX;
+    }
+}

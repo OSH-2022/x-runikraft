@@ -67,7 +67,7 @@ pub fn wall_clock() -> Duration {
     todo!("用rtc实现");
 }
 
-fn block(until: Duration) {
+pub(crate) fn block(until: Duration) {
     assert!(lcpu::irqs_disabled());
     let time_now = monotonic_clock();
     if until <= time_now {return;}
@@ -77,9 +77,11 @@ fn block(until: Duration) {
 }
 
 /// 暂停当前处理器核，直到`until`时刻 
-pub fn block_until(until: Duration) {
+pub fn sleep_until(until: Duration) {
+    let flag = lcpu::save_irqf();
     loop {
         block(until);
         if monotonic_clock() >= until {break;}
     }
+    lcpu::restore_irqf(flag);
 }
