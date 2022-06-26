@@ -34,7 +34,7 @@ use core::{slice,str};
 use core::mem::{align_of, size_of};
 use core::ptr::{addr_of, null_mut};
 use rkalloc::RKalloc;
-use rkplat::{irq,time,bootstrap,device, lcpu, println};
+use rkplat::{irq,time,bootstrap,device, lcpu};
 #[cfg(feature="have_scheduler")]
 use rksched::RKsched;
 use runikraft::align_as;
@@ -102,7 +102,6 @@ unsafe fn rkboot_entry(alloc: &dyn RKalloc, args: &mut [&str]) -> ! {
     {
         let wrapper = ThreadMainArgWrapper{base: args.as_mut_ptr(), size: args.len()};
         let cpu_cnt = lcpu::count();
-        println!("cpu_cnt={}",cpu_cnt);
         let scheds = slice::from_raw_parts_mut(alloc.alloc(cpu_cnt*size_of::<*mut dyn rksched::RKsched>(), 
             align_of::<*mut dyn rksched::RKsched>()) as *mut *mut dyn rksched::RKsched, cpu_cnt);
         for i in 0..cpu_cnt {

@@ -72,7 +72,7 @@ use core::ptr::{null_mut,addr_of_mut,addr_of,NonNull};
 use core::time::Duration;
 use core::sync::atomic::{AtomicI32,AtomicU32,Ordering};
 use rkplat::thread::Context;
-use rkplat::{time, println};
+use rkplat::time;
 use alloc::string::String;
 
 ////////////////////////////////////////////////////////////////////////
@@ -380,7 +380,6 @@ impl ThreadData {
     ///线程完成，安全性：不得对current_thread调用finish
     pub unsafe fn finish(&mut self) {
         if !self.attr.detached {
-            println!("{}: wakeup_final",&self.name);
             self.waiting_threads.wakeup_final();
         }
         // else {
@@ -436,7 +435,6 @@ impl ThreadData {
 
     /// 等待，直到某个线程终止
     pub fn block_for_thread(&mut self, thread: ThreadRef) {
-        println!("block_for_thread({})",thread.name());
         let event = NonNull::new( addr_of!(thread.waiting_threads) as *mut WaitQ);
         drop(thread);
         self.block_for_event(event.unwrap());
@@ -458,7 +456,6 @@ impl ThreadData {
     }
 
     pub fn exit(&mut self) {
-        rkplat::println!("thread::exit {}",&self.name);
         self.set_exited();
         if let Some(waitq) = self.waiting_for.as_mut() {
             unsafe {waitq.as_mut().remove(self.as_ref());}
@@ -670,7 +667,6 @@ impl ThreadData {
 
 impl Drop for ThreadData{
     fn drop(&mut self) {
-        println!("drop {}",&self.name);
         assert!(self.is_exited());
         debug_assert!(self.waiting_for.is_none());
         // debug_assert!(self.waiting_threads.empty());

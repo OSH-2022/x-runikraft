@@ -43,6 +43,7 @@ export MAKE_BUILD_TYPE := debug
 export OBJCOPY_PREFIX := rust-
 RUST_OUTPUT_DIR := $(MAKE_ROOT_DIR)/dev-test/$(MAKE_BUILD_TYPE)
 RUST_BUILD_DIR := $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(MAKE_BUILD_TYPE)
+SMP := 1
 
 .PHONY: all
 all: dev-test
@@ -99,10 +100,10 @@ $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib: lib/rkalloc/alloc_error_handler.rs
 
 .PHONY: run run_debug run_gdb
 run:
-	qemu-system-riscv64 -machine virt -nographic -smp 5 -bios $$RISCV_BIOS -kernel $(RUST_OUTPUT_DIR)/dev-test.bin
+	qemu-system-riscv64 -machine virt -nographic -smp $(SMP) -bios $$RISCV_BIOS -kernel $(RUST_OUTPUT_DIR)/dev-test.bin
 
 run_debug:
-	qemu-system-riscv64 -machine virt -nographic -smp 5 -bios $$RISCV_BIOS -kernel $(RUST_OUTPUT_DIR)/dev-test.bin -s -S
+	qemu-system-riscv64 -machine virt -nographic -smp $(SMP) -bios $$RISCV_BIOS -kernel $(RUST_OUTPUT_DIR)/dev-test.bin -s -S
 
 run_gdb:
 	riscv64-unknown-elf-gdb -ex 'file $(RUST_OUTPUT_DIR)/dev-test' -ex 'set arch riscv:rv64' -ex 'target remote localhost:1234'

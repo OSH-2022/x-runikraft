@@ -104,10 +104,8 @@ pub fn halt_irq() {
     disable_irq();
     restore_irqf(0xFFFF);//开启所有中断
     unsafe {
-        println!("hart #{} wfi",bootstrap::hart_local().hartid);
         arch::asm!("wfi");
         bootstrap::hart_local().is_running = true;
-        println!("hart #{} wfi end",bootstrap::hart_local().hartid);
     }
     restore_irqf(flag);
 }
@@ -186,7 +184,6 @@ mod smp {
         //sbi_send_ipi
         //unsigned long hart_mask
         //unsigned long hart_mask_base
-        println!("wakeup {}",lcpuid);
         if let Err(err) = sbi_call(0x735049, 0, 1<<lcpuid,
             0,0)
         {
