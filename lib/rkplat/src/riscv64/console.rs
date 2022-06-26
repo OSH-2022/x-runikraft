@@ -82,8 +82,14 @@ pub(crate) fn __print_bios(args: fmt::Arguments) {
     RustStyleOutputBIOS.write_fmt(args).unwrap();
 }
 
+#[cfg(not(feature="bios_io"))]
 pub fn __print(args: fmt::Arguments) {
     RustStyleOutput.write_fmt(args).unwrap();
+}
+
+#[cfg(feature="bios_io")]
+pub fn __print(args: fmt::Arguments) {
+    RustStyleOutputBIOS.write_fmt(args).unwrap();
 }
 
 impl Write for RustStyleOutputBIOS {

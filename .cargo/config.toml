@@ -2,5 +2,5 @@
     target-dir = "build"
     target = "riscv64gc-unknown-none-elf"
 
-[target.riscv64gc-unknown-none-elf]
-    rustflags = ["-Clink-arg=-Tlinker.ld","--extern", "__alloc_error_handler=build/liballoc_error_handler.rlib"]
+#[target.riscv64gc-unknown-none-elf]
+#    rustflags = ["-Clink-arg=-Tlinker.ld","--extern", "__alloc_error_handler=build/liballoc_error_handler.rlib"]

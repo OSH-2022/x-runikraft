@@ -1,0 +1,6 @@
+[build]
+    target-dir = "../../build/test"
+    target = "riscv64gc-unknown-none-elf"
+
+[target.riscv64gc-unknown-none-elf]
+    rustflags = ["-Clink-arg=-T../../linker.ld","--extern", "__alloc_error_handler=../../build/liballoc_error_handler.rlib"]

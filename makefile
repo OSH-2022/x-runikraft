@@ -37,8 +37,10 @@
 PWD := $(shell pwd)
 export MAKE_ROOT_DIR := $(PWD)/build
 export REPORT_ROOT_DIR := $(PWD)/report
-MAKE_BUILD_TYPE ?= debug
-OBJCOPY_PREFIX ?= rust-
+export TEST_ROOT_DIR := $(PWD)/test
+export SRC_ROOT_DIR := $(PWD)
+export MAKE_BUILD_TYPE := debug
+export OBJCOPY_PREFIX := rust-
 RUST_OUTPUT_DIR := $(MAKE_ROOT_DIR)/dev-test/$(MAKE_BUILD_TYPE)
 RUST_BUILD_DIR := $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(MAKE_BUILD_TYPE)
 
@@ -51,6 +53,18 @@ everything: all report
 .PHONY: report
 report: $(MAKE_ROOT_DIR)/report/makefile
 	cd $(MAKE_ROOT_DIR)/report && $(MAKE)
+
+$(MAKE_ROOT_DIR)/report/makefile: makefiles/report.mk
+	-mkdir --parents $(MAKE_ROOT_DIR)/report
+	cp makefiles/report.mk $(MAKE_ROOT_DIR)/report/makefile
+
+.PHONY: test
+test: $(MAKE_ROOT_DIR)/test/makefile
+	cd $(MAKE_ROOT_DIR)/test && $(MAKE)
+
+$(MAKE_ROOT_DIR)/test/makefile: makefiles/test.mk.sh makefiles/test.mk.0 makefiles/test.mk.1
+	-mkdir --parents $(MAKE_ROOT_DIR)/test
+	makefiles/test.mk.sh makefiles/test.mk $(MAKE_ROOT_DIR)/test/makefile
 
 .PHONY: dev-test
 dev-test: $(RUST_OUTPUT_DIR)/dev-test.bin
@@ -65,10 +79,10 @@ $(RUST_OUTPUT_DIR)/dev-test: $(RUST_BUILD_DIR)/dev-test
 .PHONY: $(RUST_BUILD_DIR)/dev-test
 $(RUST_BUILD_DIR)/dev-test: $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(RUST_BUILD_DIR)/deps/liballoc_error_handler.rlib
 ifeq ($(MAKE_BUILD_TYPE), release)
-	cd dev-test && cargo build --release --features rkalloc/__alloc_error_handler
+	cd dev-test &&  env RUSTFLAGS="-Clink-arg=-T$(SRC_ROOT_DIR)/linker.ld --extern __alloc_error_handler=$(MAKE_ROOT_DIR)/liballoc_error_handler.rlib" cargo build --release --features rkalloc/__alloc_error_handler
 else
 ifeq ($(MAKE_BUILD_TYPE), debug)
-	cd dev-test && cargo build --features rkalloc/__alloc_error_handler
+	cd dev-test && env RUSTFLAGS="-Clink-arg=-T$(SRC_ROOT_DIR)/linker.ld --extern __alloc_error_handler=$(MAKE_ROOT_DIR)/liballoc_error_handler.rlib"  cargo build --features rkalloc/__alloc_error_handler
 else
 	@echo "Unknown build type, expect release/debug."
 	false
@@ -82,9 +96,6 @@ $(RUST_BUILD_DIR)/deps/liballoc_error_handler.rlib: $(MAKE_ROOT_DIR)/liballoc_er
 $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib: lib/rkalloc/alloc_error_handler.rs
 	env RUSTC_BOOTSTRAP=1 rustc --edition=2021 lib/rkalloc/alloc_error_handler.rs --crate-type lib --target riscv64gc-unknown-none-elf -o $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib
 
-$(MAKE_ROOT_DIR)/report/makefile: makefiles/report.mk
-	-mkdir --parents $(MAKE_ROOT_DIR)/report
-	cp makefiles/report.mk $(MAKE_ROOT_DIR)/report/makefile
 
 .PHONY: run run_debug run_gdb
 run:

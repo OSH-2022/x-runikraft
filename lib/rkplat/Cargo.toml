@@ -24,6 +24,7 @@ authors = [
     driver_virtio_input = ["driver_virtio"]
     driver_virtio_net = ["driver_virtio"]
     driver_virtio_all = ["driver_virtio_blk","driver_virtio_console","driver_virtio_gpu","driver_virtio_input","driver_virtio_net"]
+    bios_io = []            # 使用BIOS输出
 
 [dependencies]
     rkalloc = {path = "../rkalloc"}
