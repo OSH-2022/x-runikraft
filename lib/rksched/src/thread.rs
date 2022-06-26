@@ -67,14 +67,12 @@ use sched::RKsched;
 use runikraft::compat_list::TailqNode;
 use runikraft::errno::Errno;
 use rkalloc::RKalloc;
-use core::mem::size_of;
 use core::ops::{Deref, DerefMut};
 use core::ptr::{null_mut,addr_of_mut,addr_of,NonNull};
 use core::time::Duration;
 use core::sync::atomic::{AtomicI32,AtomicU32,Ordering};
 use rkplat::thread::Context;
-use rkplat::time;
-use runikraft::config::STACK_SIZE;
+use rkplat::{time, println};
 use alloc::string::String;
 
 ////////////////////////////////////////////////////////////////////////
@@ -85,41 +83,54 @@ pub const WAITABLE: bool = false;
 pub const DETACHED: bool = true;
 
 pub const PRIO_INVALID: i32 = -1;
-pub const PRIO_MIN: i32 = 0;
-pub const PRIO_MAX: i32 = 255;
+pub const PRIO_HIGHEST: i32 = 0;
+pub const PRIO_LOWEST: i32 = 255;
 pub const PRIO_DEFAULT: i32 = 127;
+/// 空线程的优先级
+/// 
+/// 空线程是特殊的线程，一个调度器内有且只有一个空线程，在调度器内有
+/// 其他就绪线程时，空线程不得被执行。
+/// 空线程的存在是为了使调度器始终能找到一个可执行的线程，它不得终止，必须在死循环内不断调用yield。
+pub const PRIO_EMPTY: i32 = i32::MAX;
 
-pub const TIMESLICE_NIL: Duration = Duration::ZERO;
-
-//优先级类型 prio_t 为 i32
 pub type Prio = i32;
 
 #[derive(Clone,Copy)]
 pub struct ThreadAttr {
-    //True if thread should detach
     detached: bool,
-    //Priority
     prio: Prio,
-    //Time slice in nanoseconds
     timeslice: Duration,
+    deadline: Duration,
+    stack_size: usize,
+    tls_size: usize,
+    ///线程绑定到特定调度器
+    pinned: bool,
 }
 
 impl Default for ThreadAttr {
     fn default() -> Self {
         Self {
             detached: WAITABLE,
-            prio: PRIO_INVALID,
-            timeslice: TIMESLICE_NIL,
+            prio: PRIO_DEFAULT,
+            timeslice: Duration::from_millis(50),
+            deadline: Duration::MAX,
+            stack_size: runikraft::config::rksched::STACK_SIZE,
+            tls_size: 0,
+            pinned: false,
         }
     }
 }
 
 impl ThreadAttr {
-    pub fn new(detached: bool, prio: i32, timeslice: Duration) -> Self {
+    pub fn new(detached: bool,pinned: bool, prio: i32, timeslice: Duration, deadline: Duration, stack_size: usize, tls_size: usize) -> Self {
         Self {
             detached,
             prio,
+            pinned,
             timeslice,
+            deadline,
+            stack_size,
+            tls_size,
         }
     }
 
@@ -132,7 +143,7 @@ impl ThreadAttr {
     }
 
     pub fn set_prio(&mut self, prio: Prio) -> Result<(),Errno>{
-        if prio >= PRIO_MIN && prio <= PRIO_MAX {
+        if prio >= PRIO_HIGHEST && prio <= PRIO_LOWEST {
             self.prio = prio;
             Ok(())
         }
@@ -158,6 +169,86 @@ impl ThreadAttr {
     pub fn get_timeslice(&self) -> Duration {
         self.timeslice
     }
+
+    pub fn set_deadline(&mut self, deadline: Duration) -> Result<(),Errno> {
+        if deadline > rkplat::time::monotonic_clock() {
+            self.deadline = deadline;
+            Ok(())
+        }
+        else {
+            Err(Errno::Inval)
+        }
+    }
+
+    pub fn get_deadline(&self) -> Duration {
+        self.deadline
+    }
+
+    pub fn get_stack_size(&self) -> usize {
+        self.stack_size
+    }
+
+    pub fn get_tls_size(&self) -> usize {
+        self.tls_size
+    }
+
+    pub fn pinned(&self) -> bool {
+        self.pinned
+    }
+}
+
+pub struct ThreadProfile {
+    /// 等待时间
+    pub time_waiting: Duration,
+    /// 运行时间，即占用的CPU时间
+    pub time_running: Duration,
+}
+
+impl Default for ThreadProfile {
+    fn default() -> Self {
+        Self { time_waiting: Duration::ZERO, time_running: Duration::ZERO }
+    }
+}
+
+pub struct ThreadLimit {
+    memory_size: usize,
+    open_files: usize,
+    pipe_size: usize,
+    cpu_time: Duration,
+}
+
+impl Default for ThreadLimit {
+    fn default() -> Self {
+        use runikraft::config::rksched::limit::*;
+        Self {
+            memory_size: MEMORY_SIZE,
+            open_files: OPEN_FILES,
+            pipe_size: PIPE_SIZE,
+            cpu_time: CPU_TIME,
+        }
+    }
+}
+
+impl ThreadLimit {
+    pub fn new(memory_size: usize, open_files: usize, pipe_size: usize, cpu_time: Duration) -> Self {
+        Self { memory_size, open_files, pipe_size, cpu_time}
+    }
+
+    pub fn memory_size(&self) -> usize {
+        self.memory_size
+    }
+
+    pub fn open_files(&self) -> usize {
+        self.open_files
+    }
+
+    pub fn pipe_size(&self) -> usize {
+        self.pipe_size
+    }
+
+    pub fn cpu_time(&self) -> Duration {
+        self.cpu_time
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -178,9 +269,11 @@ pub type Thread = TailqNode<ThreadData>;
 /// 2. 在栈的低地址调用`init`（`unsafe{*(stack as *mut Thread).init(...)}`，初始化控制块。
 /// 3. 用`add_thread`把线程加入调度器。
 /// 4. （调度器执行线程）
-/// 5. 当线程执行完毕或被kill时，调度器调用`exit`。
-/// 6. 调用`finish`。
-/// 7. 释放线程栈空间（stack）和线程本地存储空间（tls）。
+/// 5. 当线程执行完毕或被kill时，调用`exit`。
+/// 6. 切换到其他线程
+/// 7. 调度器调用`finish`。
+/// 8. 释放线程栈空间（stack）和线程本地存储空间（tls）。
+#[repr(align(16))]
 pub struct ThreadData {
     name: String,
     id: u32,
@@ -200,20 +293,9 @@ pub struct ThreadData {
     ref_cnt: AtomicI32,
     pub alloc: *const dyn RKalloc,
     pub attr: ThreadAttr,
+    pub profile: ThreadProfile,
+    pub limit: ThreadLimit,
     _pinned_marker: core::marker::PhantomPinned,
-}
-
-#[allow(unused)]
-fn stack_push(sp: &mut usize, value: usize) {
-    *sp -= size_of::<usize>();
-    unsafe {(*sp as *mut usize).write(value);}
-}
-
-#[allow(unused_variables)]
-fn init_sp(sp: &mut usize, stack: *mut u8, function: unsafe fn(*mut u8)->!, data: *mut u8) {
-    *sp = stack as usize + STACK_SIZE;
-    // stack_push(sp, function as usize);
-    // stack_push(sp, data as usize);
 }
 
 impl ThreadData {
@@ -232,12 +314,10 @@ impl ThreadData {
     pub unsafe fn init(&mut self,
             allocator: &'static dyn RKalloc,
             name:  &str, stack: *mut u8, tls: *mut u8,
+            attr: ThreadAttr, limit: ThreadLimit,
             function: unsafe fn(*mut u8)->!, arg: *mut u8) -> Result<(),Errno>{
         assert!(!stack.is_null());
         assert!(!tls.is_null());
-
-        // Save pointer to the thread on the stack to get current thread
-        (stack as *mut usize).write(self as *mut ThreadData as usize);
 
         // Allocate thread context
         let ctx = rkalloc::alloc_type(allocator, Context::default());
@@ -255,7 +335,9 @@ impl ThreadData {
 
         self.flags = 0;
         self.wakeup_time = Duration::ZERO;
-        self.attr = ThreadAttr::default();
+        addr_of_mut!(self.attr).write(attr);
+        addr_of_mut!(self.profile).write(ThreadProfile::default());
+        addr_of_mut!(self.limit).write(limit);
         addr_of_mut!(self.waiting_threads).write(wait::WaitQ::new(allocator));
         addr_of_mut!(self.sched).write_bytes(0, 1);
         addr_of_mut!(self.waiting_for).write(None);
@@ -284,8 +366,7 @@ impl ThreadData {
         // NOTE: In case the function pointer was changed by a thread init
         //       function (e.g., encapsulation), we prepare the stack here
         //       with the final setup
-        let mut sp: usize = 0;
-        init_sp(&mut sp, stack, self.entry, self.arg);
+        let sp: usize = stack as usize + attr.stack_size;
 
         //Platform specific context initialization
         //FIXME: ukarch_tls_pointer(tls)
@@ -296,8 +377,15 @@ impl ThreadData {
         Ok(())
     }
 
-    ///线程完成
+    ///线程完成，安全性：不得对current_thread调用finish
     pub unsafe fn finish(&mut self) {
+        if !self.attr.detached {
+            println!("{}: wakeup_final",&self.name);
+            self.waiting_threads.wakeup_final();
+        }
+        // else {
+        //     debug_assert!(self.waiting_threads.empty());
+        // }
         let mut itr = _rk_thread_inittab_start;
         while itr!=_rk_thread_inittab_end {
             if (*itr).finish as usize == 0 {
@@ -336,7 +424,11 @@ impl ThreadData {
         self.waiting_for = Some(event);
         unsafe {
             let flag = rkplat::lcpu::save_irqf();
-            event.as_mut().add(self.as_ref());
+            if !event.as_mut().add(self.as_ref()) {
+                self.waiting_for=None;
+                rkplat::lcpu::restore_irqf(flag);
+                return;
+            }
             rkplat::lcpu::restore_irqf(flag);
         }
         self.block();
@@ -344,7 +436,7 @@ impl ThreadData {
 
     /// 等待，直到某个线程终止
     pub fn block_for_thread(&mut self, thread: ThreadRef) {
-        if thread.is_exited() {return;}
+        println!("block_for_thread({})",thread.name());
         let event = NonNull::new( addr_of!(thread.waiting_threads) as *mut WaitQ);
         drop(thread);
         self.block_for_event(event.unwrap());
@@ -355,7 +447,8 @@ impl ThreadData {
         if !self.is_runnable() {
             self.sched_ref().thread_woken(self.as_non_null());
             self.wakeup_time = Duration::ZERO;
-            self.set_runnable();
+            // debug_assert!(self.is_runnable());
+            //self.set_runnable();
         }
         rkplat::lcpu::restore_irqf(flag);
     }
@@ -365,17 +458,20 @@ impl ThreadData {
     }
 
     pub fn exit(&mut self) {
+        rkplat::println!("thread::exit {}",&self.name);
         self.set_exited();
         if let Some(waitq) = self.waiting_for.as_mut() {
             unsafe {waitq.as_mut().remove(self.as_ref());}
             self.waiting_for = None;
         }
-        if !self.attr.detached {
-            self.waiting_threads.wakeup_all();
-        }
-        else {
-            debug_assert!(self.waiting_threads.empty());
-        }
+        //此时不能唤醒线程，否则被唤醒的线程可能调用drop(self)，而此时线程所在的调度器还没来得及切换到其他线程
+        //finish时才可以安全的唤醒等待的线程
+        // if !self.attr.detached {
+        //     self.waiting_threads.wakeup_all();
+        // }
+        // else {
+        //     debug_assert!(self.waiting_threads.empty());
+        // }
     }
 
     pub fn detach(&mut self) {
@@ -574,9 +670,10 @@ impl ThreadData {
 
 impl Drop for ThreadData{
     fn drop(&mut self) {
+        println!("drop {}",&self.name);
         assert!(self.is_exited());
         debug_assert!(self.waiting_for.is_none());
-        debug_assert!(self.waiting_threads.empty());
+        // debug_assert!(self.waiting_threads.empty());
         let old_ref = self.ref_cnt.swap(-1, Ordering::SeqCst);
         if old_ref != 0 {
             panic!("Attempt to drop thread when it is still referenced. self={:?}, name={}, stack={:?}, tls={:?}, ref_cnt={}",self as *mut ThreadData,self.name,self.stack,self.tls,old_ref);

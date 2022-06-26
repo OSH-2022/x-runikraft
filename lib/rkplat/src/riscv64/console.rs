@@ -78,12 +78,16 @@ use core::fmt::{self, Write};
 struct RustStyleOutputBIOS;
 struct RustStyleOutput;
 
+static LOCK: super::spinlock::SpinLock = super::spinlock::SpinLock::new();
+
 pub(crate) fn __print_bios(args: fmt::Arguments) {
+    let _lock = LOCK.lock();
     RustStyleOutputBIOS.write_fmt(args).unwrap();
 }
 
 #[cfg(not(feature="bios_io"))]
 pub fn __print(args: fmt::Arguments) {
+    let _lock = LOCK.lock();
     RustStyleOutput.write_fmt(args).unwrap();
 }
 
@@ -132,6 +136,6 @@ macro_rules! print {
 #[macro_export]
 macro_rules! println {
     ($fmt: literal $(, $($arg: tt)+)?) => {
-        $crate::console::__print(format_args!(concat!($fmt, "\n") $(, $($arg)+)?))
+        $crate::console::__print(format_args!(concat!("[{:?}]\t",$fmt, "\n") ,$crate::time::monotonic_clock() $(, $($arg)+)?))
     }
 }

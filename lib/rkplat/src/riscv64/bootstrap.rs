@@ -55,12 +55,13 @@ pub(crate) struct HartLocal {
     pub(crate) is_running: bool,// offset 24
     pub(crate) start_sp: usize, // 启动新的内核时使用的栈指针 (offset 32)
     pub(crate) start_entry: usize,// 启动新的内核时跳转到的位置 (offset 40)
-    pub(crate) recovery_pc: usize,//从中断返回时的pc，如果=0，则返回中断发生的位置
+    pub(crate) recovery_pc: usize,//从中断返回时的pc，如果=0，则返回中断发生的位置 (offset 48)
+    pub(crate) start_entry_arg: *mut u8,// 传递给start_entry的参数 (offset 56)
 }
 
 impl HartLocal {
     const fn new()->Self {
-        Self { _reg_space: 0, hartid: 0, hartsp: 0, start_entry:0, start_sp: 0, is_running: false, recovery_pc: 0}
+        Self { _reg_space: 0, hartid: 0, hartsp: 0, start_entry:0, start_sp: 0, is_running: false, recovery_pc: 0, start_entry_arg: null_mut()}
     }
 }
 
@@ -84,13 +85,21 @@ struct DeviceTreeHeader {
     be_size: u32,
 }
 
+fn detect_hart_number() -> usize {
+    for i in 0.. {
+        if let Err(_) = sbi_call(0x48534D, 2, i, 0, 0) {
+            return i;
+        }
+    }
+    unsafe{core::hint::unreachable_unchecked();}
+}
+
 //debug: addi    sp,sp,-560
 //release: addi    sp,sp,-112
 #[no_mangle]
 unsafe fn __runikraft_entry_point(hartid: usize, device_ptr: usize) -> !{
-    //在OpenSBI下，编号最大的hart会继续执行到Supervisor mode, 而其他harts会被暂停，所以，此时的hartid+1就是hart数
-    HART_NUMBER = hartid+1;
-    for i in 0..=hartid {
+    HART_NUMBER = detect_hart_number();
+    for i in 0..HART_NUMBER {
         HART_LOCAL[i].hartid = i;
         HART_LOCAL[i].hartsp = (addr_of!(EXCEPT_STACK[i]) as usize)+1024;
     }

@@ -32,9 +32,9 @@
 use core::time::Duration;
 use core::{slice,str};
 use core::mem::{align_of, size_of};
-use core::ptr::addr_of;
+use core::ptr::{addr_of, null_mut};
 use rkalloc::RKalloc;
-use rkplat::{irq,time,bootstrap,device};
+use rkplat::{irq,time,bootstrap,device, lcpu, println};
 #[cfg(feature="have_scheduler")]
 use rksched::RKsched;
 use runikraft::align_as;
@@ -72,14 +72,14 @@ pub unsafe extern "C" fn rkplat_entry(argc: i32, argv: *mut *mut u8) -> ! {
     rkboot_entry(&a, args);
 }
 
-struct ArgWrapper<'a> {
+struct ThreadMainArgWrapper<'a> {
     base: *mut &'a str,
     size: usize,
 }
 
 #[cfg(feature="have_scheduler")]
 fn thread_main(arg: *mut u8) {
-    let arg = arg as *mut ArgWrapper;
+    let arg = arg as *mut ThreadMainArgWrapper;
     let arg = unsafe {
         slice::from_raw_parts_mut((*arg).base, (*arg).size)
     };
@@ -88,22 +88,51 @@ fn thread_main(arg: *mut u8) {
     bootstrap::halt();
 }
 
+fn sched_start(arg: *mut u8) -> !{
+    unsafe {
+        (**(arg as *mut *mut dyn RKsched)).start();
+    }
+}
+
 unsafe fn rkboot_entry(alloc: &dyn RKalloc, args: &mut [&str]) -> ! {
     irq::init(alloc).unwrap();
     device::init(alloc).unwrap();
     time::init();
     #[cfg(feature="have_scheduler")]
     {
-        let wrapper = ArgWrapper{base: args.as_mut_ptr(), size: args.len()};
-        #[cfg(feature="sched_coop")]
-        let mut sched = rkschedcoop::RKschedcoop::new();
-        //TODO: 暂不支持SMP
-        sched.__set_next_sheduler(addr_of!(sched));
-        rksched::sched::register(&mut sched);
-        rksched::sched::create_thread("main", rkalloc::make_static(alloc), 
-            rksched::thread::ThreadAttr::new(true, 5, Duration::from_millis(100)), 
+        let wrapper = ThreadMainArgWrapper{base: args.as_mut_ptr(), size: args.len()};
+        let cpu_cnt = lcpu::count();
+        println!("cpu_cnt={}",cpu_cnt);
+        let scheds = slice::from_raw_parts_mut(alloc.alloc(cpu_cnt*size_of::<*mut dyn rksched::RKsched>(), 
+            align_of::<*mut dyn rksched::RKsched>()) as *mut *mut dyn rksched::RKsched, cpu_cnt);
+        for i in 0..cpu_cnt {
+            #[cfg(feature="sched_coop")]
+            {scheds[i] = rkalloc::alloc_type(alloc,rkschedcoop::RKschedcoop::new(i));}
+            rksched::sched::register(&mut *scheds[i]);
+        }
+        for i in 0..cpu_cnt {
+            (*scheds[i]).__set_next_sheduler(scheds[if i+1==cpu_cnt {0} else {i+1}]);
+        }
+        let cpu_id = lcpu::id();
+        for i in 0..cpu_cnt {
+            use rksched::thread::*;
+            use runikraft::config::STACK_SIZE_SCALE as SSS;
+            rksched::sched::create_thread_on_sched("empty", rkalloc::make_static(alloc),
+                i,
+                ThreadAttr::new(WAITABLE, true,PRIO_EMPTY, Duration::MAX, Duration::MAX, 4096*SSS, 0),
+                ThreadLimit::default(),
+                rksched::sched::__empty_thread_function,
+                null_mut()).unwrap();
+            if i==cpu_id {continue;}
+            lcpu::start(i, alloc.alloc(1024*SSS, 16), sched_start, addr_of!(scheds[i]) as *mut u8).unwrap();
+        }
+        
+        rksched::sched::create_thread_on_sched("main", rkalloc::make_static(alloc), 
+            cpu_id,
+            rksched::thread::ThreadAttr::default(),
+            rksched::thread::ThreadLimit::default(),
             thread_main, addr_of!(wrapper) as *mut u8).expect("Fail to create main thread");
-        sched.start();
+        (*scheds[cpu_id]).start();
     }
     #[cfg(not(feature="have_scheduler"))]
     {
