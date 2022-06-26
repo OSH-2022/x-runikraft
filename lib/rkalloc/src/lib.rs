@@ -83,7 +83,7 @@ pub unsafe trait RKalloc: Sync {
         }
         let new_ptr = self.alloc(new_size, align);
         if !new_ptr.is_null() {
-            new_ptr.copy_from_nonoverlapping(old_ptr, old_size);
+            new_ptr.copy_from_nonoverlapping(old_ptr, core::cmp::min(old_size,new_size));
             self.dealloc(old_ptr, old_size, align);
         }
         new_ptr
