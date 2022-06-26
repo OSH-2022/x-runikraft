@@ -1,3 +1,4 @@
+# -*- makefile -*-
 .PHONY: @testname@ @testname@.bin
 @testname@: @testname@.bin
 	qemu-system-riscv64 -machine virt -nographic -bios $$RISCV_BIOS -kernel alloc_buddy0.bin
