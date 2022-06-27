@@ -1,0 +1,13 @@
+[package]
+    name = "test-rkgpu0"
+    version = "0.1.0"
+    edition = "2021"
+
+[workspace]
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+    rkboot = {path = "../../lib/rkboot"}
+    rkplat = {path = "../../lib/rkplat"}
+    rkgpu = {path = "../../lib/rkgpu"}
+    rkalloc = {path = "../../lib/rkalloc"}

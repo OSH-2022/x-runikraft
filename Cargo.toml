@@ -1,10 +1,21 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# Cargo.toml
+# Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
+
 [workspace]
 
 members = [
     "core",
     "dev-test",
+    "lib/rkplat",
+    "lib/rkboot",
     "lib/rkalloc",
-    "lib/rkalloc_empty",
+    "lib/rkalloc_buddy",
     "lib/rkring",
-    "lib/rkblkdev"
+    "lib/rkmbox",
+    "lib/rksched",
+    "lib/rkschedcoop",
+    # "lib/rkschedpreem",
+    "lib/rksignal",
+    "lib/rkgpu"
 ]

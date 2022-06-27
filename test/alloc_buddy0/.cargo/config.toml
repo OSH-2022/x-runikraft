@@ -1,0 +1,3 @@
+[build]
+    target-dir = "../../build/test"
+    target = "riscv64gc-unknown-none-elf"
