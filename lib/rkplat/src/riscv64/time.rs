@@ -4,8 +4,12 @@
 // Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
 use super::{lcpu,sbi};
+use core::time::Duration;
+#[cfg(feature="driver_rtc")]
+use crate::drivers::rtc::RtcDevice;
 
-pub type Duration = core::time::Duration;
+#[cfg(feature="driver_rtc")]
+pub(crate) static mut RTC_DEVICE: Option<&dyn RtcDevice> = None;
 
 /// 1秒
 pub const SEC: Duration = Duration::new(1, 0);
@@ -64,7 +68,14 @@ pub fn monotonic_clock() -> Duration {
 
 /// 获取UNIX时间
 pub fn wall_clock() -> Duration {
-    todo!("用rtc实现");
+    #[cfg(feature="driver_rtc")]
+    {
+        unsafe{RTC_DEVICE.unwrap().time()}
+    }
+    #[cfg(not(feature="driver_rtc"))]
+    {
+        unimplemented!("Feature `driver_rtc` is disabled.");
+    }
 }
 
 pub(crate) fn block(until: Duration) {

@@ -1,0 +1,11 @@
+[package]
+    name = "test-rkplat_time0"
+    version = "0.1.0"
+    edition = "2021"
+
+[workspace]
+
+[dependencies]
+    rkplat = {path = "../../lib/rkplat", default-features = false, features=["driver_ns16550","driver_goldfish_rtc"]}
+    rkalloc = {path = "../../lib/rkalloc"}
+    rkboot = {path = "../../lib/rkboot", default-features = false, features=["alloc_buddy"]}

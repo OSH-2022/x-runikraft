@@ -29,6 +29,8 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+#![allow(dead_code)]
+
 use core::{str, slice};
 use super::UartDevice;
 use crate::drivers::Device;
@@ -38,16 +40,16 @@ use crate::lcpu::spinwait;
 const THR: usize = 0x00;
 const RBR: usize = 0x00;
 const IER: usize = 0x01;
-// const IIR: usize = 0x02;
+const IIR: usize = 0x02;
 const FCR: usize = 0x02;
 const LCR: usize = 0x03;
-// const MCR: usize = 0x04;
+const MCR: usize = 0x04;
 const LSR: usize = 0x05;
-// const MSR: usize = 0x06;
+const MSR: usize = 0x06;
 
 const REG_SHIFT: usize = 0x00;
 
-// const LCR_DLAB: u8    = 0x80;
+const LCR_DLAB: u8    = 0x80;
 const IER_INT_EN: u8  = 0x01;
 const FCR_FIFO_EN: u8 = 0x01;
 const LSR_RX_READY: u8 = 0x01;
@@ -55,7 +57,7 @@ const LSR_TX_VALID: u8 = 0x40;
 
 pub struct Ns16550 {
     addr: usize,  //地址
-    //irq: usize,     //中断号
+    irq: usize,     //中断号
     name: [u8;32],
     name_size: usize,
 }
@@ -70,7 +72,7 @@ impl Ns16550 {
         println_bios!("Init ns16550 device, name={},addr=0x{:x},irq={}.",name,addr,irq);
 
         Self {
-            addr,//irq,
+            addr,irq,
             name: name1,
             name_size: name.len()
         }.init()
