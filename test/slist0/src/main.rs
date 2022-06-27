@@ -1,6 +1,5 @@
-// test rkalloc_buddy
+// test compact_list-slist
 
-// TODO
 #![no_std]
 #![no_main]
 
