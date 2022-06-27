@@ -5,7 +5,7 @@
 [package]
 name = "rkblkdev"
 version = "0.1.0"
-authors = [ 郭耸霄 <logname@mail.ustc.edu.cn> ]
+authors = [ "郭耸霄 <logname@mail.ustc.edu.cn> "]
 license = "BSD-3-Clause"
 edition = "2021"
 

@@ -64,6 +64,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "rkgpu"
+version = "0.1.0"
+dependencies = [
+ "rkplat",
+]
+
+[[package]]
 name = "rkmbox"
 version = "0.1.0"
 dependencies = [

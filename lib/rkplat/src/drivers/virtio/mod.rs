@@ -40,7 +40,7 @@ mod blk;
 #[cfg(feature="driver_virtio_console")]
 mod console;
 #[cfg(feature="driver_virtio_gpu")]
-mod gpu;
+pub(crate) mod gpu;
 mod hal;
 mod header;
 #[cfg(feature="driver_virtio_input")]
@@ -112,3 +112,7 @@ unsafe trait AsBuf: Sized {
         unsafe { core::slice::from_raw_parts_mut(self as *mut _ as _, size_of::<Self>()) }
     }
 }
+
+
+#[cfg(feature="driver_virtio_gpu")]
+pub static mut GPU_DEIVCE: Option<&'static mut VirtIOGpu> = None;

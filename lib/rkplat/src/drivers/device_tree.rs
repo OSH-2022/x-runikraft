@@ -33,6 +33,7 @@ use super::uart;
 use super::virtio;
 use rkalloc::{RKalloc,alloc_type};
 use crate::console;
+use crate::drivers::virtio::{GPU_DEIVCE, VirtIOHeader};
 
 const MAGIC_NUMBER: u32 = 0xd00dfeed;
 const SUPPORTED_VERSION: u32 = 17;
@@ -289,7 +290,11 @@ fn parse_device(a: &dyn RKalloc, name: &str, props: &[(&str,&[u8])], props_size:
                     #[cfg(feature="driver_virtio_console")]
                     virtio::DeviceType::Console => {todo!()},
                     #[cfg(feature="driver_virtio_gpu")]
-                    virtio::DeviceType::GPU => {todo!()},
+                    virtio::DeviceType::GPU => {
+                        unsafe {
+                            GPU_DEIVCE = Some(&mut *alloc_type(a,virtio::gpu::VirtIOGpu::new(name,header).unwrap()));
+                        }
+                    },
                     #[cfg(feature="driver_virtio_input")]
                     virtio::DeviceType::Input => {todo!()},
                     #[cfg(feature="driver_virtio_net")]
