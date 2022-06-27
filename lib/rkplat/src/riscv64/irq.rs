@@ -79,7 +79,7 @@ pub unsafe fn register(irq: usize, func: IRQHandlerFunc, arg: *mut u8) -> Result
 #[no_mangle]
 unsafe extern "C" fn __rkplat_irq_handle(regs: &mut RegGenInt, irq: usize) {
     for i in IRQ_HANDLERS[irq].as_ref().unwrap().iter() {
-        if (i.as_ref().element.func)(i.as_ref().element.arg) {
+        if (i.element.func)(i.element.arg) {
             intctrl::ack_irq(irq);
             let rpc = bootstrap::hart_local().recovery_pc;
             if rpc !=0 {

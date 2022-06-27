@@ -68,7 +68,7 @@ impl WaitQ {
         let mut find = false;
         let _lock = self.mutex.lock();
         for i in self.q.iter() {
-            if unsafe{i.as_ref().element == entry} {
+            if i.element == entry {
                 find = true;
                 break;
             }
@@ -76,7 +76,7 @@ impl WaitQ {
         }
         if find { unsafe {
             let x =if let Some(mut pos) = pos {
-                pos.as_mut().remove_after(Some(&mut self.q))
+                pos.remove_after(Some(&mut self.q))
             }
             else {
                 self.q.pop_front()
