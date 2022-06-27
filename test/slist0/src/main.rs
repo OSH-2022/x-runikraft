@@ -47,7 +47,7 @@ fn main(_args: &mut [&str])->i32 {
         counter = 0;
         for node in slist_iter {
             // rkplat::println!("counter: {}, result in node: {}, expect result: {}", counter, node.as_ref().element, result[counter]);
-            assert_eq!(node.as_ref().element, result[counter]);
+            assert_eq!(node.element, result[counter]);
             counter += 1;
         }
 
@@ -56,14 +56,19 @@ fn main(_args: &mut [&str])->i32 {
         let result = [1, 2, 5, 7, 9, 11, 13, 15];
         counter = 0;
         for mut node in slist_iter {
-            if node.as_ref().element % 2 == 1 {
-                node.as_mut().remove_after();
-                a.dealloc(node.as_ptr() as *mut u8, size_of::<SlistNode<i32>>(), align_of::<SlistNode<i32>>());
+            if node.element % 2 == 1 {
+                match node.remove_after() {
+                    None => (),
+                    Some(rm_node) => {
+                        a.dealloc(rm_node.as_ptr() as *mut u8, size_of::<SlistNode<i32>>(), align_of::<SlistNode<i32>>());
+                    }
+                }
             }
         }
         let slist_iter = slist_a.iter();
         for node in slist_iter {
-            assert_eq!(node.as_ref().element, result[counter]);
+            // rkplat::println!("counter: {}, result in node: {}, expect result: {}", counter, node.element, result[counter]);
+            assert_eq!(node.element, result[counter]);
             counter += 1;
         }
         arr_len = 8;
