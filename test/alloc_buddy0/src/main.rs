@@ -26,14 +26,14 @@ extern "C" fn rkplat_entry(_: i32, _: *mut *mut u8) -> ! {
         let arr_heap = a.alloc(arr_len*size_of::<usize>(), align_of::<usize>());
         assert!(!arr_heap.is_null());
         let mut counter: usize = 0;
-        let arr = slice::from_raw_parts_mut(arr_heap as *mut i32, arr_len as usize);
+        let arr = slice::from_raw_parts_mut(arr_heap as *mut usize, arr_len as usize);
         while counter < arr_len {
-            arr[counter] = (arr_len - counter) as i32;
+            arr[counter] = (arr_len - counter) as usize;
             counter += 1;
         }
         counter = 0;
         while counter < arr_len {
-            assert_eq!(arr[counter], (arr_len - counter) as i32);
+            assert_eq!(arr[counter], (arr_len - counter) as usize);
             counter += 1;
         }
         
@@ -44,7 +44,7 @@ extern "C" fn rkplat_entry(_: i32, _: *mut *mut u8) -> ! {
         let new_arr = slice::from_raw_parts_mut(new_arr_heap as *mut usize, new_arr_len as usize);
         counter = 0;
         while counter < arr_len {
-            assert_eq!(arr[counter], (arr_len - counter) as i32);
+            assert_eq!(new_arr[counter], (arr_len - counter) as usize);
             counter += 1;
         }
         counter = 0;
