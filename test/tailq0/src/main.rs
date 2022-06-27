@@ -1,29 +1,25 @@
-// test rkalloc_buddy
+// test compact_list-tailq
 
-// TODO
 #![no_std]
 #![no_main]
-extern crate rkalloc;
-extern crate rkalloc_buddy;
+
+extern crate rkboot;
 extern crate runikraft;
+extern crate rkalloc;
 
-use rkalloc::RKalloc;
-use rkalloc_buddy::RKallocBuddy;
-use runikraft::align_as;
-use core::mem::{size_of, align_of};
+use runikraft::compat_list::*;
+use rkalloc::*;
 use core::slice;
-
-const HEAP_SIZE: usize = 65536;
-
-static mut HEAP:align_as::A4096<[u8;HEAP_SIZE]> = align_as::A4096::new([0;HEAP_SIZE]);
+use core::mem::{size_of, align_of};
+use core::ptr::NonNull;
 
 #[no_mangle]
-extern "C" fn rkplat_entry(_: i32, _: *mut *mut u8) -> ! {
-    let arr_len = 10;
-    unsafe {
-        // test `RKallocBuddy::new()` and `RKallocBuddy::alloc()`
-        let a = RKallocBuddy::new(HEAP.data.as_mut_ptr(), HEAP.data.len());
-        let arr_heap = a.alloc(arr_len*size_of::<usize>(), align_of::<usize>());
+fn main(_args: &mut [&str])->i32 {
+    let mut tailq_a = Tailq::<i32>::new();
+    unsafe{
+        let a = rkalloc::get_default().expect("error: fail to find global allocator\n");
+        let mut arr_len = 15;
+        let arr_heap = a.alloc(arr_len*size_of::<i32>(), align_of::<i32>());
         assert!(!arr_heap.is_null());
         let mut counter: usize = 0;
         let arr = slice::from_raw_parts_mut(arr_heap as *mut i32, arr_len as usize);
@@ -31,46 +27,95 @@ extern "C" fn rkplat_entry(_: i32, _: *mut *mut u8) -> ! {
             arr[counter] = (arr_len - counter) as i32;
             counter += 1;
         }
+
+        // test `Tailq::push_front()`, `TailqNode::insert_after()`, `TailqNode::insert_before()` and `Tailq::iter()`
         counter = 0;
         while counter < arr_len {
-            assert_eq!(arr[counter], (arr_len - counter) as i32);
+            let ptr_e = alloc_type::<TailqNode<i32>>(a, TailqNode::<i32>::new(arr[counter]));
+            let mut node1 = NonNull::new(ptr_e).expect("error: fail to get node\n");
+            tailq_a.push_front(node1);
             counter += 1;
+            if counter < arr_len {
+                let ptr_e = alloc_type::<TailqNode<i32>>(a, TailqNode::<i32>::new(arr[counter]));
+                let mut node2 = NonNull::new(ptr_e).expect("error: fail to get node\n");
+                node1.as_mut().insert_after(node2, Some(&mut tailq_a));
+                counter += 1;
+                if counter < arr_len {
+                    let ptr_e = alloc_type::<TailqNode<i32>>(a, TailqNode::<i32>::new(arr[counter]));
+                    let node3 = NonNull::new(ptr_e).expect("error: fail to get node\n");
+                    node2.as_mut().insert_before(node3, Some(&mut tailq_a));
+                    counter += 1;
+                }
+            }
         }
-        
-        // test `RKallocBuddy::realloc()`
-        let new_arr_len = 20;
-        let new_arr_heap = a.realloc(arr_heap, arr_len*size_of::<usize>(), new_arr_len*size_of::<u8>(), align_of::<usize>());
-        assert!(!new_arr_heap.is_null());
-        let new_arr = slice::from_raw_parts_mut(new_arr_heap as *mut u8, new_arr_len as usize);
+        let list_iter = tailq_a.iter();
+        let result = [3, 1, 2, 6, 4, 5, 9, 7, 8, 12, 10, 11, 15, 13, 14];
         counter = 0;
-        let mut data = 66;
-        while counter < new_arr_len {
-            new_arr[counter] = data;
-            data += 7;
-            counter += 1;
-        }
-        counter = 0;
-        data = 66;
-        while counter < new_arr_len {
-            assert_eq!(new_arr[counter], data);
-            data += 7;
+        for node in list_iter {
+            // rkplat::println!("counter: {}, result in node: {}, expect result: {}", counter, node.as_ref().element, result[counter]);
+            assert_eq!(node.as_ref().element, result[counter]);
             counter += 1;
         }
 
-        // test `RKallocBuddy::dealloc()`
-        a.dealloc(new_arr_heap, new_arr_len*size_of::<u8>(), align_of::<usize>());
-
-        // test 'RKallocBuddy::alloc_zeroed()`
-        let arr_len = 15;
-        let arr_heap = a.alloc_zeroed(arr_len*size_of::<i8>(), align_of::<i8>());
-        let arr = slice::from_raw_parts_mut(arr_heap as *mut i8, arr_len as usize);
+        // test `TailqNode::remove()`
+        let list_iter = tailq_a.iter();
+        let result = [3, 1, 5, 9, 7, 11, 15, 13];
         counter = 0;
-        while counter < arr_len {
-            assert_eq!(arr[counter], 0);
+        for mut node in list_iter {
+            if node.as_ref().element % 2 == 0 {
+                node.as_mut().remove(Some(&mut tailq_a));
+                a.dealloc(node.as_ptr() as *mut u8, size_of::<TailqNode<i32>>(), align_of::<TailqNode<i32>>());
+            }
+        }
+        let list_iter = tailq_a.iter();
+        for node in list_iter {
+            assert_eq!(node.as_ref().element, result[counter]);
             counter += 1;
         }
-        a.dealloc(arr_heap, arr_len*size_of::<i8>(), align_of::<i8>());
+        arr_len = 8;
+
+        // test 'TailqNode::remove_after()` and `TailqNode::remove_before()`
+        let list_iter = tailq_a.iter();
+        let result = [3, 1, 9, 13];
+        counter = 0;
+        for mut node in list_iter {
+            if node.as_ref().element > 10 || node.as_ref().element == 3 {
+                match node.as_mut().remove_before(Some(&mut tailq_a)) {
+                    None => (),
+                    Some(rm_node) => {
+                        a.dealloc(rm_node.as_ptr() as *mut u8, size_of::<TailqNode<i32>>(), align_of::<TailqNode<i32>>());
+                    }
+                }
+            }
+            if node.as_ref().element == 1 || node.as_ref().element == 13 {
+                match node.as_mut().remove_after() {
+                    None => (),
+                    Some(rm_node) => {
+                        a.dealloc(rm_node.as_ptr() as *mut u8, size_of::<TailqNode<i32>>(), align_of::<TailqNode<i32>>());
+                    }
+                }
+            }
+            counter += 1;
+        }
+        let list_iter = tailq_a.iter();
+        counter = 0;
+        for node in list_iter {
+            assert_eq!(node.as_ref().element, result[counter]);
+            counter += 1;
+        }
+        arr_len = 4;
+
+        // test `Tailq::pop_front()` and `Tailq::is_empty()`
+        counter = 0;
+        while counter < arr_len {
+            let node = tailq_a.pop_front().expect("error: fail to get node from pop_front()\n");
+            let e = node.as_ref().element;
+            assert_eq!(e, result[counter]);
+            a.dealloc(node.as_ptr() as *mut u8, size_of::<TailqNode<i32>>(), align_of::<TailqNode<i32>>());
+            counter += 1;
+        }
+        assert!(tailq_a.is_empty());
     }
-    rkplat::println!("\nTest alloc_buddy0 passed!\n");
-    rkplat::bootstrap::halt();
+    rkplat::println!("\nTest tailq0 passed!\n");
+    return 0;
 }

@@ -37,7 +37,7 @@ fn main(_args: &mut [&str])->i32 {
             counter += 1;
             if counter < arr_len {
                 let ptr_e = alloc_type::<SlistNode<i32>>(a, SlistNode::<i32>::new(arr[counter]));
-                let mut node2 = NonNull::new(ptr_e).expect("error: fail to get node\n");
+                let node2 = NonNull::new(ptr_e).expect("error: fail to get node\n");
                 node1.as_mut().insert_after(node2);
                 counter += 1;
             }
