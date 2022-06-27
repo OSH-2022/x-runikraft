@@ -122,6 +122,9 @@ impl<T> Tailq<T> {
                 if let Some(mut tail) = self.tail {
                     tail.as_mut().next = None;
                 }
+                else {
+                    self.head = None;
+                }
                 tail
             })
         }
