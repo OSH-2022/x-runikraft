@@ -4,9 +4,10 @@ use core::cmp::min;
 use rkplat::drivers::virtio::GPU_DEIVCE;
 use crate::DIRECTION::{Horizontal, Vertical};
 
-static mut _EMPTY: [u8;0] = [0;0];
+static mut _EMPTY: [u8; 0] = [0; 0];
 
-pub static mut FB: &mut [u8] = unsafe {&mut _EMPTY};
+pub static mut FB: &mut [u8] = unsafe { &mut _EMPTY };
+
 pub unsafe fn init() {
     FB = GPU_DEIVCE.as_mut().unwrap().setup_framebuffer().expect("failed to get FB");
     let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
@@ -18,7 +19,6 @@ pub unsafe fn init() {
             FB[idx + 2] = (x + y) as u8;
         }
     }
-    //TODO A start photo posed by LJW
     GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
 }
 
@@ -27,25 +27,31 @@ pub enum DIRECTION {
     Vertical,
 }
 
-pub unsafe fn draw_line(direction: DIRECTION, start_x: u32, start_y: u32, length: u32, color: u8) {
+pub unsafe fn draw_line(direction: DIRECTION, start_x: u32, start_y: u32, length: u32, color: (u8, u8, u8, u8)) {
     let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
     match direction {
         Horizontal => {
             for x in 0..min(length, width - start_x) {
-                let idx = start_y * width + x;
-                FB[idx as usize] = color as u8;
+                let idx = (start_y * width + x) * 4;
+                FB[idx as usize + 0] = color.0 as u8;
+                FB[idx as usize + 1] = color.1 as u8;
+                FB[idx as usize + 2] = color.2 as u8;
+                FB[idx as usize + 3] = color.3 as u8;
             }
         }
         Vertical => {
             for y in 0..min(length, height - start_y) {
-                let idx = y * width + start_x;
-                FB[idx as usize] = color as u8;
+                let idx = (y * width + start_x) * 4;
+                FB[idx as usize + 0] = color.0 as u8;
+                FB[idx as usize + 1] = color.1 as u8;
+                FB[idx as usize + 2] = color.2 as u8;
+                FB[idx as usize + 3] = color.3 as u8;
             }
         }
     }
     GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
 }
 
-pub unsafe fn draw_font(start_x:u32,start_y:u32,color:u8,font:u8){
+pub unsafe fn draw_font(start_x: u32, start_y: u32, color: (u8, u8, u8, u8), font: u8) {
     //TODO
 }
