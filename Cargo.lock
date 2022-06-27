@@ -71,6 +71,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "rklock"
+version = "0.1.0"
+dependencies = [
+ "rkplat",
+ "rksched",
+ "runikraft",
+]
+
+[[package]]
 name = "rkmbox"
 version = "0.1.0"
 dependencies = [

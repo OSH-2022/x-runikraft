@@ -13,6 +13,7 @@ members = [
     "lib/rkalloc_buddy",
     "lib/rkring",
     "lib/rkmbox",
+    "lib/rklock",
     "lib/rksched",
     "lib/rkschedcoop",
     # "lib/rkschedpreem",
