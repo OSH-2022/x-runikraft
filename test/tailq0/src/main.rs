@@ -105,12 +105,41 @@ fn main(_args: &mut [&str])->i32 {
         }
         arr_len = 4;
 
-        // test `Tailq::pop_front()` and `Tailq::is_empty()`
+        // test `Tailq::push_back()`
+        let tailq_iter = tailq_a.iter();
+        let result = [3, 1, 9, 13, 12, 10, 8, 6];
         counter = 0;
-        while counter < arr_len {
+        while counter < 4 {
+            let ptr_e = alloc_type::<TailqNode<i32>>(a, TailqNode::<i32>::new((2*(6-counter)) as i32));
+            let mut node = NonNull::new(ptr_e).expect("error: fail to get node\n");
+            tailq_a.push_back(node);
+            counter += 1;
+        }
+        counter = 0;
+        for node in tailq_iter {
+            assert_eq!(node.element, result[counter]);
+            counter += 1;
+        }
+        arr_len = 8;
+
+        // test `Tailq::pop_front()`
+        counter = 0;
+        while counter < arr_len - 4 {
             let node = tailq_a.pop_front().expect("error: fail to get node from pop_front()\n");
             let e = node.as_ref().element;
             assert_eq!(e, result[counter]);
+            a.dealloc(node.as_ptr() as *mut u8, size_of::<TailqNode<i32>>(), align_of::<TailqNode<i32>>());
+            counter += 1;
+        }
+        arr_len = 4;
+
+        // test `Tailq::pop_back()` and `Tailq::is_empty()`
+        let result = [12, 10, 8, 6];
+        counter = 0;
+        while counter < arr_len {
+            let node = tailq_a.pop_back().expect("error: fail to get node from pop_back()\n");
+            let e = node.as_ref().element;
+            assert_eq!(e, result[arr_len - counter - 1]);
             a.dealloc(node.as_ptr() as *mut u8, size_of::<TailqNode<i32>>(), align_of::<TailqNode<i32>>());
             counter += 1;
         }
