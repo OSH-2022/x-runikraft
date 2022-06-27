@@ -2,6 +2,8 @@
 pub mod uart;
 #[cfg(feature="driver_virtio")]
 pub mod virtio;
+#[cfg(feature="driver_rtc")]
+pub mod rtc;
 pub mod device_tree;
 
 pub type DriverIntHandler = fn();

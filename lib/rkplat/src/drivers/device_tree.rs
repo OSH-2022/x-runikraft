@@ -277,6 +277,13 @@ fn parse_device(a: &dyn RKalloc, name: &str, props: &[(&str,&[u8])], props_size:
                         prop_u32(props,props_size,"interrupts").unwrap() as usize)));
                 }
             },
+            #[cfg(feature="driver_goldfish_rtc")]
+            "google,goldfish-rtc" => {
+                unsafe {
+                    crate::time::RTC_DEVICE = Some(&*alloc_type(a, 
+                        super::rtc::goldfish::GoldfishRtc::new(name, prop_u64(props,props_size,"reg").unwrap() as usize)));
+                }
+            },
             #[cfg(feature="driver_virtio")]
             "virtio,mmio" => {
                 let header = unsafe {

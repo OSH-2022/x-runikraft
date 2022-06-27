@@ -88,6 +88,7 @@ fn thread_main(arg: *mut u8) {
     bootstrap::halt();
 }
 
+#[cfg(feature="have_scheduler")]
 fn sched_start(arg: *mut u8) -> !{
     unsafe {
         (**(arg as *mut *mut dyn RKsched)).start();

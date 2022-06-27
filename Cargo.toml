@@ -15,7 +15,7 @@ members = [
     "lib/rkmbox",
     "lib/rksched",
     "lib/rkschedcoop",
-    "lib/rkschedpreem",
+    #"lib/rkschedpreem",
     "lib/rksignal",
     "lib/rkgpu"
 ]

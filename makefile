@@ -65,7 +65,7 @@ test: $(MAKE_ROOT_DIR)/test/makefile
 
 $(MAKE_ROOT_DIR)/test/makefile: makefiles/test.mk.sh makefiles/test.mk.0 makefiles/test.mk.1
 	-mkdir --parents $(MAKE_ROOT_DIR)/test
-	makefiles/test.mk.sh makefiles/test.mk $(MAKE_ROOT_DIR)/test/makefile
+	makefiles/test.mk.sh makefiles/test.mk $(MAKE_ROOT_DIR)/test/makefile $(TEST_ROOT_DIR)
 
 .PHONY: dev-test
 dev-test: $(RUST_OUTPUT_DIR)/dev-test.bin
