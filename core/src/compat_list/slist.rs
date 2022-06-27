@@ -111,12 +111,12 @@ impl<T> Slist<T> {
     }
 }
 
-impl<T> Iterator for SlistIter<T> {
-    type Item = NonNull<SlistNode<T>>;
+impl<T: 'static> Iterator for SlistIter<T> {
+    type Item = &'static mut SlistNode<T>;
     fn next(&mut self) -> Option<Self::Item> {
         self.node.map(|mut node| {
-            self.node = unsafe{node.as_mut().next};
-            node
+            unsafe{self.node = node.as_mut().next;
+            node.as_mut()}
         })
     }
 }

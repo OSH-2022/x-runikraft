@@ -196,12 +196,12 @@ impl<T> List<T> {
     }
 }
 
-impl<T> Iterator for ListIter<T> {
-    type Item = NonNull<ListNode<T>>;
+impl<T: 'static> Iterator for ListIter<T> {
+    type Item = &'static mut ListNode<T>;
     fn next(&mut self) -> Option<Self::Item> {
         self.node.map(|mut node| {
-            self.node = unsafe{node.as_mut().next};
-            node
+            unsafe {self.node = node.as_mut().next;
+            node.as_mut()}
         })
     }
 }
