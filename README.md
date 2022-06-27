@@ -1,4 +1,4 @@
-# x-runikraft
+# ![Runikraft_logo](./doc/assets/Runikraft_logo.svg)
 
 USTC 011705 (OSH) Course Project of Runikraft Group
 
