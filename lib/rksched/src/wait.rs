@@ -75,7 +75,7 @@ impl WaitQ {
             pos = Some(i);
         }
         if find { unsafe {
-            let x =if let Some(mut pos) = pos {
+            let x =if let Some(pos) = pos {
                 pos.remove_after(Some(&mut self.q))
             }
             else {

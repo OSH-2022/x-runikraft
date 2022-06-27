@@ -2,6 +2,7 @@
 
 #![no_std]
 #![no_main]
+#![allow(unused_assignments)]
 
 extern crate rkboot;
 extern crate runikraft;
@@ -42,20 +43,18 @@ fn main(_args: &mut [&str])->i32 {
                 counter += 1;
             }
         }
-        let stailq_iter = stailq_a.iter();
         let result = [1, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14];
         counter = 0;
-        for node in stailq_iter {
+        for node in stailq_a.iter() {
             // rkplat::println!("counter: {}, result in node: {}, expect result: {}", counter, node.as_ref().element, result[counter]);
             assert_eq!(node.element, result[counter]);
             counter += 1;
         }
 
         // test `StailqNode::remove_after()`
-        let stailq_iter = stailq_a.iter();
         let result = [1, 2, 5, 7, 9, 11, 13, 15];
         counter = 0;
-        for mut node in stailq_iter {
+        for node in stailq_a.iter() {
             if node.element % 2 == 1 {
                 match node.remove_after(Some(&mut stailq_a)) {
                     None => (),
@@ -65,8 +64,7 @@ fn main(_args: &mut [&str])->i32 {
                 }
             }
         }
-        let stailq_iter = stailq_a.iter();
-        for node in stailq_iter {
+        for node in stailq_a.iter() {
             // rkplat::println!("counter: {}, result in node: {}, expect result: {}", counter, node.element, result[counter]);
             assert_eq!(node.element, result[counter]);
             counter += 1;
@@ -74,17 +72,16 @@ fn main(_args: &mut [&str])->i32 {
         arr_len = 8;
 
         // test `Stailq::push_back()`
-        let stailq_iter = stailq_a.iter();
         let result = [1, 2, 5, 7, 9, 11, 13, 15, 14, 12, 10, 8];
         counter = 0;
         while counter < 4 {
             let ptr_e = alloc_type::<StailqNode<i32>>(a, StailqNode::<i32>::new((2*(7-counter)) as i32));
-            let mut node = NonNull::new(ptr_e).expect("error: fail to get node\n");
+            let node = NonNull::new(ptr_e).expect("error: fail to get node\n");
             stailq_a.push_back(node);
             counter += 1;
         }
         counter = 0;
-        for node in stailq_iter {
+        for node in stailq_a.iter() {
             assert_eq!(node.element, result[counter]);
             counter += 1;
         }

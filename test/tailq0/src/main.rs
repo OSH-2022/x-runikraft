@@ -2,6 +2,7 @@
 
 #![no_std]
 #![no_main]
+#![allow(unused_assignments)]
 
 extern crate rkboot;
 extern crate runikraft;
@@ -48,37 +49,33 @@ fn main(_args: &mut [&str])->i32 {
                 }
             }
         }
-        let tailq_iter = tailq_a.iter();
         let result = [3, 1, 2, 6, 4, 5, 9, 7, 8, 12, 10, 11, 15, 13, 14];
         counter = 0;
-        for node in tailq_iter {
+        for node in tailq_a.iter() {
             // rkplat::println!("counter: {}, result in node: {}, expect result: {}", counter, node.as_ref().element, result[counter]);
             assert_eq!(node.element, result[counter]);
             counter += 1;
         }
 
         // test `TailqNode::remove()`
-        let tailq_iter = tailq_a.iter();
         let result = [3, 1, 5, 9, 7, 11, 15, 13];
         counter = 0;
-        for mut node in tailq_iter {
+        for node in tailq_a.iter() {
             if node.element % 2 == 0 {
                 node.remove(Some(&mut tailq_a));
                 a.dealloc(node as *mut TailqNode<i32> as *mut u8, size_of::<TailqNode<i32>>(), align_of::<TailqNode<i32>>());
             }
         }
-        let tailq_iter = tailq_a.iter();
-        for node in tailq_iter {
+        for node in tailq_a.iter() {
             assert_eq!(node.element, result[counter]);
             counter += 1;
         }
         arr_len = 8;
 
         // test 'TailqNode::remove_after()` and `TailqNode::remove_before()`
-        let tailq_iter = tailq_a.iter();
         let result = [3, 1, 9, 13];
         counter = 0;
-        for mut node in tailq_iter {
+        for node in tailq_a.iter() {
             if node.element > 10 || node.element == 3 {
                 match node.remove_before(Some(&mut tailq_a)) {
                     None => (),
@@ -97,26 +94,24 @@ fn main(_args: &mut [&str])->i32 {
             }
             counter += 1;
         }
-        let tailq_iter = tailq_a.iter();
         counter = 0;
-        for node in tailq_iter {
+        for node in tailq_a.iter() {
             assert_eq!(node.element, result[counter]);
             counter += 1;
         }
         arr_len = 4;
 
         // test `Tailq::push_back()`
-        let tailq_iter = tailq_a.iter();
         let result = [3, 1, 9, 13, 12, 10, 8, 6];
         counter = 0;
         while counter < 4 {
             let ptr_e = alloc_type::<TailqNode<i32>>(a, TailqNode::<i32>::new((2*(6-counter)) as i32));
-            let mut node = NonNull::new(ptr_e).expect("error: fail to get node\n");
+            let node = NonNull::new(ptr_e).expect("error: fail to get node\n");
             tailq_a.push_back(node);
             counter += 1;
         }
         counter = 0;
-        for node in tailq_iter {
+        for node in tailq_a.iter() {
             assert_eq!(node.element, result[counter]);
             counter += 1;
         }

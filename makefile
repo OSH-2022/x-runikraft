@@ -63,6 +63,9 @@ $(MAKE_ROOT_DIR)/report/makefile: makefiles/report.mk
 test: $(MAKE_ROOT_DIR)/test/makefile
 	cd $(MAKE_ROOT_DIR)/test && $(MAKE)
 
+build_test: $(MAKE_ROOT_DIR)/test/makefile
+	cd $(MAKE_ROOT_DIR)/test && $(MAKE) build
+
 $(MAKE_ROOT_DIR)/test/makefile: makefiles/test.mk.sh makefiles/test.mk.0 makefiles/test.mk.1
 	-mkdir --parents $(MAKE_ROOT_DIR)/test
 	makefiles/test.mk.sh makefiles/test.mk $(MAKE_ROOT_DIR)/test/makefile $(TEST_ROOT_DIR)

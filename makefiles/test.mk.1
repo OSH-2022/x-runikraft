@@ -1,17 +1,17 @@
 # -*- makefile -*-
-.PHONY: @testname@ @testname@.bin
-@testname@: @testname@.bin
-	qemu-system-riscv64 -machine virt -nographic -bios $$RISCV_BIOS -kernel @testname@.bin
+.PHONY: @testname@.bin
 
 @testname@.bin: $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(TEST_BUILD_DIR)/deps/liballoc_error_handler.rlib
+	@echo "Building @testname@..."
 ifeq ($(MAKE_BUILD_TYPE), release)
-	cd $(TEST_ROOT_DIR)/@testname@ && env RUSTFLAGS="-Clink-arg=-T$(SRC_ROOT_DIR)/linker.ld --extern __alloc_error_handler=$(MAKE_ROOT_DIR)/liballoc_error_handler.rlib" cargo build --offline --release --features rkalloc/__alloc_error_handler
+	@cd $(TEST_ROOT_DIR)/@testname@ && env RUSTFLAGS="-Clink-arg=-T$(SRC_ROOT_DIR)/linker.ld --extern __alloc_error_handler=$(MAKE_ROOT_DIR)/liballoc_error_handler.rlib" cargo build --offline --release --features rkalloc/__alloc_error_handler
 else
 ifeq ($(MAKE_BUILD_TYPE), debug)
-	cd $(TEST_ROOT_DIR)/@testname@ && env RUSTFLAGS="-Clink-arg=-T$(SRC_ROOT_DIR)/linker.ld --extern __alloc_error_handler=$(MAKE_ROOT_DIR)/liballoc_error_handler.rlib" cargo build --offline --features rkalloc/__alloc_error_handler
+	@cd $(TEST_ROOT_DIR)/@testname@ && env RUSTFLAGS="-Clink-arg=-T$(SRC_ROOT_DIR)/linker.ld --extern __alloc_error_handler=$(MAKE_ROOT_DIR)/liballoc_error_handler.rlib" cargo build --offline --features rkalloc/__alloc_error_handler
 else
 	@echo "Unknown build type, expect release/debug."
 	false
 endif
 endif
-	$(OBJCOPY_PREFIX)objcopy --strip-all $(TEST_BUILD_DIR)/test-@testname@ -O binary @testname@.bin
+	@rm $(TEST_ROOT_DIR)/@testname@/Cargo.lock
+	@$(OBJCOPY_PREFIX)objcopy --strip-all $(TEST_BUILD_DIR)/test-@testname@ -O binary @testname@.bin

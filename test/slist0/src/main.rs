@@ -42,20 +42,18 @@ fn main(_args: &mut [&str])->i32 {
                 counter += 1;
             }
         }
-        let slist_iter = slist_a.iter();
         let result = [1, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14];
         counter = 0;
-        for node in slist_iter {
+        for node in slist_a.iter() {
             // rkplat::println!("counter: {}, result in node: {}, expect result: {}", counter, node.as_ref().element, result[counter]);
             assert_eq!(node.element, result[counter]);
             counter += 1;
         }
 
         // test `SlistNode::remove_after()`
-        let slist_iter = slist_a.iter();
         let result = [1, 2, 5, 7, 9, 11, 13, 15];
         counter = 0;
-        for mut node in slist_iter {
+        for node in slist_a.iter() {
             if node.element % 2 == 1 {
                 match node.remove_after() {
                     None => (),
@@ -65,8 +63,7 @@ fn main(_args: &mut [&str])->i32 {
                 }
             }
         }
-        let slist_iter = slist_a.iter();
-        for node in slist_iter {
+        for node in slist_a.iter() {
             // rkplat::println!("counter: {}, result in node: {}, expect result: {}", counter, node.element, result[counter]);
             assert_eq!(node.element, result[counter]);
             counter += 1;

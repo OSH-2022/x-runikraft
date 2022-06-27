@@ -3,16 +3,17 @@
 
 TEST_BUILD_DIR := $(MAKE_ROOT_DIR)/test/riscv64gc-unknown-none-elf/$(MAKE_BUILD_TYPE)
 
-.PHONY: all
+.PHONY: all build run
 
-all: @testlist@
+all: run
 
+build: @testlist@
 
 $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib: $(SRC_ROOT_DIR)/lib/rkalloc/alloc_error_handler.rs
-	env RUSTC_BOOTSTRAP=1 rustc --edition=2021 $(SRC_ROOT_DIR)/lib/rkalloc/alloc_error_handler.rs --crate-type lib --target riscv64gc-unknown-none-elf -o $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib
+	@env RUSTC_BOOTSTRAP=1 rustc --edition=2021 $(SRC_ROOT_DIR)/lib/rkalloc/alloc_error_handler.rs --crate-type lib --target riscv64gc-unknown-none-elf -o $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib
 	
 
 $(TEST_BUILD_DIR)/deps/liballoc_error_handler.rlib: $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib
-	-mkdir --parents $(TEST_BUILD_DIR)/deps
-	cp $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(TEST_BUILD_DIR)/deps/liballoc_error_handler.rlib
+	@-mkdir --parents $(TEST_BUILD_DIR)/deps
+	@cp $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(TEST_BUILD_DIR)/deps/liballoc_error_handler.rlib
 
