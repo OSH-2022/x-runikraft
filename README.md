@@ -22,7 +22,7 @@ Runikraft is a unikernel written in Rust language that runs on RISC-V architectu
 - `core`: core component of Runikraft
 - `lib`: micro-libraries
 
- ## Getting Started
+## Getting Started
 
 ### Building Runikraft
 
