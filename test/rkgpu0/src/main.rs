@@ -1,4 +1,4 @@
-// test compact_list-list
+// test rkgpu
 
 #![no_std]
 #![no_main]
