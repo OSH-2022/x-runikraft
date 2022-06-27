@@ -12,8 +12,9 @@ use rkgpu::*;
 // use core::ptr::NonNull;
 
 #[no_mangle]
-fn main(_args: &mut [&str])->i32 {
+unsafe fn main(_args: &mut [&str])->i32 {
     init();
     rkplat::println!("\nTest rkgpu0 passed!\n");
+    loop{}
     return 0;
 }

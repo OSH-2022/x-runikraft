@@ -29,6 +29,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #![no_std]
+#![allow(unused_imports)]
+
 use core::time::Duration;
 use core::{slice,str};
 use core::mem::{align_of, size_of};
@@ -38,13 +40,39 @@ use rkplat::{irq,time,bootstrap,device, lcpu};
 #[cfg(feature="have_scheduler")]
 use rksched::RKsched;
 use runikraft::align_as;
-
-const HEAP_SIZE: usize = 1<<20;
+use runikraft::config::HEAP_SIZE;
 
 static mut HEAP:align_as::A4096<[u8;HEAP_SIZE]> = align_as::A4096::new([0;HEAP_SIZE]);
 
 extern "Rust" {
     fn main(args: &mut [&str])->i32;
+}
+
+mod virtio_alloc{
+    type VirtAddr = usize;
+    type PhysAddr = usize;
+
+    #[no_mangle]
+    unsafe extern "C" fn __rkplat_virtio_dma_alloc(pages: usize) -> PhysAddr {
+        let paddr = rkalloc::get_default().unwrap().alloc(0x1000 * pages, 1);
+        paddr as PhysAddr
+    }
+
+    #[no_mangle]
+    unsafe extern "C" fn __rkplat_virtio_dma_dealloc(paddr: PhysAddr, pages: usize) -> i32 {
+        rkalloc::get_default().unwrap().dealloc(paddr as *mut u8, 0x1000 * pages, 1);
+        0
+    }
+
+    #[no_mangle]
+    extern "C" fn __rkplat_virtio_phys_to_virt(paddr: PhysAddr) -> VirtAddr {
+        paddr
+    }
+
+    #[no_mangle]
+    extern "C" fn __rkplat_virtio_virt_to_phys(vaddr: VirtAddr) -> PhysAddr {
+        vaddr
+    }
 }
 
 #[no_mangle]
@@ -72,6 +100,7 @@ pub unsafe extern "C" fn rkplat_entry(argc: i32, argv: *mut *mut u8) -> ! {
     rkboot_entry(&a, args);
 }
 
+#[cfg(feature="have_scheduler")]
 struct ThreadMainArgWrapper<'a> {
     base: *mut &'a str,
     size: usize,

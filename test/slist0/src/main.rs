@@ -58,7 +58,7 @@ fn main(_args: &mut [&str])->i32 {
         counter = 0;
         for mut node in slist_iter {
             if node.as_ref().element % 2 == 1 {
-                node.as_mut().remove_after(Some(&mut slist_a));
+                node.as_mut().remove_after();
                 a.dealloc(node.as_ptr() as *mut u8, size_of::<SlistNode<i32>>(), align_of::<SlistNode<i32>>());
             }
         }

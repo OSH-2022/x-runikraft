@@ -33,7 +33,7 @@ use super::uart;
 use super::virtio;
 use rkalloc::{RKalloc,alloc_type};
 use crate::console;
-use crate::drivers::virtio::{GPU_DEIVCE, VirtIOHeader};
+use crate::drivers::virtio::GPU_DEIVCE;
 
 const MAGIC_NUMBER: u32 = 0xd00dfeed;
 const SUPPORTED_VERSION: u32 = 17;

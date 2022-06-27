@@ -16,7 +16,7 @@ pub struct DMA {
 
 impl DMA {
     pub fn new(pages: usize) -> Result<Self> {
-        let paddr = unsafe { virtio_dma_alloc(pages) };
+        let paddr = unsafe { __rkplat_virtio_dma_alloc(pages) };
         if paddr == 0 {
             return Err(Error::DmaError);
         }
@@ -47,22 +47,23 @@ impl DMA {
 
 impl Drop for DMA {
     fn drop(&mut self) {
-        let err = unsafe { virtio_dma_dealloc(self.paddr as usize, self.pages as usize) };
+        let err = unsafe { __rkplat_virtio_dma_dealloc(self.paddr as usize, self.pages as usize) };
         assert_eq!(err, 0, "failed to deallocate DMA");
     }
 }
 
 pub fn phys_to_virt(paddr: PhysAddr) -> VirtAddr {
-    unsafe { virtio_phys_to_virt(paddr) }
+    unsafe { __rkplat_virtio_phys_to_virt(paddr) }
 }
 
 pub fn virt_to_phys(vaddr: VirtAddr) -> PhysAddr {
-    unsafe { virtio_virt_to_phys(vaddr) }
+    unsafe { __rkplat_virtio_virt_to_phys(vaddr) }
 }
 
+// rkplat应该提供这4个函数
 extern "C" {
-    fn virtio_dma_alloc(pages: usize) -> PhysAddr;
-    fn virtio_dma_dealloc(paddr: PhysAddr, pages: usize) -> i32;
-    fn virtio_phys_to_virt(paddr: PhysAddr) -> VirtAddr;
-    fn virtio_virt_to_phys(vaddr: VirtAddr) -> PhysAddr;
+    fn __rkplat_virtio_dma_alloc(pages: usize) -> PhysAddr;
+    fn __rkplat_virtio_dma_dealloc(paddr: PhysAddr, pages: usize) -> i32;
+    fn __rkplat_virtio_phys_to_virt(paddr: PhysAddr) -> VirtAddr;
+    fn __rkplat_virtio_virt_to_phys(vaddr: VirtAddr) -> PhysAddr;
 }
