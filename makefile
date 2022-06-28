@@ -59,7 +59,7 @@ $(MAKE_ROOT_DIR)/report/makefile: makefiles/report.mk
 	-mkdir --parents $(MAKE_ROOT_DIR)/report
 	cp makefiles/report.mk $(MAKE_ROOT_DIR)/report/makefile
 
-.PHONY: test
+.PHONY: test build_test $(MAKE_ROOT_DIR)/test/makefile
 test: $(MAKE_ROOT_DIR)/test/makefile
 	cd $(MAKE_ROOT_DIR)/test && $(MAKE)
 

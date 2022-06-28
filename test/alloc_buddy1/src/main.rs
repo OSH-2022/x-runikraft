@@ -6,7 +6,7 @@ extern crate rkalloc;
 extern crate rkalloc_buddy;
 extern crate runikraft;
 
-use rkalloc::RKalloc;
+use rkalloc::{RKalloc, RKallocExt};
 use rkalloc_buddy::RKallocBuddy;
 use runikraft::align_as;
 use core::mem::{size_of, align_of};
@@ -63,6 +63,6 @@ extern "C" fn rkplat_entry(_: i32, _: *mut *mut u8) -> ! {
         // test `RKallocBuddy::dealloc_ext()`
         a.dealloc_ext(new_arr_heap);
     }
-    rkplat::println!("\nTest alloc_buddy0 passed!\n");
+    rkplat::println!("\nTest alloc_buddy1 passed!\n");
     rkplat::bootstrap::halt();
 }
