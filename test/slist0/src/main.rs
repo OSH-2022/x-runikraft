@@ -53,14 +53,18 @@ fn main(_args: &mut [&str])->i32 {
         // test `SlistNode::remove_after()`
         let result = [1, 2, 5, 7, 9, 11, 13, 15];
         counter = 0;
-        for node in slist_a.iter() {
-            if node.element % 2 == 1 {
-                match node.remove_after() {
-                    None => (),
-                    Some(rm_node) => {
-                        a.dealloc(rm_node.as_ptr() as *mut u8, size_of::<SlistNode<i32>>(), align_of::<SlistNode<i32>>());
+        {
+            let mut node = slist_a.head();
+            loop {
+                node = if let Some(mut node) = node {
+                    if node.as_ref().element % 2 == 1 {
+                        if let Some(rm_node) = node.as_mut().remove_after() {
+                            a.dealloc(rm_node.as_ptr() as *mut u8, size_of::<SlistNode<i32>>(), align_of::<SlistNode<i32>>());
+                        }
                     }
+                    node.as_ref().next
                 }
+                else {break;}
             }
         }
         for node in slist_a.iter() {

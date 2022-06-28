@@ -54,14 +54,18 @@ fn main(_args: &mut [&str])->i32 {
         // test `StailqNode::remove_after()`
         let result = [1, 2, 5, 7, 9, 11, 13, 15];
         counter = 0;
-        for node in stailq_a.iter() {
-            if node.element % 2 == 1 {
-                match node.remove_after(Some(&mut stailq_a)) {
-                    None => (),
-                    Some(rm_node) => {
-                        a.dealloc(rm_node.as_ptr() as *mut u8, size_of::<StailqNode<i32>>(), align_of::<StailqNode<i32>>());
+        {
+            let mut node = stailq_a.head();
+            loop {
+                node = if let Some(mut node) = node {
+                    if node.as_ref().element % 2 == 1 {
+                        if let Some(rm_node) = node.as_mut().remove_after(Some(&mut stailq_a)) {
+                            a.dealloc(rm_node.as_ptr() as *mut u8, size_of::<StailqNode<i32>>(), align_of::<StailqNode<i32>>());
+                        }
                     }
+                    node.as_ref().next
                 }
+                else {break;}
             }
         }
         for node in stailq_a.iter() {
