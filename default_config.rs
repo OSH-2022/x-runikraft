@@ -10,8 +10,8 @@ pub const RK_NETDEV_SCRATCH_SIZE: usize = 0;
 
 /// rkplat配置
 pub mod rkplat{
-    /// 处理器的最大数量
-    pub const LCPU_MAXCOUNT: usize = 16;
+    /// 处理器的最大数量（QEMU最多支持8）
+    pub const LCPU_MAXCOUNT: usize = 8;
     /// 主线程的栈的大小
     pub const MAIN_STACK_SIZE: usize = 65536;
     pub const PAGE_SIZE: usize = 4096;

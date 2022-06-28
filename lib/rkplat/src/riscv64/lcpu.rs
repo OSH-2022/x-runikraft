@@ -6,9 +6,9 @@
 use core::time::Duration;
 use core::arch;
 use core::sync::atomic;
-use core::ptr::addr_of;
 
 use super::{bootstrap,time,spinlock};
+#[cfg(feature="riscv_smode")]
 use super::sbi::sbi_call;
 
 /// 中断标志，具体格式由平台决定
@@ -124,7 +124,7 @@ mod smp {
     pub type StackPointer = *mut u8;
 
     static LOCK: spinlock::SpinLock = spinlock::SpinLock::new();
-    arch::global_asm!(include_str!("hart_entry.asm"));
+    arch::global_asm!(include_str!(asm_path!("hart_entry.asm")));
 
     /// 返回当前的逻辑处理器的ID
     pub fn id() -> ID {
@@ -143,6 +143,26 @@ mod smp {
     /// - `lcpuid`: 逻辑处理器ID
     /// - `sp`: 栈指针
     /// - `entry`: 入口函数
+    #[cfg(feature="riscv_mmode")]
+    pub fn start(lcpuid: ID, sp: StackPointer, entry: Entry, arg: *mut u8) -> Result<(), i32> {
+        let _lock = match LOCK.try_lock() {
+            Some(x) => x,
+            None => {return Err(0);}
+        };
+        rmb();
+        unsafe {
+            if !bootstrap::HART_LOCAL[lcpuid].is_running {
+                bootstrap::HART_LOCAL[lcpuid].is_running = true;
+                bootstrap::HART_LOCAL[lcpuid].start_sp = sp as usize;
+                bootstrap::HART_LOCAL[lcpuid].start_entry = entry as usize;
+                bootstrap::HART_LOCAL[lcpuid].start_entry_arg = arg;
+                todo!("发送内核间中断");
+            }
+        }
+        Ok(())
+    }
+
+    #[cfg(feature="riscv_smode")]
     pub fn start(lcpuid: ID, sp: StackPointer, entry: Entry, arg: *mut u8) -> Result<(), i32> {
         let _lock = match LOCK.try_lock() {
             Some(x) => x,
@@ -154,16 +174,16 @@ mod smp {
                 bootstrap::HART_LOCAL[lcpuid].start_sp = sp as usize;
                 bootstrap::HART_LOCAL[lcpuid].start_entry = entry as usize;
                 bootstrap::HART_LOCAL[lcpuid].start_entry_arg = arg;
-            }
-            //sbi_hart_start
-            //unsigned long hartid
-            //unsigned long start_addr
-            //unsigned long opaque
-            if let Err(err) = sbi_call(0x48534D, 0, lcpuid,
-                __rkplat_hart_entry as usize,
-                addr_of!(bootstrap::HART_LOCAL[lcpuid]) as usize)
-            {
-                return Err(err as i32);
+                //sbi_hart_start
+                //unsigned long hartid
+                //unsigned long start_addr
+                //unsigned long opaque
+                if let Err(err) = sbi_call(0x48534D, 0, lcpuid,
+                    __rkplat_hart_entry as usize,
+                    core::ptr::addr_of!(bootstrap::HART_LOCAL[lcpuid]) as usize)
+                {
+                    return Err(err as i32);
+                }
             }
         }
         Ok(())
@@ -180,6 +200,11 @@ mod smp {
     // fn run()
 
     /// 唤醒被挂起或处在低功耗状态的逻辑处理器
+    #[cfg(feature="riscv_mmode")]
+    pub fn wakeup(_lcpuid: ID) -> Result<(), i32> {
+        todo!()
+    }
+    #[cfg(feature="riscv_smode")]
     pub fn wakeup(lcpuid: ID) -> Result<(), i32> {
         //sbi_send_ipi
         //unsigned long hart_mask

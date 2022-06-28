@@ -11,6 +11,7 @@ use runikraft::config::rkplat::*;
 use runikraft::config::STACK_SIZE_SCALE as SSS;
 use super::device;
 
+#[cfg(feature="riscv_smode")]
 use super::sbi::*;
 
 extern "C" {
@@ -68,8 +69,10 @@ impl HartLocal {
 /// 读取内核本地数据
 pub(crate) unsafe fn hart_local() -> &'static mut HartLocal{
     let mut scratch: usize;
-    arch::asm!("csrr {scratch}, sscratch",
-        scratch=out(reg)(scratch));
+    #[cfg(feature="riscv_mmode")]
+    arch::asm!("csrr {scratch}, mscratch",scratch=out(reg)(scratch));
+    #[cfg(feature="riscv_smode")]
+    arch::asm!("csrr {scratch}, sscratch",scratch=out(reg)(scratch));
     (scratch as *mut HartLocal).as_mut().unwrap()
 }
 
@@ -85,6 +88,7 @@ struct DeviceTreeHeader {
     be_size: u32,
 }
 
+#[cfg(feature="riscv_smode")]
 fn detect_hart_number() -> usize {
     for i in 0.. {
         if let Err(_) = sbi_call(0x48534D, 2, i, 0, 0) {
@@ -94,8 +98,44 @@ fn detect_hart_number() -> usize {
     unsafe{core::hint::unreachable_unchecked();}
 }
 
+#[cfg(feature="riscv_mmode")]
+#[no_mangle]
+unsafe fn __runikraft_entry_point(hartid: usize, device_ptr: usize) -> !{
+    use core::sync::atomic::{AtomicUsize, Ordering};
+    extern "C" {
+        fn __rkplat_hart_entry();
+    }
+
+    #[allow(non_upper_case_globals)]
+    static hart_cnt: AtomicUsize = AtomicUsize::new(0);
+    hart_cnt.fetch_add(1, Ordering::SeqCst);
+    HART_LOCAL[hartid].hartid = hartid;
+    HART_LOCAL[hartid].hartsp = (addr_of!(EXCEPT_STACK[hartid]) as usize)+1024;
+    let scratch_addr = addr_of!(HART_LOCAL[hartid]);
+    arch::asm!("csrw mscratch, {s}",s=in(reg)scratch_addr);
+    if hartid != 0 {
+        HART_LOCAL[hartid].is_running = false;
+        loop {
+            arch::asm!("wfi");
+            if HART_LOCAL[hartid].is_running {
+                __rkplat_hart_entry();
+                panic!("should jumped");
+            }
+        }
+    }
+    HART_LOCAL[hartid].is_running = true;
+    HART_NUMBER = hart_cnt.load(Ordering::SeqCst);
+    let header = &*(device_ptr as *const DeviceTreeHeader);
+    let magic = u32::from_be(header.be_magic);
+    assert_eq!(magic,DEVICE_TREE_MAGIC);
+    let len = u32::from_be(header.be_size) as usize;
+    device::DEVICE_PTR = slice::from_raw_parts(device_ptr as *const u8, len);
+    __rkplat_newstack((addr_of_mut!(MAIN_STACK) as *mut u8).add(MAIN_STACK_SIZE), __runikraft_entry_point2,null_mut());
+}
+
 //debug: addi    sp,sp,-560
 //release: addi    sp,sp,-112
+#[cfg(feature="riscv_smode")]
 #[no_mangle]
 unsafe fn __runikraft_entry_point(hartid: usize, device_ptr: usize) -> !{
     HART_NUMBER = detect_hart_number();
@@ -105,8 +145,7 @@ unsafe fn __runikraft_entry_point(hartid: usize, device_ptr: usize) -> !{
     }
     HART_LOCAL[hartid].is_running = true;
     let scratch_addr = addr_of!(HART_LOCAL[hartid]);
-        arch::asm!("csrw sscratch, {s}",
-            s=in(reg)scratch_addr);
+    arch::asm!("csrw sscratch, {s}",s=in(reg)scratch_addr);
     let header = &*(device_ptr as *const DeviceTreeHeader);
     let magic = u32::from_be(header.be_magic);
     assert_eq!(magic,DEVICE_TREE_MAGIC);
@@ -116,18 +155,34 @@ unsafe fn __runikraft_entry_point(hartid: usize, device_ptr: usize) -> !{
 }
 
 /// 退出
+#[cfg(feature="riscv_mmode")]
+pub fn halt() -> ! {
+    todo!()
+}
+#[cfg(feature="riscv_smode")]
 pub fn halt() -> ! {
     sbi_call(SBI_SRST, 0, 0, 0, 0).unwrap();
     panic!("Should halt.");
 }
 
 /// 重启
+#[cfg(feature="riscv_mmode")]
+pub fn restart() -> ! {
+    todo!()
+}
+#[cfg(feature="riscv_smode")]
 pub fn restart() -> ! {
     sbi_call(SBI_SRST, 0, 1, 0, 0).unwrap();
     panic!("Should restart.");
 }
 
 /// 崩溃
+#[cfg(feature="riscv_mmode")]
+pub fn crash() -> ! {
+    print_bios!("System crashed!\n");
+    todo!()
+}
+#[cfg(feature="riscv_smode")]
 pub fn crash() -> ! {
     print_bios!("System crashed!\n");
     sbi_call(SBI_SRST, 0, 0, 1, 0).unwrap();

@@ -3,7 +3,7 @@
 // Authors: 张子辰 <zichen350@gmail.com>
 // Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
-use super::{lcpu,sbi};
+use super::lcpu;
 use core::time::Duration;
 #[cfg(feature="driver_rtc")]
 use crate::drivers::rtc::RtcDevice;
@@ -83,7 +83,10 @@ pub(crate) fn block(until: Duration) {
     let time_now = monotonic_clock();
     if until <= time_now {return;}
     //Set Timer
-    sbi::sbi_call(0x54494D45, 0, ((until.as_nanos() as u64 + unsafe{INIT_TIME})/TICK_NANOSEC) as usize, 0, 0).unwrap();
+    //TODO
+    //unsafe{core::arch::asm!("csrw mtimecmp, {timer}",timer=in(reg)((until.as_nanos() as u64 + INIT_TIME)/TICK_NANOSEC) as usize)};
+    #[cfg(feature="riscv_smode")]
+    super::sbi::sbi_call(0x54494D45, 0, ((until.as_nanos() as u64 + unsafe{INIT_TIME})/TICK_NANOSEC) as usize, 0, 0).unwrap();
     lcpu::halt_irq();
 }
 

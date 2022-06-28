@@ -26,7 +26,7 @@ pub struct RegGenExcept {
     pub a7: usize,      //112
     pub ra: usize,      //120
     pub pc: usize,      //128
-    pub sstatus: usize, //136
+    pub status: usize,  //136
     pub sp: usize,      //144
 }
 
@@ -53,7 +53,7 @@ pub struct RegGenInt {
     pub a7: usize,      //112
     pub ra: usize,      //120
     pub pc: usize,      //128
-    pub sstatus: usize, //136
+    pub status: usize,  //136
 }
 
 /// ctx_switch时保存需要保存的所有的通用寄存器

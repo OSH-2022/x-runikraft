@@ -15,8 +15,10 @@ pub(crate) fn ack_irq(irq: usize) {
 pub(crate) fn raise_irq(irq: usize) {
     let irq = 1usize<<irq;
     unsafe {
-        arch::asm!("csrs sip, {irq}",
-        irq=in(reg)irq);
+        #[cfg(feature="riscv_mmode")]
+        arch::asm!("csrs mip, {irq}",irq=in(reg)irq);
+        #[cfg(feature="riscv_smode")]
+        arch::asm!("csrs sip, {irq}",irq=in(reg)irq);
     }
 }
 
@@ -24,7 +26,9 @@ pub(crate) fn raise_irq(irq: usize) {
 pub(crate) fn clear_irq(irq: usize) {
     let irq = 1usize<<irq;
     unsafe {
-        arch::asm!("csrc sip, {irq}",
-        irq=in(reg)irq);
+        #[cfg(feature="riscv_mmode")]
+        arch::asm!("csrc mip, {irq}",irq=in(reg)irq);
+        #[cfg(feature="riscv_smode")]
+        arch::asm!("csrc sip, {irq}",irq=in(reg)irq);
     }
 }

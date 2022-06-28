@@ -5,8 +5,10 @@
 
 //控制台输入输出
 
+#[cfg(feature="riscv_smode")]
 use super::sbi::*;
 
+#[cfg(feature="riscv_smode")]
 fn putchar_bios(ch: usize) -> bool {
     if let Err(_) = sbi_call(SBI_CONSOLE_PUTCHAR, 0, ch, 0, 0) {
         return false;
@@ -75,14 +77,21 @@ pub use uart_based_io::*;
 
 use core::fmt::{self, Write};
 
+#[cfg(feature="riscv_smode")]
 struct RustStyleOutputBIOS;
 struct RustStyleOutput;
 
 static LOCK: super::spinlock::SpinLock = super::spinlock::SpinLock::new();
 
+#[cfg(feature="riscv_smode")]
 pub(crate) fn __print_bios(args: fmt::Arguments) {
     let _lock = LOCK.lock();
     RustStyleOutputBIOS.write_fmt(args).unwrap();
+}
+
+#[cfg(feature="riscv_mmode")]
+pub(crate) fn __print_bios(args: fmt::Arguments) {
+    __print(args)
 }
 
 #[cfg(not(feature="bios_io"))]
@@ -96,6 +105,7 @@ pub fn __print(args: fmt::Arguments) {
     RustStyleOutputBIOS.write_fmt(args).unwrap();
 }
 
+#[cfg(feature="riscv_smode")]
 impl Write for RustStyleOutputBIOS {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         for ch in s.as_bytes() {
