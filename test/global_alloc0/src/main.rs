@@ -27,7 +27,7 @@ fn main(_args: &mut [&str])->i32 {
     let old_total_size = state.total_size();
     let old_free_size = state.free_size();
 
-    let mut p1 = Box::new(Struct::new(15));
+    let p1 = Box::new(Struct::new(15));
     let new_total_size = state.total_size();
     let new_free_size = state.free_size();
 

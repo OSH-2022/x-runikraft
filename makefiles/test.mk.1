@@ -2,7 +2,6 @@
 .PHONY: @testname@.bin
 
 @testname@.bin: $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(TEST_BUILD_DIR)/deps/liballoc_error_handler.rlib
-	@echo "Building @testname@..."
 ifeq ($(MAKE_BUILD_TYPE), release)
 	@cd $(TEST_ROOT_DIR)/@testname@ && env RUSTFLAGS="-Clink-arg=-T$(SRC_ROOT_DIR)/linker.ld --extern __alloc_error_handler=$(MAKE_ROOT_DIR)/liballoc_error_handler.rlib" cargo build --offline --release --features rkalloc/__alloc_error_handler
 else
