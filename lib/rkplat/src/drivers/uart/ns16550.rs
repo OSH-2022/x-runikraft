@@ -32,6 +32,8 @@
 #![allow(dead_code)]
 
 use core::{str, slice};
+use log::info;
+
 use super::UartDevice;
 use crate::drivers::Device;
 use crate::device::{ioreg_read8,ioreg_write8};
@@ -69,7 +71,7 @@ impl Ns16550 {
         for i in 0..name.len() {
             name1[i] = name.as_bytes()[i];
         }
-        println_bios!("Init ns16550 device, name={},addr=0x{:x},irq={}.",name,addr,irq);
+        info!("Init ns16550 device, name={},addr=0x{:x},irq={}.",name,addr,irq);
 
         Self {
             addr,irq,

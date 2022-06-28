@@ -40,7 +40,7 @@ export REPORT_ROOT_DIR := $(PWD)/report
 export TEST_ROOT_DIR := $(PWD)/test
 export SRC_ROOT_DIR := $(PWD)
 export MAKE_BUILD_TYPE := debug
-export OBJCOPY_PREFIX := rust-
+export CROSS_COMPILE := riscv64-linux-gnu-
 TEST_LIST := @all
 IGNORED_LIST := 
 
@@ -59,7 +59,7 @@ $(MAKE_ROOT_DIR)/report/makefile: makefiles/report.mk
 	cp makefiles/report.mk "$(MAKE_ROOT_DIR)/report/makefile"
 
 .PHONY: test build_test $(MAKE_ROOT_DIR)/test/makefile
-test: $(MAKE_ROOT_DIR)/test/makefile
+test: $(MAKE_ROOT_DIR)/test/makefile opensbi
 	cd "$(MAKE_ROOT_DIR)/test" && $(MAKE)
 
 build_test: $(MAKE_ROOT_DIR)/test/makefile
@@ -67,4 +67,10 @@ build_test: $(MAKE_ROOT_DIR)/test/makefile
 
 $(MAKE_ROOT_DIR)/test/makefile: makefiles/test.mk.sh makefiles/test.mk.0 makefiles/test.mk.1
 	-mkdir --parents "$(MAKE_ROOT_DIR)/test"
-	makefiles/test.mk.sh makefiles/test.mk "$(MAKE_ROOT_DIR)/test/makefile" "$(TEST_ROOT_DIR)" "$(TEST_LIST)" "$(IGNORED_LIST)"
+	makefiles/test.mk.sh makefiles/test.mk "$(MAKE_ROOT_DIR)/test/makefile" "$(TEST_ROOT_DIR)" "$(TEST_LIST)" "$(IGNORED_LIST)" "$(MAKE_ROOT_DIR)/opensbi/platform/generic/firmware/fw_jump.bin"
+
+.PHONY: opensbi
+opensbi:
+#FW_OPTIONS=1 indicates quiet boot
+	-mkdir --parents "$(MAKE_ROOT_DIR)/opensbi"
+	cd opensbi && $(MAKE) PLATFORM=generic FW_OPTIONS=1 FW_DYNAMIC=n FW_JUMP=y FW_PAYLOAD=n O="$(MAKE_ROOT_DIR)/opensbi"

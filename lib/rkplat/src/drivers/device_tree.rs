@@ -31,6 +31,7 @@ use core::ptr::addr_of;
 use super::uart;
 #[cfg(feature="driver_virtio")]
 use super::virtio;
+use log::{info, warn};
 use rkalloc::{RKalloc,alloc_type};
 use crate::console;
 use crate::drivers::virtio::GPU_DEIVCE;
@@ -290,7 +291,7 @@ fn parse_device(a: &dyn RKalloc, name: &str, props: &[(&str,&[u8])], props_size:
                     &mut *(prop_u64(props, props_size, "reg").
                     unwrap() as *mut virtio::VirtIOHeader)
                 };
-                println_bios!("Detected virtio device with vendor id {:#X}",header.vendor_id());
+                info!("Detected virtio device with vendor id {:#X}",header.vendor_id());
                 match header.device_type() {
                     #[cfg(feature="driver_virtio_blk")]
                     virtio::DeviceType::Block => {todo!()},
@@ -306,7 +307,7 @@ fn parse_device(a: &dyn RKalloc, name: &str, props: &[(&str,&[u8])], props_size:
                     virtio::DeviceType::Input => {todo!()},
                     #[cfg(feature="driver_virtio_net")]
                     virtio::DeviceType::Network => {todo!()},
-                    t => println_bios!("WARNING: Unrecognized virtio device: {:?}",t),
+                    t => warn!("Unrecognized virtio device: {:?}",t),
                 }
             },
             _ => {}

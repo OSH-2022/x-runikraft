@@ -13,4 +13,4 @@ else
 endif
 endif
 	@rm $(TEST_ROOT_DIR)/@testname@/Cargo.lock
-	@$(OBJCOPY_PREFIX)objcopy --strip-all $(TEST_BUILD_DIR)/test-@testname@ -O binary @testname@.bin
+	@$(CROSS_COMPILE)objcopy --strip-all $(TEST_BUILD_DIR)/test-@testname@ -O binary @testname@.bin

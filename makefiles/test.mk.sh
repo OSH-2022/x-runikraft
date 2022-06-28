@@ -1,5 +1,5 @@
 #!/bin/bash
-#usage: test.mk.sh <输入> <输出> <test> <测试列表> <忽略列表>
+#usage: test.mk.sh <输入> <输出> <test> <测试列表> <忽略列表> <BIOS>
 
 #如果测试列表是@all，则测试test目录下的所有文件夹
 if [ "$4" = @all ]
@@ -55,25 +55,22 @@ QEMU_VERSION=$(qemu-system-riscv64 -version | grep --basic-regexp 'version *[0-9
 
 echo "" >> $2
 echo "run: build" >> $2
-if [ -z "$RISCV_BIOS" ]
-then
-	RISCV_BIOS=default
-fi
 
 for TEST in $TEST_LIST
 do
 	# old QEMU versions do not support `-kernel` option
-	if [ QEMU_VERSION>=6 ]
+	if [ $QEMU_VERSION -ge 6 ]
 	then
 		KERNEL="-kernel $TEST.bin"
 	else
 		KERNEL="-device loader,file=$TEST.bin,addr=0x80200000"
 	fi
 
+	echo "	@echo Running $TEST..." >> $2
 	if [ -f $3/$TEST/run_flags.txt ]
 	then
-		echo "	qemu-system-riscv64 -machine virt $(cat $3/$TEST/run_flags.txt) -bios $RISCV_BIOS $KERNEL" >> $2
+		echo "	@qemu-system-riscv64 -machine virt $(cat $3/$TEST/run_flags.txt) -bios \"$6\" $KERNEL" >> $2
 	else
-		echo "	qemu-system-riscv64 -machine virt -nographic -bios $RISCV_BIOS $KERNEL" >> $2
+		echo "	@qemu-system-riscv64 -machine virt -nographic -bios $6 $KERNEL" >> $2
 	fi
 done
