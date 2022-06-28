@@ -130,6 +130,9 @@ unsafe fn __runikraft_entry_point(hartid: usize, device_ptr: usize) -> !{
     assert_eq!(magic,DEVICE_TREE_MAGIC);
     let len = u32::from_be(header.be_size) as usize;
     device::DEVICE_PTR = slice::from_raw_parts(device_ptr as *const u8, len);
+    let uart_device = crate::drivers::uart::ns16550::Ns16550::new("uart@10000000",0x10000000, 0x0a);
+    //提前初始化串口设备
+    crate::console::UART_DEIVCE = Some(&*addr_of!(uart_device));
     __rkplat_newstack((addr_of_mut!(MAIN_STACK) as *mut u8).add(MAIN_STACK_SIZE), __runikraft_entry_point2,null_mut());
 }
 

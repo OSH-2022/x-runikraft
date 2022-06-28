@@ -272,16 +272,20 @@ fn parse_device(a: &dyn RKalloc, name: &str, props: &[(&str,&[u8])], props_size:
             #[cfg(feature="driver_uart")]
             "ns16550a" | "ns16550" => {
                 unsafe {
-                    console::UART_DEIVCE = Some(&*alloc_type(a,uart::ns16550::Ns16550::new(name,
-                        prop_u64(props,props_size,"reg").unwrap() as usize, 
-                        prop_u32(props,props_size,"interrupts").unwrap() as usize)));
+                    if console::UART_DEIVCE.is_none() {
+                        console::UART_DEIVCE = Some(&*alloc_type(a,uart::ns16550::Ns16550::new(name,
+                            prop_u64(props,props_size,"reg").unwrap() as usize, 
+                            prop_u32(props,props_size,"interrupts").unwrap() as usize)));
+                    }
                 }
             },
             #[cfg(feature="driver_goldfish_rtc")]
             "google,goldfish-rtc" => {
                 unsafe {
-                    crate::time::RTC_DEVICE = Some(&*alloc_type(a, 
-                        super::rtc::goldfish::GoldfishRtc::new(name, prop_u64(props,props_size,"reg").unwrap() as usize)));
+                    if crate::time::RTC_DEVICE.is_none() {
+                        crate::time::RTC_DEVICE = Some(&*alloc_type(a, 
+                            super::rtc::goldfish::GoldfishRtc::new(name, prop_u64(props,props_size,"reg").unwrap() as usize)));
+                    }
                 }
             },
             #[cfg(feature="driver_virtio")]
@@ -299,7 +303,9 @@ fn parse_device(a: &dyn RKalloc, name: &str, props: &[(&str,&[u8])], props_size:
                     #[cfg(feature="driver_virtio_gpu")]
                     virtio::DeviceType::GPU => {
                         unsafe {
-                            GPU_DEIVCE = Some(&mut *alloc_type(a,virtio::gpu::VirtIOGpu::new(name,header).unwrap()));
+                            if GPU_DEIVCE.is_none() {
+                                GPU_DEIVCE = Some(&mut *alloc_type(a,virtio::gpu::VirtIOGpu::new(name,header).unwrap()));
+                            }
                         }
                     },
                     #[cfg(feature="driver_virtio_input")]

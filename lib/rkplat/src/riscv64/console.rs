@@ -91,7 +91,9 @@ pub(crate) fn __print_bios(args: fmt::Arguments) {
 
 #[cfg(feature="riscv_mmode")]
 pub(crate) fn __print_bios(args: fmt::Arguments) {
-    __print(args)
+    if unsafe{UART_DEIVCE}.is_some() {
+        __print(args)
+    }
 }
 
 #[cfg(not(feature="bios_io"))]
