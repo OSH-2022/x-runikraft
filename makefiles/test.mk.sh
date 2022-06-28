@@ -23,8 +23,8 @@ for TEST in $TEST_LIST
 do
 	if [ -f $3/$TEST/run_flags.txt ]
 	then
-		echo "	qemu-system-riscv64 -machine virt $(cat $3/$TEST/run_flags.txt) -bios \$\$RISCV_BIOS -kernel $TEST.bin" >> $2
+		echo "	qemu-system-riscv64 -machine virt $(cat $3/$TEST/run_flags.txt) -bios \$\$RISCV_BIOS -device loader,file=$TEST.bin,addr=0x80200000" >> $2
 	else
-		echo "	qemu-system-riscv64 -machine virt -nographic -bios \$\$RISCV_BIOS -kernel $TEST.bin" >> $2
+		echo "	qemu-system-riscv64 -machine virt -nographic -bios \$\$RISCV_BIOS -device loader,file=$TEST.bin,addr=0x80200000" >> $2
 	fi
 done

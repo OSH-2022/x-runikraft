@@ -103,10 +103,10 @@ $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib: lib/rkalloc/alloc_error_handler.rs
 
 .PHONY: run run_debug run_gdb
 run:
-	qemu-system-riscv64 -machine virt -nographic -smp $(SMP) -bios $$RISCV_BIOS -kernel $(RUST_OUTPUT_DIR)/dev-test.bin
+	qemu-system-riscv64 -machine virt -nographic -smp $(SMP) -bios $$RISCV_BIOS -device loader,file=$(RUST_OUTPUT_DIR)/dev-test.bin,addr=0x80200000
 
 run_debug:
-	qemu-system-riscv64 -machine virt -nographic -smp $(SMP) -bios $$RISCV_BIOS -kernel $(RUST_OUTPUT_DIR)/dev-test.bin -s -S
+	qemu-system-riscv64 -machine virt -nographic -smp $(SMP) -bios $$RISCV_BIOS -device loader,file=$(RUST_OUTPUT_DIR)/dev-test.bin,addr=0x80200000 -s -S
 
 run_gdb:
 	riscv64-unknown-elf-gdb -ex 'file $(RUST_OUTPUT_DIR)/dev-test' -ex 'set arch riscv:rv64' -ex 'target remote localhost:1234'
