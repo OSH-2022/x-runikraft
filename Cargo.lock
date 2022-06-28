@@ -68,6 +68,7 @@ name = "rkgpu"
 version = "0.1.0"
 dependencies = [
  "rkplat",
+ "rksched",
 ]
 
 [[package]]

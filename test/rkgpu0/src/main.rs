@@ -15,8 +15,11 @@ unsafe fn main(_args: &mut [&str])->i32 {
     init();
     draw_sudoku_lattices();
     show_sudoku_number(0, 0, 0);
-    draw_font(0, 0, (0, 0, 0, 1), 60);
-    rksched::this_thread::sleep_for(Duration::from_secs(10));
+    show_sudoku_number(0, 5, 9);
+    show_sudoku_number(8, 8, 4);
+    show_sudoku_number(4, 4, 7);
+    show_sudoku_number(2, 7, 1);
+    rksched::this_thread::sleep_for(Duration::from_secs(5));
     rkplat::println!("\nTest rkgpu0 passed!\n");
     return 0;
 }
