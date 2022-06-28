@@ -95,15 +95,15 @@ pub unsafe fn draw_clear() {
     }
 }
 
-static DIC: [u128; 128] = include!("dic.txt");
+static DIC: [u128; 126] = include!("dic.txt");
 
 pub unsafe fn draw_font(start_x: u32, start_y: u32, rgb: (u8, u8, u8, u8), font: u8) -> u8 {
     let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
     if start_x + 8 <= width && start_y + 16 <= height {
-        let mut pos = font;
+        let mut pos = DIC[font as usize];
         for x in start_x..start_x + 7 {
             for y in start_y..start_y + 7 {
-                let idx = (y * width as usize + x) * 4;
+                let idx = ((y * width  + x) * 4) as usize;
                 if pos & (1 << 127) == 1 << 127 {
                     FB[idx] = rgb.0;
                     FB[idx + 1] = rgb.1;
@@ -120,29 +120,29 @@ pub unsafe fn draw_font(start_x: u32, start_y: u32, rgb: (u8, u8, u8, u8), font:
         }
         0
     }
-    1
+    else {1}
 }
 
 pub unsafe fn draw_sudoku_lattices() -> u8 {
     let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
-    if width >= 450 && height >= 450 {
-        for x in 0..9 {
-            draw_line(Horizontal, x * 50, 0, 450, (0, 0, 0, 1));
+    if width >= 500 && height >= 500 {
+        for x in 0..10 {
+            draw_line(Vertical, x * 50, 0, 450, (0, 0, 0, 1));
         }
-        for y in 0..9 {
+        for y in 0..10 {
             draw_line(Horizontal, 0, y * 50, 450, (0, 0, 0, 1));
         }
         1
     }
-    0
+    else {0}
 }
 
 pub unsafe fn show_sudoku_number(pos_x: u8, pos_y: u8, number: u8) -> u8 {
     if pos_x <= 8 && pos_y <= 8 {
         let start_x: u32 = 50 * pos_x as u32 + 20;
         let start_y: u32 = 50 * pos_y as u32 + 20;
-        draw_font(start_x, start_y, (0, 0, 0, 1), number);
+        draw_font(start_x, start_y, (0, 0, 0, 1), number+48);
         0
     }
-    1
+    else {1}
 }
