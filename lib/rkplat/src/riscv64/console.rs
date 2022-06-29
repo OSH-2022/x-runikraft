@@ -28,7 +28,6 @@ mod uart_based_io
     /// 注意字符串不必是合法的UTF-8，也不会因null终止
     /// - `buf`: 字符串缓冲区
     /// - 返回值: 输出的字符数
-    #[inline]
     pub fn coutk(buf: &[u8]) -> Option<usize> {
         unsafe {
             UART_DEIVCE.map(|uart|{
@@ -45,7 +44,6 @@ mod uart_based_io
     /// 从控制台读入字符
     /// - `buf`: 目标缓冲区
     /// - 返回值 读入的字符数
-    #[inline]
     pub fn cink(buf: &mut [u8]) -> Option<usize> {
         unsafe {
             if let Some(uart) = UART_DEIVCE {
@@ -67,8 +65,48 @@ mod uart_based_io
     }
 }
 
+#[cfg(feature="bios_io")]
+mod bios_io {
+    use super::*;
+    fn putchar(ch: usize) -> bool {
+        if let Err(_) = sbi_call(SBI_CONSOLE_PUTCHAR, 0, ch, 0, 0) {
+            return false;
+        }
+        true
+    }
+    
+    fn getchar() -> Result<usize, usize> {
+        sbi_call(SBI_CONSOLE_GETCHAR, 0, 0, 0, 0)
+    }
+
+    pub fn coutk(buf: &[u8]) -> Option<usize> {
+        for i in buf {
+            if !putchar(*i as usize) {
+                return None;
+            }
+        }
+        Some(buf.len())
+    }
+    pub fn cink(buf: &mut [u8]) -> Option<usize> {
+        let mut cnt: usize = 0;
+        for i in buf {
+            match getchar() {
+                Ok(ch) => {
+                    *i = ch as u8;
+                    cnt = cnt + 1;
+                }
+                Err(_) => { return None; }
+            }
+        }
+        Some(cnt)
+    }
+}
+
 #[cfg(feature="driver_uart")]
 pub use uart_based_io::*;
+
+#[cfg(feature="bios_io")]
+pub use bios_io::*;
 
 ///////////////////
 //Rust风格的输出
@@ -85,15 +123,9 @@ pub(crate) fn __print_bios(args: fmt::Arguments) {
     RustStyleOutputBIOS.write_fmt(args).unwrap();
 }
 
-#[cfg(not(feature="bios_io"))]
 pub fn __print(args: fmt::Arguments) {
     let _lock = LOCK.lock();
     RustStyleOutput.write_fmt(args).unwrap();
-}
-
-#[cfg(feature="bios_io")]
-pub fn __print(args: fmt::Arguments) {
-    RustStyleOutputBIOS.write_fmt(args).unwrap();
 }
 
 impl Write for RustStyleOutputBIOS {

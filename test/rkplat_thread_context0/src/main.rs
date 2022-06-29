@@ -21,11 +21,12 @@ unsafe fn thread_entry(arg: *mut u8)->! {
             THREAD_STACK[(arg.id+1)%4].as_mut_ptr() as *mut thread::Context);
     }
     println!("Thread #{} ended.",arg.id);
+    rkplat::println!("Test rkplat_thread_context0 passed!");
     bootstrap::halt();
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn rkplat_entry(argc: i32, argv: *mut *mut u8) -> ! {
+pub unsafe extern "C" fn rkplat_entry(_argc: i32, _argv: *mut *mut u8) -> ! {
     for i in 0..4 {
         let base = 4096 - size_of::<Arg>();
         let arg = (THREAD_STACK[i].as_mut_ptr().add(base) as *mut Arg).as_mut().unwrap();

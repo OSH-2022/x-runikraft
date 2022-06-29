@@ -24,6 +24,7 @@
 
 // Derived from mbr/device_tree-rs.
 
+#![allow(unused_imports)]
 use core::mem::size_of;
 use core::{str,slice};
 use core::ptr::addr_of;
@@ -34,7 +35,7 @@ use super::virtio;
 use log::{info, warn};
 use rkalloc::{RKalloc,alloc_type};
 use crate::console;
-use crate::drivers::virtio::{GPU_DEIVCE, INPUT_DEIVCE};
+
 
 const MAGIC_NUMBER: u32 = 0xd00dfeed;
 const SUPPORTED_VERSION: u32 = 17;
@@ -267,7 +268,8 @@ fn load_node(a: &dyn RKalloc, buffer: &[u8], start: usize, off_dt_strings: usize
     Ok(pos)
 }
 
-fn parse_device(a: &dyn RKalloc, name: &str, props: &[(&str,&[u8])], props_size: usize) -> Result<(), DeviceTreeError> {
+fn parse_device(#[allow(unused_variables)]a: &dyn RKalloc, #[allow(unused_variables)]name: &str, 
+    #[allow(unused_variables)]props: &[(&str,&[u8])], #[allow(unused_variables)]props_size: usize) -> Result<(), DeviceTreeError> {
     if let Some(compatible) = prop_str(props, props_size, "compatible") {
         match compatible {
             #[cfg(feature="driver_uart")]
@@ -300,13 +302,13 @@ fn parse_device(a: &dyn RKalloc, name: &str, props: &[(&str,&[u8])], props_size:
                     #[cfg(feature="driver_virtio_gpu")]
                     virtio::DeviceType::GPU => {
                         unsafe {
-                            GPU_DEIVCE = Some(&mut *alloc_type(a,virtio::gpu::VirtIOGpu::new(name,header).unwrap()));
+                            virtio::GPU_DEIVCE = Some(&mut *alloc_type(a,virtio::gpu::VirtIOGpu::new(name,header).unwrap()));
                         }
                     },
                     #[cfg(feature="driver_virtio_input")]
                     virtio::DeviceType::Input => {
                         unsafe {
-                            INPUT_DEIVCE = Some(&mut *alloc_type(a,virtio::input::VirtIOInput::new(name,header).unwrap()));
+                            virtio::INPUT_DEIVCE = Some(&mut *alloc_type(a,virtio::input::VirtIOInput::new(name,header).unwrap()));
                         }
                     },
                     #[cfg(feature="driver_virtio_net")]
@@ -320,6 +322,7 @@ fn parse_device(a: &dyn RKalloc, name: &str, props: &[(&str,&[u8])], props_size:
     Ok(())
 }
 
+#[allow(unused)]
 fn prop_raw<'a>(props: &[(&str,&'a [u8])], props_size: usize, prop_name: &str) -> Option<&'a [u8]> {
     for i in 0..props_size {
         let val = props[i].1;
@@ -330,18 +333,21 @@ fn prop_raw<'a>(props: &[(&str,&'a [u8])], props_size: usize, prop_name: &str) -
     None
 }
 
+#[allow(unused)]
 fn prop_str<'a>(props: &[(&str,&'a [u8])], props_size: usize, prop_name: &str) -> Option<&'a str> {
     prop_raw(props,props_size,prop_name).map(|val| {
         str::from_utf8(&val[0..(val.len()-1)]).unwrap()
     })
 }
 
+#[allow(unused)]
 fn prop_u32(props: &[(&str,&[u8])], props_size: usize, prop_name: &str) -> Option<u32> {
     prop_raw(props,props_size,prop_name).map(|val| {
         val.read_be_u32(0).unwrap()
     })
 }
 
+#[allow(unused)]
 fn prop_u64(props: &[(&str,&[u8])], props_size: usize, prop_name: &str) -> Option<u64> {
     prop_raw(props,props_size,prop_name).map(|val| {
         val.read_be_u64(0).unwrap()
