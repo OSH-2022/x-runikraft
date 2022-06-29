@@ -6,5 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rand = { version = "0.8.5", features = ["small_rng"] }
+
 rkgpu = {path = "../../lib/rkgpu"}
+rkplat = {path = "../../lib/rkplat"}
+rkalloc = {path = "../../lib/rkalloc"}
+rkboot = {path = "../../lib/rkboot"}

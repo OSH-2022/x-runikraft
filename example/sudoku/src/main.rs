@@ -6,9 +6,14 @@
     rand = { version = "0.8.5", features = ["small_rng"] }
 
 */
-extern crate rand;
-use rand::Rng;
+// extern crate rand;
+// use rand::Rng;
+#![no_std]
+#![no_main]
+extern crate rkboot;
+
 use rkgpu::show_sudoku_number;
+use rkplat::time::wall_clock;
 
 pub struct Sudoku {
     // 当前数独信息(玩家显示)
@@ -53,9 +58,14 @@ pub fn sudoku_init_zero () -> Sudoku {
 
 pub fn row_random(map: &mut [[usize; 9]; 9], row: usize) {
     let mut rowtable = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+
+
     for i in 0..9 {
-        let mut rng = rand::thread_rng();
-        let index = rng.gen_range(0..9);
+        // let mut rng = rand::thread_rng();
+        // let index = rng.gen_range(0..9);
+        let time = wall_clock();
+        let index = (time.as_nanos() % 9) as usize;
         let temp = rowtable[i];
         rowtable[i] = rowtable[index];
         rowtable[index] = temp;
@@ -194,12 +204,14 @@ pub fn hole_dig(map:& mut [[usize; 9]; 9], num: usize) {
     let mut hole_map = [[0; 9]; 9];
 
     let number_num = num % 81;
-    let mut rng = rand::thread_rng();
+    // let mut rng = rand::thread_rng();
     let mut i = 0;
 
     while i < number_num {
     
-        let mut index = rng.gen_range(0..81);
+        // let mut index = rng.gen_range(0..81);
+        let time = wall_clock();
+        let mut index = (time.as_nanos() % 81) as usize;
         loop {
             if index >= 81 {
                 index %= 81;
@@ -218,6 +230,7 @@ pub fn hole_dig(map:& mut [[usize; 9]; 9], num: usize) {
 
 }
 
+#[no_mangle]
 fn main() {
     let mut sudoku = sudoku_init_zero();
 
