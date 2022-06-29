@@ -126,9 +126,6 @@ impl SpinLock {
             None
         }
     }
-}
-
-impl SpinLockGuard<'_> {
     pub fn is_locked(&self) -> bool {
         self.lock.is_locked()
     }

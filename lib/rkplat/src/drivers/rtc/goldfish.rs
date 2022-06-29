@@ -3,6 +3,8 @@
 // Authors: 张子辰 <zichen350@gmail.com>
 // Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
+use log::info;
+
 use super::{RtcDevice, super::Device};
 use core::{slice,str};
 use core::time::Duration;
@@ -24,7 +26,7 @@ impl GoldfishRtc {
         for i in 0..name.len() {
             name1[i] = name.as_bytes()[i];
         }
-        println_bios!("Init goldfish RTC device, name={},addr=0x{:x}.",name,addr);
+        info!("Init goldfish RTC device, name={},addr=0x{:x}.",name,addr);
 
         Self {
             addr,
