@@ -2,7 +2,7 @@
 // blkdev.rs
 
 // Authors:  郭耸霄 <logname@mail.ustc.edu.cn>
-
+// Authors:  蓝俊玮 <ljw13@mail.ustc.edu.cn>
 // Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
 // Redistribution and use in source and binary forms, with or without
@@ -38,8 +38,9 @@ use crate::DIRECTION::{Horizontal, Vertical};
 static mut _EMPTY: [u8; 0] = [0; 0];
 
 pub static mut FB: &mut [u8] = unsafe { &mut _EMPTY };
-static CURSOR: [u8; 1024] = include!("cursor.txt");
+
 pub unsafe fn init() {
+    let cursor_img: [u8; 16384] = include!("cursor.txt");
     FB = GPU_DEIVCE.as_mut().unwrap().setup_framebuffer().expect("failed to get FB");
     let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
     draw_font(width / 2 - 4 * 16, height / 2 - 8 * 16, (0, 0, 0, 1), 3 + 48, 16);
@@ -60,7 +61,7 @@ pub unsafe fn init() {
             FB[idx + 3] = 1;
         }
     }
-    //GPU_DEIVCE.as_mut().unwrap().setup_cursor(&CURSOR,50,50,0,0).expect("failed to set up cursor.");
+    GPU_DEIVCE.as_mut().unwrap().setup_cursor(&cursor_img, 50, 50, 0, 0).expect("failed to set up cursor.");
     GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
 }
 
