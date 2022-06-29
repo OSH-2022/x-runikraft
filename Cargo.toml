@@ -19,5 +19,6 @@ members = [
     # "lib/rkschedpreem",
     "lib/rksignal",
     "lib/rkgpu",
-    "lib/rkinput"
+    "lib/rkinput",
+    "example/sudoku"
 ]

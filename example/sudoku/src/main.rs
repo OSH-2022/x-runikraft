@@ -8,6 +8,7 @@
 */
 extern crate rand;
 use rand::Rng;
+use rkgpu::show_sudoku_number;
 
 pub struct Sudoku {
     // 当前数独信息(玩家显示)
@@ -19,12 +20,15 @@ pub struct Sudoku {
 
 impl Sudoku {
     // 打印当前数独信息
-    pub fn map_print(&self) {
+    pub unsafe fn map_print(&self) {
         for i in 0..9 {
             for j in 0..9 {
-                print!("{} ", self.map[i][j]);
+                // show_sudoku_number(pos_x: u8, pos_y: u8, number: u8);
+                show_sudoku_number(i as u8, j as u8, self.map[i][j] as u8);
+
+                // print!("{} ", self.map[i][j]);
             }
-            println!("");
+            // println!("");
         }
     }
 
@@ -221,8 +225,8 @@ fn main() {
     sudoku_solve(& mut sudoku.map, & mut sudoku.answer, 1, 1);
     
     hole_dig(& mut sudoku.map, 10);
-    sudoku.map_print();
+    unsafe { sudoku.map_print(); }
 
-    sudoku_solve(& mut sudoku.map, & mut sudoku.answer, 0, 0);
-    sudoku.map_print();
+    // sudoku_solve(& mut sudoku.map, & mut sudoku.answer, 0, 0);
+    // unsafe { sudoku.map_print(); }
 }
