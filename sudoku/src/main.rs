@@ -73,6 +73,14 @@ pub fn sudoku_copy(map1: & mut [[usize; 9]; 9], map2: &[[usize; 9]; 9]) {
     }
 }
 
+pub fn sudoku_setzero(map: & mut [[usize; 9]; 9]) {
+    for i in 0..9 {
+        for j in 0..9 {
+            map[i][j] = 0;
+        }
+    }
+}
+
 /*  寻找下一个可填入的空位
  *  从第 @row 行开始寻找
  *  如果找到则将结果填入 @nextrow, @nextcol 中，并返回 1
@@ -175,9 +183,46 @@ pub fn sudoku_solve(map: & mut [[usize; 9]; 9], answer: &mut [[usize; 9]; 9], ro
     false
 }
 
-// fn main() {
-//     let mut sudoku = sudoku_init_zero();
-//     row_random(& mut sudoku.map, 0);
-//     sudoku_solve(& mut sudoku.map, & mut sudoku.answer, 1, 1);
-//     sudoku.map_print();
-// }
+// 挖洞函数： 对于生成的数独进行随机挖空
+// 以 @map 为模板，将挖空的结果写入 @map
+// @num 为留下的非空格数字数目，最低为 10
+pub fn hole_dig(map:& mut [[usize; 9]; 9], num: usize) {
+    let mut hole_map = [[0; 9]; 9];
+
+    let number_num = num % 81;
+    let mut rng = rand::thread_rng();
+    let mut i = 0;
+
+    while i < number_num {
+    
+        let mut index = rng.gen_range(0..81);
+        loop {
+            if index >= 81 {
+                index %= 81;
+            }
+            if hole_map[index / 9][index % 9] != 0 {
+                index += 1;
+                continue
+            }
+            hole_map[index / 9][index % 9] = map[index / 9][index % 9];
+            break;
+        }
+        i += 1;
+    }
+
+    sudoku_copy(map, & hole_map);
+
+}
+
+fn main() {
+    let mut sudoku = sudoku_init_zero();
+
+    row_random(& mut sudoku.map, 0);
+    sudoku_solve(& mut sudoku.map, & mut sudoku.answer, 1, 1);
+    
+    hole_dig(& mut sudoku.map, 10);
+    sudoku.map_print();
+
+    sudoku_solve(& mut sudoku.map, & mut sudoku.answer, 0, 0);
+    sudoku.map_print();
+}
