@@ -16,9 +16,9 @@ edition = "2021"
     sched_coop = ["have_scheduler","rkschedcoop"]
 
 [dependencies]
-    runikraft = {path = "../../core"}
-    rkalloc = {path = "../rkalloc"}
-    rkalloc_buddy = {path = "../rkalloc_buddy", optional = true}
-    rkplat = {path = "../rkplat"}
-    rksched = {path = "../rksched", optional = true}
-    rkschedcoop = {path = "../rkschedcoop", optional = true}
+    runikraft = {path = "../../core", default-features = false}
+    rkalloc = {path = "../rkalloc", default-features = false}
+    rkalloc_buddy = {path = "../rkalloc_buddy", default-features = false, optional = true}
+    rkplat = {path = "../rkplat", default-features = false}
+    rksched = {path = "../rksched", default-features = false, optional = true}
+    rkschedcoop = {path = "../rkschedcoop", default-features = false, optional = true}

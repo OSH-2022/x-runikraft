@@ -22,7 +22,22 @@ Runikraft is a unikernel written in Rust language that runs on RISC-V architectu
 - `core`: core component of Runikraft
 - `lib`: micro-libraries
 
- ## Getting Started
+## Getting Started
+
+### Quick Guideline
+
+For Ubuntu 22.04 users, the following command will download, build and test Ruikraft:
+
+```
+sudo apt install git curl crossbuild-essential-riscv64 qemu-system-misc qemu-system-gui
+curl https://sh.rustup.rs | sh
+rustup target add riscv64gc-unknown-none-elf
+source ~/.cargo/env
+git clone --recursive https://github.com/OSH-2022/x-runikraft.git
+cd x-runikraft
+cargo fetch
+make  # -j is not neccessary since make is just a wrapper to cargo
+```
 
 ### Building Runikraft
 
@@ -30,23 +45,14 @@ As different parts of this project were written in different languages, we use `
 
 To build everything without reports and documentations, install all the dependencies:
 
-- Rust compiler (`rustc >= 1.59`+`cargo`): `apt install rust-all` or follow the official guidance using `rustup`.
-- objcopy supporting RISC-V elf (either riscv64-linux-gnu-objcopy or rust-objcopy):
-    - riscv64-linux-gnu-objcopy: `sudo apt install binutils-riscv64-linux-gnu`;
-    - rust-objcopy: `cargo install cargo-binutils`.
-
-- make: it should have been installed.
+- Rust compiler (`rustc >= 1.59`+`cargo`): you must install it via `rustup`, since rustc in distribution's software source usually does not support riscv64 target.
+- C compiler and binutils: any version of riscv64 cross-compile GCC should works.
+- QEMU (`qemu-system-riscv64 >= 6.2.0`): we did not test QEMU 5, but we known that QEMU 4 does not support RTC (real-time clock).
 
 Then run:
 
 ```
 make
-```
-
-We use `rust-objcopy` by default; please specific `OBJCOPY_PREFIX` if you installed a different objcopy, for example:
-
-```
-make OBJCOPY_PREFIX=riscv64-linux-gnu-
 ```
 
 Building the reports and documentations requires XeLaTeX (recommend TeX Live 2021+) and some CJK fonts:

@@ -43,6 +43,10 @@ fn main(_args: &mut [&str])->i32 {
     let new_total_size = state.total_size();
     let new_free_size = state.free_size();
 
+    for i in 0..10 {
+        assert_eq!((i+1) as i32, v1[i].data);
+    }
+
     assert_eq!(old_total_size, new_total_size);
     assert!((size_of::<[Struct; 10]>() <= (old_free_size - new_free_size)) && ((old_free_size - new_free_size) <= 2*size_of::<[Struct; 10]>()));
 

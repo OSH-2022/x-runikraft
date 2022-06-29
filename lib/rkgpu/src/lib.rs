@@ -37,7 +37,7 @@ use crate::DIRECTION::{Horizontal, Vertical};
 
 static mut _EMPTY: [u8; 0] = [0; 0];
 
-pub static mut FB: &mut [u8] = unsafe { &mut _EMPTY };
+static mut FB: &mut [u8] = unsafe { &mut _EMPTY };
 
 static CURSOR: [u8; 16*16*4] = include!("cursor.txt");
 
@@ -146,36 +146,6 @@ pub unsafe fn draw_font(start_x: u32, start_y: u32, rgb: (u8, u8, u8, u8), ascii
             }
         }
         GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
-        0
-    } else { 1 }
-}
-
-pub unsafe fn draw_sudoku_lattices() -> u8 {
-    let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
-    if width >= 750 && height >= 750 {
-        for x in 0..10 {
-            if x % 3 == 0 {
-                draw_line(Vertical, x * 75, 0, 675, (0, 0, 0, 1), 4);
-            } else {
-                draw_line(Vertical, x * 75, 0, 675, (0, 0, 0, 1), 1);
-            }
-        }
-        for y in 0..10 {
-            if y % 3 == 0 {
-                draw_line(Horizontal, 0, y * 75, 675, (0, 0, 0, 1), 4);
-            } else {
-                draw_line(Horizontal, 0, y * 75, 675, (0, 0, 0, 1), 1);
-            }
-        }
-        1
-    } else { 0 }
-}
-
-pub unsafe fn show_sudoku_number(pos_x: u8, pos_y: u8, number: u8) -> u8 {
-    if pos_x <= 8 && pos_y <= 8 {
-        let start_x: u32 = 75 * pos_x as u32 + 20;
-        let start_y: u32 = 75 * pos_y as u32 + 8;
-        draw_font(start_x, start_y, (0, 0, 0, 1), number + 48, 4);
         0
     } else { 1 }
 }
