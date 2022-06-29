@@ -511,6 +511,6 @@ const RESOURCE_ID_CURSOR: u32 = 0xdade;
 const CURSOR_RECT: Rect = Rect {
     x: 0,
     y: 0,
-    width: 64,
-    height: 64,
+    width: 16,//64
+    height: 16,//64
 };

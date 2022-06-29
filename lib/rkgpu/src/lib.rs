@@ -38,17 +38,17 @@ use crate::DIRECTION::{Horizontal, Vertical};
 static mut _EMPTY: [u8; 0] = [0; 0];
 
 pub static mut FB: &mut [u8] = unsafe { &mut _EMPTY };
-
+static CURSOR: [u8; 1024] = include!("cursor.txt");
 pub unsafe fn init() {
     FB = GPU_DEIVCE.as_mut().unwrap().setup_framebuffer().expect("failed to get FB");
     let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
-    draw_font(width/2-4*16,height/2-8*16,(0,0,0,1),3+48,16);
+    draw_font(width / 2 - 4 * 16, height / 2 - 8 * 16, (0, 0, 0, 1), 3 + 48, 16);
     GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
     rksched::this_thread::sleep_for(Duration::from_secs(1));
-    draw_font(width/2-4*16,height/2-8*16,(0,0,0,1),2+48,16);
+    draw_font(width / 2 - 4 * 16, height / 2 - 8 * 16, (0, 0, 0, 1), 2 + 48, 16);
     GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
     rksched::this_thread::sleep_for(Duration::from_secs(1));
-    draw_font(width/2-4*16,height/2-8*16,(0,0,0,1),1+48,16);
+    draw_font(width / 2 - 4 * 16, height / 2 - 8 * 16, (0, 0, 0, 1), 1 + 48, 16);
     GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
     rksched::this_thread::sleep_for(Duration::from_secs(1));
     for y in 0..height as usize {
@@ -60,6 +60,7 @@ pub unsafe fn init() {
             FB[idx + 3] = 1;
         }
     }
+    //GPU_DEIVCE.as_mut().unwrap().setup_cursor(&CURSOR,50,50,0,0).expect("failed to set up cursor.");
     GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
 }
 
@@ -111,11 +112,11 @@ static DIC: [u128; 127] = include!("dic.txt");
 pub unsafe fn draw_font(start_x: u32, start_y: u32, rgb: (u8, u8, u8, u8), ascii: u8, size: u8) -> u8 {
     let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
     if start_x + 8 * size as u32 <= width && start_y + 16 * size as u32 <= height {
-        let pos=DIC[ascii as usize];
+        let pos = DIC[ascii as usize];
         for y in start_y..start_y + 16 * size as u32 {
             for x in start_x..start_x + 8 * size as u32 {
                 let idx = ((y * width + x) * 4) as usize;
-                let num = ((y-start_y) / size as u32 * 8 + (x-start_x) / size as u32) as usize;
+                let num = ((y - start_y) / size as u32 * 8 + (x - start_x) / size as u32) as usize;
                 if pos & (1 << (127 - num)) == (1 << (127 - num)) {
                     FB[idx] = rgb.0;
                     FB[idx + 1] = rgb.1;
@@ -149,8 +150,8 @@ pub unsafe fn draw_sudoku_lattices() -> u8 {
 
 pub unsafe fn show_sudoku_number(pos_x: u8, pos_y: u8, number: u8) -> u8 {
     if pos_x <= 8 && pos_y <= 8 {
-        let start_x: u32 = 75 * pos_x as u32 +20;
-        let start_y: u32 = 75 * pos_y as u32 +8;
+        let start_x: u32 = 75 * pos_x as u32 + 20;
+        let start_y: u32 = 75 * pos_y as u32 + 8;
         draw_font(start_x, start_y, (0, 0, 0, 1), number + 48, 4);
         0
     } else { 1 }

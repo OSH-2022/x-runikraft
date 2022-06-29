@@ -44,7 +44,7 @@ pub(crate) mod gpu;
 mod hal;
 mod header;
 #[cfg(feature="driver_virtio_input")]
-mod input;
+pub(crate) mod input;
 #[cfg(feature="driver_virtio_net")]
 mod net;
 mod queue;
@@ -116,3 +116,6 @@ unsafe trait AsBuf: Sized {
 
 #[cfg(feature="driver_virtio_gpu")]
 pub static mut GPU_DEIVCE: Option<&'static mut VirtIOGpu> = None;
+
+#[cfg(feature="driver_virtio_input")]
+pub static mut INPUT_DEIVCE: Option<&'static mut VirtIOInput> = None;

@@ -34,7 +34,7 @@ use super::virtio;
 use log::{info, warn};
 use rkalloc::{RKalloc,alloc_type};
 use crate::console;
-use crate::drivers::virtio::GPU_DEIVCE;
+use crate::drivers::virtio::{GPU_DEIVCE, INPUT_DEIVCE};
 
 const MAGIC_NUMBER: u32 = 0xd00dfeed;
 const SUPPORTED_VERSION: u32 = 17;
@@ -304,7 +304,11 @@ fn parse_device(a: &dyn RKalloc, name: &str, props: &[(&str,&[u8])], props_size:
                         }
                     },
                     #[cfg(feature="driver_virtio_input")]
-                    virtio::DeviceType::Input => {todo!()},
+                    virtio::DeviceType::Input => {
+                        unsafe {
+                            INPUT_DEIVCE = Some(&mut *alloc_type(a,virtio::input::VirtIOInput::new(name,header).unwrap()));
+                        }
+                    },
                     #[cfg(feature="driver_virtio_net")]
                     virtio::DeviceType::Network => {todo!()},
                     t => warn!("Unrecognized virtio device: {:?}",t),
