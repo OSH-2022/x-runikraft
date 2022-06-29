@@ -7,7 +7,7 @@ extern crate rkplat;
 extern crate rkboot;
 
 use alloc::{boxed::Box, vec, string::String};
-use core::mem::size_of_val;
+use core::mem::size_of;
 
 #[derive(Debug)]
 struct Struct {
@@ -27,12 +27,12 @@ fn main(_args: &mut [&str])->i32 {
     let old_total_size = state.total_size();
     let old_free_size = state.free_size();
 
-    let p1 = Box::new(Struct::new(15));
+    let _p1 = Box::new(Struct::new(15));
     let new_total_size = state.total_size();
     let new_free_size = state.free_size();
 
     assert_eq!(old_total_size, new_total_size);
-    assert_eq!(old_free_size, new_free_size + size_of_val(&p1));
+    assert!((size_of::<Box<Struct>>() <= (old_free_size - new_free_size)) && ((old_free_size - new_free_size) <= 2*size_of::<Box<Struct>>()));
 
     let old_total_size = state.total_size();
     let old_free_size = state.free_size();
@@ -44,7 +44,7 @@ fn main(_args: &mut [&str])->i32 {
     let new_free_size = state.free_size();
 
     assert_eq!(old_total_size, new_total_size);
-    assert_eq!(old_free_size, new_free_size + size_of_val(&v1));
+    assert!((size_of::<[Struct; 10]>() <= (old_free_size - new_free_size)) && ((old_free_size - new_free_size) <= 2*size_of::<[Struct; 10]>()));
 
     let old_total_size = state.total_size();
     let old_free_size = state.free_size();
@@ -74,21 +74,21 @@ fn main(_args: &mut [&str])->i32 {
     let new_free_size = state.free_size();
 
     assert_eq!(old_total_size, new_total_size);
-    assert_eq!(old_free_size, new_free_size + size_of_val(&str1));
+    assert!((str1.len()*size_of::<u8>() <= (old_free_size - new_free_size)) && ((old_free_size - new_free_size) <= 2*str1.len()*size_of::<u8>()));
 
     str1 += "你好, 世界！";
     let new_total_size = state.total_size();
     let new_free_size = state.free_size();
 
     assert_eq!(old_total_size, new_total_size);
-    assert_eq!(old_free_size, new_free_size + size_of_val(&str1));
+    assert!((str1.len()*size_of::<u8>() <= (old_free_size - new_free_size)) && ((old_free_size - new_free_size) <= 2*str1.len()*size_of::<u8>()));
 
     str1 = str1.replace("hello", "换出并就绪");
     let new_total_size = state.total_size();
     let new_free_size = state.free_size();
 
     assert_eq!(old_total_size, new_total_size);
-    assert_eq!(old_free_size, new_free_size + size_of_val(&str1));
+    assert!((str1.len()*size_of::<u8>() <= (old_free_size - new_free_size)) && ((old_free_size - new_free_size) <= 2*str1.len()*size_of::<u8>()));
 
     rkplat::println!("\nTest global_alloc0 passed!\n");
     return 0;
