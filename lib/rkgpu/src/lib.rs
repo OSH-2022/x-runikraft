@@ -39,15 +39,16 @@ static mut _EMPTY: [u8; 0] = [0; 0];
 
 pub static mut FB: &mut [u8] = unsafe { &mut _EMPTY };
 static CURSOR: [u8; 1024] = include!("cursor.txt");
+
 pub unsafe fn init() {
     FB = GPU_DEIVCE.as_mut().unwrap().setup_framebuffer().expect("failed to get FB");
     let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
-    draw_font(width / 2 - 4 * 16, height / 2 - 8 * 16, (0, 0, 0, 1), 3 + 48, 16);
-    GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
-    rksched::this_thread::sleep_for(Duration::from_secs(1));
-    draw_font(width / 2 - 4 * 16, height / 2 - 8 * 16, (0, 0, 0, 1), 2 + 48, 16);
-    GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
-    rksched::this_thread::sleep_for(Duration::from_secs(1));
+    // draw_font(width / 2 - 4 * 16, height / 2 - 8 * 16, (0, 0, 0, 1), 3 + 48, 16);
+    // GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
+    // rksched::this_thread::sleep_for(Duration::from_secs(1));
+    // draw_font(width / 2 - 4 * 16, height / 2 - 8 * 16, (0, 0, 0, 1), 2 + 48, 16);
+    // GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
+    // rksched::this_thread::sleep_for(Duration::from_secs(1));
     draw_font(width / 2 - 4 * 16, height / 2 - 8 * 16, (0, 0, 0, 1), 1 + 48, 16);
     GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
     rksched::this_thread::sleep_for(Duration::from_secs(1));
@@ -69,25 +70,29 @@ pub enum DIRECTION {
     Vertical,
 }
 
-pub unsafe fn draw_line(direction: DIRECTION, start_x: u32, start_y: u32, length: u32, rgb: (u8, u8, u8, u8)) {
+pub unsafe fn draw_line(direction: DIRECTION, start_x: u32, start_y: u32, length: u32, rgb: (u8, u8, u8, u8), line_width: u32) {
     let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
     match direction {
         Horizontal => {
-            for x in 0..min(length, width - start_x) {
-                let idx = (start_y * width + x) * 4;
-                FB[idx as usize + 0] = rgb.0;
-                FB[idx as usize + 1] = rgb.1;
-                FB[idx as usize + 2] = rgb.2;
-                FB[idx as usize + 3] = rgb.3;
+            for y in 0..min(line_width, height - start_y) {
+                for x in 0..min(length, width - start_x) {
+                    let idx = ((start_y + y) * width + x) * 4;
+                    FB[idx as usize + 0] = rgb.0;
+                    FB[idx as usize + 1] = rgb.1;
+                    FB[idx as usize + 2] = rgb.2;
+                    FB[idx as usize + 3] = rgb.3;
+                }
             }
         }
         Vertical => {
-            for y in 0..min(length, height - start_y) {
-                let idx = (y * width + start_x) * 4;
-                FB[idx as usize + 0] = rgb.0;
-                FB[idx as usize + 1] = rgb.1;
-                FB[idx as usize + 2] = rgb.2;
-                FB[idx as usize + 3] = rgb.3;
+            for x in 0..min(line_width, height - start_x) {
+                for y in 0..min(length, height - start_y) {
+                    let idx = (y * width + x + start_x) * 4;
+                    FB[idx as usize + 0] = rgb.0;
+                    FB[idx as usize + 1] = rgb.1;
+                    FB[idx as usize + 2] = rgb.2;
+                    FB[idx as usize + 3] = rgb.3;
+                }
             }
         }
     }
@@ -139,10 +144,18 @@ pub unsafe fn draw_sudoku_lattices() -> u8 {
     let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
     if width >= 750 && height >= 750 {
         for x in 0..10 {
-            draw_line(Vertical, x * 75, 0, 675, (0, 0, 0, 1));
+            if x % 3 == 0 {
+                draw_line(Vertical, x * 75, 0, 675, (0, 0, 0, 1), 4);
+            } else {
+                draw_line(Vertical, x * 75, 0, 675, (0, 0, 0, 1), 1);
+            }
         }
         for y in 0..10 {
-            draw_line(Horizontal, 0, y * 75, 675, (0, 0, 0, 1));
+            if y % 3 == 0 {
+                draw_line(Horizontal, 0, y * 75, 675, (0, 0, 0, 1), 4);
+            } else {
+                draw_line(Horizontal, 0, y * 75, 675, (0, 0, 0, 1), 1);
+            }
         }
         1
     } else { 0 }
