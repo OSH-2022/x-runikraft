@@ -39,8 +39,18 @@ static mut _EMPTY: [u8; 0] = [0; 0];
 
 pub static mut FB: &mut [u8] = unsafe { &mut _EMPTY };
 
+static CURSOR: [u8; 16*16*4] = include!("cursor.txt");
+
 pub unsafe fn init() {
-    let cursor_img: [u8; 16384] = include!("cursor.txt");
+    static mut CURSOR_NEW: [u8; 64*64*4] = [0; 64*64*4];
+    for i in 0..16 {
+        for j in 0..16 {
+            CURSOR_NEW[(i*64 + j)*4 + 0] = CURSOR[(i*16 + j)*4 + 0];
+            CURSOR_NEW[(i*64 + j)*4 + 1] = CURSOR[(i*16 + j)*4 + 1];
+            CURSOR_NEW[(i*64 + j)*4 + 2] = CURSOR[(i*16 + j)*4 + 2];
+            CURSOR_NEW[(i*64 + j)*4 + 3] = CURSOR[(i*16 + j)*4 + 3];
+        }
+    }
     FB = GPU_DEIVCE.as_mut().unwrap().setup_framebuffer().expect("failed to get FB");
     let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
     // draw_font(width / 2 - 4 * 16, height / 2 - 8 * 16, (0, 0, 0, 1), 3 + 48, 16);
@@ -58,10 +68,10 @@ pub unsafe fn init() {
             FB[idx] = 255;
             FB[idx + 1] = 255;
             FB[idx + 2] = 255;
-            FB[idx + 3] = 1;
+            FB[idx + 3] = 255;
         }
     }
-    //GPU_DEIVCE.as_mut().unwrap().setup_cursor(&CURSOR,50,50,0,0).expect("failed to set up cursor.");
+    GPU_DEIVCE.as_mut().unwrap().setup_cursor(&CURSOR_NEW, 50, 50, 0, 0).expect("failed to set up cursor.");
     GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
 }
 
