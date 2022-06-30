@@ -1,0 +1,12 @@
+[package]
+    name = "test-rand0"
+    version = "0.1.0"
+    edition = "2021"
+
+[workspace]
+
+[dependencies]
+    rkplat = {path = "../../lib/rkplat"}
+    rkalloc = {path = "../../lib/rkalloc"}
+    rkboot = {path = "../../lib/rkboot"}
+    rkswrand = {path = "../../lib/rkswrand"}

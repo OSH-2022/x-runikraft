@@ -30,10 +30,11 @@
 
 #![no_std]
 
-pub mod spinlock {
-    pub use rkplat::spinlock::SpinLock;
-    pub use rkplat::spinlock::SpinLockGuard;
-}
+pub use rkplat::spinlock::SpinLock;
+pub use rkplat::spinlock::SpinLockGuard;
 
-pub mod mutex;
-pub mod semaphore;
+mod mutex;
+mod semaphore;
+
+pub use mutex::*;
+pub use semaphore::*;

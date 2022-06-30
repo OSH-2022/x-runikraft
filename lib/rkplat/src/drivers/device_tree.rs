@@ -295,6 +295,7 @@ fn parse_device(#[allow(unused_variables)]a: &dyn RKalloc, #[allow(unused_variab
                 };
                 info!("Detected virtio device with vendor id {:#X}",header.vendor_id());
                 match header.device_type() {
+                    virtio::DeviceType::Invalid => {/* noting to do */},
                     #[cfg(feature="driver_virtio_blk")]
                     virtio::DeviceType::Block => {todo!()},
                     #[cfg(feature="driver_virtio_console")]
@@ -302,18 +303,24 @@ fn parse_device(#[allow(unused_variables)]a: &dyn RKalloc, #[allow(unused_variab
                     #[cfg(feature="driver_virtio_gpu")]
                     virtio::DeviceType::GPU => {
                         unsafe {
-                            virtio::GPU_DEIVCE = Some(&mut *alloc_type(a,virtio::gpu::VirtIOGpu::new(name,header).unwrap()));
+                            virtio::GPU_DEIVCE = Some(&mut *alloc_type(a,virtio::VirtIOGpu::new(name,header).unwrap()));
                         }
                     },
                     #[cfg(feature="driver_virtio_input")]
                     virtio::DeviceType::Input => {
                         unsafe {
-                            virtio::INPUT_DEIVCE = Some(&mut *alloc_type(a,virtio::input::VirtIOInput::new(name,header).unwrap()));
+                            virtio::INPUT_DEIVCE = Some(&mut *alloc_type(a,virtio::VirtIOInput::new(name,header).unwrap()));
+                        }
+                    },
+                    #[cfg(feature="driver_virtio_entropy")]
+                    virtio::DeviceType::EntropySource => {
+                        unsafe {
+                            virtio::ENTROPY_DEIVCE = Some(&mut *alloc_type(a,virtio::VirtIOEntropy::new(name,header).unwrap()));
                         }
                     },
                     #[cfg(feature="driver_virtio_net")]
                     virtio::DeviceType::Network => {todo!()},
-                    t => warn!("Unrecognized virtio device: {:?}",t),
+                    t => warn!("Unsupported virtio device: {:?}",t),
                 }
             },
             _ => {}

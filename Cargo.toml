@@ -19,5 +19,6 @@ members = [
     "lib/rksignal",
     "lib/rkgpu",
     "lib/rkinput",
+    "lib/rkswrand",
     "example/sudoku"
 ]

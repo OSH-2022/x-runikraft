@@ -1,0 +1,14 @@
+[package]
+name = "rkswrand"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+runikraft = {path = "../../core", default-features = false}
+rkplat = {path = "../rkplat", default-features = false, features = ["driver_virtio_entropy"]}
+getrandom = { version = "0.2", features = ["custom"] }
+rand = {version = "0.8", default-features = false, features = ["std_rng","small_rng","getrandom"]}
+rklock = {path = "../rklock", optional = true, default-features = false}
+
+[features]
+have_scheduler = ["rklock"]

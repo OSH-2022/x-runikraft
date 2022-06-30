@@ -9,7 +9,7 @@ extern crate alloc;
 use alloc::{vec::Vec, format};
 use rksched::this_thread;
 use core::ptr::addr_of;
-use rklock::{mutex::Mutex,semaphore::Semaphore};
+use rklock::{Mutex,Semaphore};
 
 static mut CNT: usize = 0;
 static MUTEX: Mutex = Mutex::new();

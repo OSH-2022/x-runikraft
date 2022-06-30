@@ -40,14 +40,16 @@ mod blk;
 #[cfg(feature="driver_virtio_console")]
 mod console;
 #[cfg(feature="driver_virtio_gpu")]
-pub(crate) mod gpu;
+mod gpu;
 mod hal;
 mod header;
 #[cfg(feature="driver_virtio_input")]
-pub(crate) mod input;
+mod input;
 #[cfg(feature="driver_virtio_net")]
 mod net;
 mod queue;
+#[cfg(feature="driver_virtio_entropy")]
+mod entropy;
 
 #[cfg(feature="driver_virtio_blk")]
 pub use self::blk::{BlkResp, RespStatus, VirtIOBlk};
@@ -60,6 +62,8 @@ pub use self::header::*;
 pub use self::input::{InputConfigSelect, InputEvent, VirtIOInput};
 #[cfg(feature="driver_virtio_net")]
 pub use self::net::VirtIONet;
+#[cfg(feature="driver_virtio_entropy")]
+pub use self::entropy::VirtIOEntropy;
 use self::queue::VirtQueue;
 use core::mem::size_of;
 use hal::*;
@@ -119,3 +123,6 @@ pub static mut GPU_DEIVCE: Option<&'static mut VirtIOGpu> = None;
 
 #[cfg(feature="driver_virtio_input")]
 pub static mut INPUT_DEIVCE: Option<&'static mut VirtIOInput> = None;
+
+#[cfg(feature="driver_virtio_entropy")]
+pub static mut ENTROPY_DEIVCE: Option<&'static mut VirtIOEntropy> = None;
