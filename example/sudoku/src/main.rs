@@ -13,6 +13,7 @@
 extern crate rkboot;
 
 use rkplat::time::wall_clock;
+use rkgpu::*;
 
 pub struct Sudoku {
     // 当前数独信息(玩家显示)
@@ -28,7 +29,7 @@ impl Sudoku {
         for i in 0..9 {
             for j in 0..9 {
                 // show_sudoku_number(pos_x: u8, pos_y: u8, number: u8);
-                show_sudoku_number(i as u8, j as u8, self.map[i][j] as u8);
+                show_sudoku_number(i as u8, j as u8, self.map[i][j] as u8,GREEN);
 
                 // print!("{} ", self.map[i][j]);
             }
@@ -231,7 +232,7 @@ pub fn hole_dig(map:& mut [[usize; 9]; 9], num: usize) {
 
 #[no_mangle]
 fn main() {
-    unsafe{rkgpu::init();draw_sudoku_lattices();}
+    unsafe{rkgpu::init();draw_sudoku_lattices(BLACK,BLUE);}
     
     let mut sudoku = sudoku_init_zero();
 
@@ -249,32 +250,32 @@ fn main() {
 
 use rkplat::drivers::virtio::GPU_DEIVCE;
 use rkgpu::{draw_font,DIRECTION,draw_line};
-unsafe fn draw_sudoku_lattices() -> u8 {
+unsafe fn draw_sudoku_lattices(color0:Color,color1:Color) -> u8 {
     let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
     if width >= 750 && height >= 750 {
         for x in 0..10 {
             if x % 3 == 0 {
-                draw_line(DIRECTION::Vertical, x * 75, 0, 675, (0, 0, 0, 1), 4);
+                draw_line(DIRECTION::Vertical, x * 75, 0, 675, color0, 255, 4);
             } else {
-                draw_line(DIRECTION::Vertical, x * 75, 0, 675, (0, 0, 0, 1), 1);
+                draw_line(DIRECTION::Vertical, x * 75, 0, 675, color1, 255, 1);
             }
         }
         for y in 0..10 {
             if y % 3 == 0 {
-                draw_line(DIRECTION::Horizontal, 0, y * 75, 675, (0, 0, 0, 1), 4);
+                draw_line(DIRECTION::Horizontal, 0, y * 75, 675, color0, 255, 4);
             } else {
-                draw_line(DIRECTION::Horizontal, 0, y * 75, 675, (0, 0, 0, 1), 1);
+                draw_line(DIRECTION::Horizontal, 0, y * 75, 675, color1, 255, 1);
             }
         }
         1
     } else { 0 }
 }
 
-unsafe fn show_sudoku_number(pos_x: u8, pos_y: u8, number: u8) -> u8 {
+unsafe fn show_sudoku_number(pos_x: u8, pos_y: u8, number: u8,color:Color) -> u8 {
     if pos_x <= 8 && pos_y <= 8 {
         let start_x: u32 = 75 * pos_x as u32 + 20;
         let start_y: u32 = 75 * pos_y as u32 + 8;
-        draw_font(start_x, start_y, (0, 0, 0, 1), number + 48, 4);
+        draw_font(start_x, start_y, color, 255,(number + 48).into(), 4);
         0
     } else { 1 }
 }
