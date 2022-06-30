@@ -24,10 +24,9 @@ unsafe fn main(_args: &mut [&str])->i32 {
     return 0;
 }
 
-use rkplat::drivers::virtio::GPU_DEIVCE;
-use rkgpu::{draw_font,DIRECTION,draw_line};
+use rkgpu::{draw_font,DIRECTION,draw_line,resolution};
 unsafe fn draw_sudoku_lattices() -> u8 {
-    let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
+    let (width, height) = resolution();
     if width >= 750 && height >= 750 {
         for x in 0..10 {
             if x % 3 == 0 {

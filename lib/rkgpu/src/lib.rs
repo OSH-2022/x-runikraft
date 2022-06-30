@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// blkdev.rs
+// rkgpu/lib.rs
 
 // Authors:  郭耸霄 <logname@mail.ustc.edu.cn>
-// Authors:  蓝俊玮 <ljw13@mail.ustc.edu.cn>
+//           蓝俊玮 <ljw13@mail.ustc.edu.cn>
 // Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
 // Redistribution and use in source and binary forms, with or without
@@ -80,72 +80,82 @@ pub enum DIRECTION {
     Vertical,
 }
 
-pub unsafe fn draw_line(direction: DIRECTION, start_x: u32, start_y: u32, length: u32, rgb: (u8, u8, u8, u8), line_width: u32) {
-    let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
-    match direction {
-        Horizontal => {
-            for y in 0..min(line_width, height - start_y) {
-                for x in 0..min(length, width - start_x) {
-                    let idx = ((start_y + y) * width + x) * 4;
-                    FB[idx as usize + 0] = rgb.0;
-                    FB[idx as usize + 1] = rgb.1;
-                    FB[idx as usize + 2] = rgb.2;
-                    FB[idx as usize + 3] = rgb.3;
-                }
-            }
-        }
-        Vertical => {
-            for x in 0..min(line_width, height - start_x) {
-                for y in 0..min(length, height - start_y) {
-                    let idx = (y * width + x + start_x) * 4;
-                    FB[idx as usize + 0] = rgb.0;
-                    FB[idx as usize + 1] = rgb.1;
-                    FB[idx as usize + 2] = rgb.2;
-                    FB[idx as usize + 3] = rgb.3;
-                }
-            }
-        }
-    }
-    GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
+pub fn resolution() -> (u32,u32) {
+    unsafe{GPU_DEIVCE.as_mut().unwrap().resolution()}
 }
 
-pub unsafe fn draw_clear() {
-    let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
-    for y in 0..height as usize {
-        for x in 0..width as usize {
-            let idx = (y * width as usize + x) * 4;
-            FB[idx] = 255;
-            FB[idx + 1] = 255;
-            FB[idx + 2] = 255;
-            FB[idx + 3] = 1;
+pub fn draw_line(direction: DIRECTION, start_x: u32, start_y: u32, length: u32, rgb: (u8, u8, u8, u8), line_width: u32) {
+    unsafe {
+        let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
+        match direction {
+            Horizontal => {
+                for y in 0..min(line_width, height - start_y) {
+                    for x in 0..min(length, width - start_x) {
+                        let idx = ((start_y + y) * width + x) * 4;
+                        FB[idx as usize + 0] = rgb.0;
+                        FB[idx as usize + 1] = rgb.1;
+                        FB[idx as usize + 2] = rgb.2;
+                        FB[idx as usize + 3] = rgb.3;
+                    }
+                }
+            }
+            Vertical => {
+                for x in 0..min(line_width, height - start_x) {
+                    for y in 0..min(length, height - start_y) {
+                        let idx = (y * width + x + start_x) * 4;
+                        FB[idx as usize + 0] = rgb.0;
+                        FB[idx as usize + 1] = rgb.1;
+                        FB[idx as usize + 2] = rgb.2;
+                        FB[idx as usize + 3] = rgb.3;
+                    }
+                }
+            }
+        }
+        GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
+    }
+}
+
+pub fn draw_clear() {
+    unsafe {
+        let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
+        for y in 0..height as usize {
+            for x in 0..width as usize {
+                let idx = (y * width as usize + x) * 4;
+                FB[idx] = 255;
+                FB[idx + 1] = 255;
+                FB[idx + 2] = 255;
+                FB[idx + 3] = 1;
+            }
         }
     }
 }
 
 static DIC: [u128; 127] = include!("dic.txt");
 
-pub unsafe fn draw_font(start_x: u32, start_y: u32, rgb: (u8, u8, u8, u8), ascii: u8, size: u8) -> u8 {
-    let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
-    if start_x + 8 * size as u32 <= width && start_y + 16 * size as u32 <= height {
-        let pos = DIC[ascii as usize];
-        for y in start_y..start_y + 16 * size as u32 {
-            for x in start_x..start_x + 8 * size as u32 {
-                let idx = ((y * width + x) * 4) as usize;
-                let num = ((y - start_y) / size as u32 * 8 + (x - start_x) / size as u32) as usize;
-                if pos & (1 << (127 - num)) == (1 << (127 - num)) {
-                    FB[idx] = rgb.0;
-                    FB[idx + 1] = rgb.1;
-                    FB[idx + 2] = rgb.2;
-                    FB[idx + 3] = rgb.3;
-                } else {
-                    FB[idx] = 255;
-                    FB[idx + 1] = 255;
-                    FB[idx + 2] = 255;
-                    FB[idx + 3] = 1;
+pub fn draw_font(start_x: u32, start_y: u32, rgb: (u8, u8, u8, u8), ascii: u8, size: u8) -> u8 {
+    unsafe {
+        let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
+        if start_x + 8 * size as u32 <= width && start_y + 16 * size as u32 <= height {
+            let pos = DIC[ascii as usize];
+            for y in start_y..start_y + 16 * size as u32 {
+                for x in start_x..start_x + 8 * size as u32 {
+                    let idx = ((y * width + x) * 4) as usize;
+                    let num = ((y - start_y) / size as u32 * 8 + (x - start_x) / size as u32) as usize;
+                    if pos & (1 << (127 - num)) == (1 << (127 - num)) {
+                        FB[idx] = rgb.0;
+                        FB[idx + 1] = rgb.1;
+                        FB[idx + 2] = rgb.2;
+                        FB[idx + 3] = rgb.3;
+                    } else {
+                        FB[idx] = 255;
+                        FB[idx + 1] = 255;
+                        FB[idx + 2] = 255;
+                        FB[idx + 3] = 1;
+                    }
                 }
             }
-        }
-        GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
-        0
-    } else { 1 }
+            GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
+            0
+        } else { 1 }
+    }
 }

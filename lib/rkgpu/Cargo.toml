@@ -6,5 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rkplat={path="../rkplat", default-features = false}
-rksched={path="../rksched", default-features = false}
+runikraft = {path = "../../core", default-features = false}
+rkplat = {path = "../rkplat", default-features = false, features = ["driver_virtio_gpu"]}
+rksched = {path = "../rksched", default-features = false}
