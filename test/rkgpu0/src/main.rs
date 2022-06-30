@@ -15,7 +15,7 @@ use core::time::Duration;
 unsafe fn main(_args: &mut [&str]) -> i32 {
     init();
     draw_sudoku_lattices();
-    printg("asdfh\nansi", 100, 100, RED ,255, 8);
+    // printg("asdfh\n\nansi", 100, 100, RED ,255, 8);
     rksched::this_thread::sleep_for(Duration::from_secs(5));
     rkplat::println!("\nTest rkgpu0 passed!\n");
     return 0;

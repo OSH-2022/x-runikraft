@@ -87,7 +87,8 @@ pub unsafe fn init() {
     draw_font(width / 2 - 4 * 16, height / 2 - 8 * 16, WHITE, 255, '1', 16);
     GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
     rksched::this_thread::sleep_for(Duration::from_secs(1));
-    draw_clear();
+    draw_clear(CYAN);
+    printg("Hello, world!\nHello, OSH-2022!\nHello, Runikraft!\n", 700, 10, RED ,255, 4);
     GPU_DEIVCE.as_mut().unwrap().setup_cursor(&CURSOR_NEW, 50, 50, 0, 0).expect("failed to set up cursor.");
     GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
 }
@@ -132,15 +133,15 @@ pub fn draw_line(direction: DIRECTION, start_x: u32, start_y: u32, length: u32, 
     }
 }
 
-pub fn draw_clear() {
+pub fn draw_clear(color: Color) {
     unsafe {
         let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
         for y in 0..height as usize {
             for x in 0..width as usize {
                 let idx = (y * width as usize + x) * 4;
-                FB[idx] = WHITE.red;
-                FB[idx + 1] = WHITE.green;
-                FB[idx + 2] = WHITE.blue;
+                FB[idx + 2] = color.red;
+                FB[idx + 1] = color.green;
+                FB[idx + 0] = color.blue;
                 FB[idx + 3] = 255;
             }
         }
