@@ -39,8 +39,6 @@ impl Sudoku {
             // println!("");
         }
     }
-
-    
 }
 
 // 数独零初始化
@@ -97,8 +95,8 @@ pub fn sudoku_setzero(map: & mut [[usize; 9]; 9]) {
 
 /*  寻找下一个可填入的空位
  *  从第 @row 行开始寻找
- *  如果找到则将结果填入 @nextrow, @nextcol 中，并返回 1
- *  否则返回 0
+ *  如果找到则将结果填入 @nextrow, @nextcol 中，并返回 true
+ *  否则返回 false
  */
 pub fn findnext_empty(map: &[[usize; 9]; 9], row: usize, nextrow: & mut usize, nextcol: & mut usize)-> bool {
     for i in row..9 {
@@ -160,10 +158,12 @@ pub fn if_fit_check(map: &[[usize; 9]; 9], x: usize, y: usize, number: usize, if
 }
 
 
-// 求解函数（递归实现）
-// 从 (row, col) 开始求解当前 @map 中的数独，将结果存储到 @answer 中
-// 返回 true 为有解，返回 false 为无解
-pub fn sudoku_solve(map: & mut [[usize; 9]; 9], answer: &mut [[usize; 9]; 9], row: usize, col: usize) -> bool{
+/* 求解函数（递归实现）
+ * 从 (row, col) 开始求解当前 @map 中的数独，将结果存储到 @map 中
+ * 返回 true 为有解，返回 false 为无解
+ */
+
+pub fn sudoku_solve(map: & mut [[usize; 9]; 9], row: usize, col: usize) -> bool{
 
     let mut nextrow: usize = 0;
     let mut nextcol: usize = 0;
@@ -186,7 +186,7 @@ pub fn sudoku_solve(map: & mut [[usize; 9]; 9], answer: &mut [[usize; 9]; 9], ro
             return true;
         }
 
-        if !(sudoku_solve(map, answer, nextrow, nextcol)) {
+        if !(sudoku_solve(map, nextrow, nextcol)) {
             map[row][col] = 0;
             continue;
         }
@@ -197,19 +197,22 @@ pub fn sudoku_solve(map: & mut [[usize; 9]; 9], answer: &mut [[usize; 9]; 9], ro
     false
 }
 
-
-// 挖洞函数： 对于生成的数独进行随机挖空
-// 以 @map 为模板，将挖空的结果写入 @map
-// @num 为留下的非空格数字数目，最低为 10
+/* 
+    挖洞函数： 对于生成的数独进行随机挖空
+    以 @map 为模板，将挖空的结果写入 @map
+    @num 为留下的非空格数字数目，最低为 10
+*/
 pub fn hole_dig(map:& mut [[usize; 9]; 9], num: usize) {
     let mut hole_map = [[0; 9]; 9];
 
     let number_num = num % 81;
+    if number_num < 10 {
+        number_num = 10;
+    }
     // let mut rng = rand::thread_rng();
     let mut i = 0;
 
     while i < number_num {
-    
         // let mut index = rng.gen_range(0..81);
         // let time = wall_clock();
         // let mut index = (time.as_nanos() % 81) as usize;
@@ -246,7 +249,7 @@ pub fn add_num(map: &mut [[usize; 9]; 9], row:usize, col:usize, num: usize, ifch
     if map[row][col] != 0 {
         return false;
     }
-    if num > 8 {
+    if num > 9 {
         return false;
     }
     if ifcheck && !(if_fit_check(map, row, col, num, false)) {
@@ -267,11 +270,32 @@ pub fn del_num(map: &mut [[usize; 9]; 9], row:usize, col:usize) -> bool {
         // 访问越界
         return false;
     }
-    if map[row][col] != 0 {
+    if map[row][col] == 0 {
         return false;
     }
     
     map[row][col] = 0;
+    return true;
+}
+
+
+/*
+    提示函数：该函数将根据当前 @map 的内容，求解数独，并将解填入第一个空格。
+ */
+pub fn hint(map: &mut [[usize; 9]; 9]) -> bool{
+    let mut map_allzero:[[usize; 9]; 9] = [[0; 9]; 9];
+    sudoku_copy(& mut map_allzero, map);
+
+    let mut nextrow: usize = 0;
+    let mut nextcol: usize = 0;
+
+    if !(findnext_empty(map, 0, & mut nextrow, & mut nextcol)) {
+        // 没有空位了 
+        return false;
+    }
+    sudoku_solve(& mut map_allzero, nextrow, nextcol);
+
+    add_num(map, nextrow, nextcol, map_allzero[nextrow][nextcol], false);
     return true;
 }
 
@@ -283,7 +307,7 @@ fn main() {
     let mut sudoku = sudoku_init_zero();
 
     row_random(& mut sudoku.map, 0);
-    sudoku_solve(& mut sudoku.map, & mut sudoku.answer, 1, 1);
+    sudoku_solve(& mut sudoku.map, 1, 1);
     
     hole_dig(& mut sudoku.map, 10);
     unsafe { sudoku.map_print(); }
