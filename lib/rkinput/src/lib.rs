@@ -32,7 +32,7 @@
 
 
 use core::time::Duration;
-use rkgpu::update_cursor;
+use rkgpu::{update_cursor, draw_select};
 use rkplat::drivers::virtio::{GPU_DEIVCE, INPUT_DEIVCE, InputEvent};
 use rkplat::println;
 
@@ -45,6 +45,9 @@ const REL_Y: u16 = 0x01;
 
 pub static mut MOUSE_X: u32 = 0;
 pub static mut MOUSE_Y: u32 = 0;
+
+pub static mut SELECT_X: u32 = 1;
+pub static mut SELECT_Y: u32 = 1;
 
 const EV_KEY: u16 = 0x01;
 const KEY_UP: u16 = 103;
@@ -80,9 +83,14 @@ pub fn input_handler(input_event: InputEvent) {
                 KEY_PAGEDOWN => { if CURSOR_Y < height - LONG_STEP { CURSOR_Y += LONG_STEP } }
                 KEY_HOME => { if CURSOR_X > LONG_STEP { CURSOR_X -= LONG_STEP } }
                 KEY_END => { if CURSOR_X < width - LONG_STEP { CURSOR_X += LONG_STEP } }
+                KEY_W => { if SELECT_Y > 75 { SELECT_Y -= 75} }
+                KEY_S => { if SELECT_Y < 600 { SELECT_Y += 75} }
+                KEY_A => { if SELECT_X > 75 { SELECT_X -= 75} }
+                KEY_D => { if SELECT_X < 600 { SELECT_X += 75} }
                 _ => {}
             }
             update_cursor(CURSOR_X, CURSOR_Y, false);
+            draw_select(SELECT_X, SELECT_Y);
         }
     }
 }

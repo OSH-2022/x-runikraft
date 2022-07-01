@@ -242,3 +242,10 @@ pub fn update_cursor(start_x: u32, start_y: u32, is_init: bool) {
         draw_line(Vertical, (max(1, start_x) - 1) as u32, (max(10, start_y) - 10) as u32, min(21, start_y + 10), BLACK, 255, 3);
     }
 }
+
+pub unsafe fn draw_select(start_x: u32, start_y: u32) {
+    draw_line(Horizontal, start_x, start_y, 75, BLACK, 255, 3);
+    draw_line(Horizontal, start_x, start_y + 75, 75, BLACK, 255, 3);
+    draw_line(Vertical, start_x, start_y, 75, BLACK, 255, 3);
+    draw_line(Vertical, start_x + 75, start_y, 75, BLACK, 255, 3)
+}
