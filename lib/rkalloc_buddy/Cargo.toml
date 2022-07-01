@@ -14,6 +14,6 @@ edition = "2021"
 # harness = false # 默认值为true，如果设置为false，`cargo test`会忽略传递给rustc的--test参数，达到的效果就是无法单独运行一个测试，比如使用`cargo test --test alloc_buddy`可以单独运行alloc_buddy这一个集成测试
 
 [dependencies]
-    runikraft = {path = "../../core"}
-    rkalloc = {path = "../rkalloc"}
-    rkplat = {path = "../rkplat"}
+    runikraft = {path = "../../core", default-features = false}
+    rkalloc = {path = "../rkalloc", default-features = false}
+    rkplat = {path = "../rkplat", default-features = false}

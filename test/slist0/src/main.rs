@@ -37,33 +37,39 @@ fn main(_args: &mut [&str])->i32 {
             counter += 1;
             if counter < arr_len {
                 let ptr_e = alloc_type::<SlistNode<i32>>(a, SlistNode::<i32>::new(arr[counter]));
-                let mut node2 = NonNull::new(ptr_e).expect("error: fail to get node\n");
+                let node2 = NonNull::new(ptr_e).expect("error: fail to get node\n");
                 node1.as_mut().insert_after(node2);
                 counter += 1;
             }
         }
-        let slist_iter = slist_a.iter();
         let result = [1, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14];
         counter = 0;
-        for node in slist_iter {
+        for node in slist_a.iter() {
             // rkplat::println!("counter: {}, result in node: {}, expect result: {}", counter, node.as_ref().element, result[counter]);
-            assert_eq!(node.as_ref().element, result[counter]);
+            assert_eq!(node.element, result[counter]);
             counter += 1;
         }
 
         // test `SlistNode::remove_after()`
-        let slist_iter = slist_a.iter();
         let result = [1, 2, 5, 7, 9, 11, 13, 15];
         counter = 0;
-        for mut node in slist_iter {
-            if node.as_ref().element % 2 == 1 {
-                node.as_mut().remove_after();
-                a.dealloc(node.as_ptr() as *mut u8, size_of::<SlistNode<i32>>(), align_of::<SlistNode<i32>>());
+        {
+            let mut node = slist_a.head();
+            loop {
+                node = if let Some(mut node) = node {
+                    if node.as_ref().element % 2 == 1 {
+                        if let Some(rm_node) = node.as_mut().remove_after() {
+                            a.dealloc(rm_node.as_ptr() as *mut u8, size_of::<SlistNode<i32>>(), align_of::<SlistNode<i32>>());
+                        }
+                    }
+                    node.as_ref().next
+                }
+                else {break;}
             }
         }
-        let slist_iter = slist_a.iter();
-        for node in slist_iter {
-            assert_eq!(node.as_ref().element, result[counter]);
+        for node in slist_a.iter() {
+            // rkplat::println!("counter: {}, result in node: {}, expect result: {}", counter, node.element, result[counter]);
+            assert_eq!(node.element, result[counter]);
             counter += 1;
         }
         arr_len = 8;

@@ -1,6 +1,5 @@
-// test rkalloc_buddy
+// test rkalloc_buddy::RKalloc
 
-// TODO
 #![no_std]
 #![no_main]
 extern crate rkalloc;

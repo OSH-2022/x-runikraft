@@ -151,12 +151,12 @@ impl<T> Stailq<T> {
     }
 }
 
-impl<T> Iterator for StailqIter<T> {
-    type Item = NonNull<StailqNode<T>>;
+impl<T: 'static> Iterator for StailqIter<T> {
+    type Item = &'static mut StailqNode<T>;
     fn next(&mut self) -> Option<Self::Item> {
         self.node.map(|mut node| {
-            self.node = unsafe{node.as_mut().next};
-            node
+            unsafe{ self.node = node.as_mut().next;
+            node.as_mut()}
         })
     }
 }

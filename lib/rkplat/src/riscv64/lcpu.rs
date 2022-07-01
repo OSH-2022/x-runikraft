@@ -3,6 +3,7 @@
 // Authors: 张子辰 <zichen350@gmail.com>
 // Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
+#![allow(unused_imports)]
 use core::time::Duration;
 use core::arch;
 use core::sync::atomic;
