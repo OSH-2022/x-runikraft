@@ -13,3 +13,7 @@
 !/reference/*
 *.dtb
 *.dts
+.vscode*
+.vScode*
+.Vscode*
+.VScode*
