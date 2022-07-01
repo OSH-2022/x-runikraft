@@ -206,6 +206,7 @@ dependencies = [
  "rkboot",
  "rkgpu",
  "rkplat",
+ "rkswrand",
 ]
 
 [[package]]

@@ -11,3 +11,4 @@ rkgpu = {path = "../../lib/rkgpu"}
 rkplat = {path = "../../lib/rkplat"}
 rkalloc = {path = "../../lib/rkalloc"}
 rkboot = {path = "../../lib/rkboot"}
+rkswrand = {path = "../../lib/rkswrand"}

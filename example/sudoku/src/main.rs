@@ -12,8 +12,9 @@
 #![no_main]
 extern crate rkboot;
 
-use rkplat::time::wall_clock;
+// use rkplat::time::wall_clock;
 use rkgpu::*;
+use rkswrand::fast_random;
 
 pub struct Sudoku {
     // 当前数独信息(玩家显示)
@@ -22,7 +23,7 @@ pub struct Sudoku {
     answer: [[usize; 9]; 9]
 
 }
-
+ 
 impl Sudoku {
     // 打印当前数独信息
     pub unsafe fn map_print(&self) {
@@ -59,13 +60,10 @@ pub fn sudoku_init_zero () -> Sudoku {
 pub fn row_random(map: &mut [[usize; 9]; 9], row: usize) {
     let mut rowtable = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
-
-
     for i in 0..9 {
         // let mut rng = rand::thread_rng();
         // let index = rng.gen_range(0..9);
-        let time = wall_clock();
-        let index = (time.as_nanos() % 9) as usize;
+        let index: usize = fast_random() % 9;
         let temp = rowtable[i];
         rowtable[i] = rowtable[index];
         rowtable[index] = temp;
@@ -210,8 +208,9 @@ pub fn hole_dig(map:& mut [[usize; 9]; 9], num: usize) {
     while i < number_num {
     
         // let mut index = rng.gen_range(0..81);
-        let time = wall_clock();
-        let mut index = (time.as_nanos() % 81) as usize;
+        // let time = wall_clock();
+        // let mut index = (time.as_nanos() % 81) as usize;
+        let index:usize = fast_random() % 81;
         loop {
             if index >= 81 {
                 index %= 81;
