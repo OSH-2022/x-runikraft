@@ -339,7 +339,7 @@ fn main() {
     loop {
         rksched::this_thread::sleep_for(Duration::from_millis(1));
 
-        if add_num(&mut sudoku.map, SELECT_X as usize / 75 , SELECT_Y as usize / 75, INPUT_NUMBER - 1, true) {
+        if INPUT_NUMBER != 0 && add_num(&mut sudoku.map, SELECT_X as usize / 75 , SELECT_Y as usize / 75, INPUT_NUMBER - 1, true) {
         //if add_num(&mut sudoku.map, 0 , 0, INPUT_NUMBER, true) {
             show_sudoku_number((SELECT_X / 75) as u8, (SELECT_Y / 75) as u8, (INPUT_NUMBER - 1) as u8, GRAY);
             //show_sudoku_number(0, 0, INPUT_NUMBER as u8, GRAY);
