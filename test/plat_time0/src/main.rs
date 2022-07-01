@@ -13,5 +13,6 @@ fn main(_args: &mut [&str])->i32 {
     let time2 = monotonic_clock();
     let time3 = get_ticks();
     println!("wall_clock()={:?}\nmonotonic_clock()={:?}\nget_ticks()={:?}",time1,time2,time3);
+    rkplat::println!("Test plat_time0 passed!");
     0
 }

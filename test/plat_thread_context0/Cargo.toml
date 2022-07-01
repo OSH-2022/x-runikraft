@@ -1,5 +1,5 @@
 [package]
-    name = "test-rkplat_thread_context0"
+    name = "test-plat_thread_context0"
     version = "0.1.0"
     edition = "2021"
 

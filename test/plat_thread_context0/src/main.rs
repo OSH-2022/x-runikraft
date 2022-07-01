@@ -21,7 +21,7 @@ unsafe fn thread_entry(arg: *mut u8)->! {
             THREAD_STACK[(arg.id+1)%4].as_mut_ptr() as *mut thread::Context);
     }
     println!("Thread #{} ended.",arg.id);
-    rkplat::println!("Test rkplat_thread_context0 passed!");
+    rkplat::println!("Test plat_thread_context0 passed!");
     bootstrap::halt();
 }
 

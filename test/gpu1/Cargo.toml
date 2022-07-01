@@ -1,5 +1,5 @@
 [package]
-name = "test-rkgpu1"
+name = "test-gpu1"
 version = "0.1.0"
 edition = "2021"
 
