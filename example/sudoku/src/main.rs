@@ -244,6 +244,9 @@ pub fn add_num(map: &mut [[usize; 9]; 9], row:usize, col:usize, num: usize, ifch
     if map[row][col] != 0 {
         return false;
     }
+    if num > 8 {
+        return false;
+    }
     if ifcheck && !(if_fit_check(map, row, col, num, false)) {
         return false;
     }
