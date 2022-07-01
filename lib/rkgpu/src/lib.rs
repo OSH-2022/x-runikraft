@@ -97,7 +97,6 @@ pub unsafe fn init() {
     // update_cursor(200, 100, false);
     // rksched::this_thread::sleep_for(Duration::from_secs(1));
     //GPU_DEIVCE.as_mut().unwrap().setup_cursor(&CURSOR_NEW, 50, 50, 0, 0).expect("failed to set up cursor.");
-    GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
 }
 
 pub enum DIRECTION {
@@ -136,7 +135,7 @@ pub fn draw_line(direction: DIRECTION, start_x: u32, start_y: u32, length: u32, 
                 }
             }
         }
-        GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
+
     }
 }
 
@@ -152,6 +151,7 @@ pub fn draw_clear(color: Color) {
                 FB[idx + 3] = 255;
             }
         }
+        GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
     }
 }
 
@@ -174,7 +174,7 @@ pub fn draw_font(start_x: u32, start_y: u32, color: Color, alpha: u8, ch: char, 
                     }
                 }
             }
-            GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
+
             0
         } else { 1 }
     }
@@ -182,16 +182,19 @@ pub fn draw_font(start_x: u32, start_y: u32, color: Color, alpha: u8, ch: char, 
 
 
 pub fn printg(ascii_str: &str, start_x: u32, start_y: u32, color: Color, alpha: u8, size: u8) {
-    let mut x = start_x;
-    let mut y = start_y;
-    for ascii in ascii_str.chars() {
-        if ascii == '\n' {
-            x = start_x;
-            y += 16 * size as u32;
-        } else {
-            draw_font(x, y, color, alpha, ascii, size);
-            x += 8 * size as u32;
+    unsafe {
+        let mut x = start_x;
+        let mut y = start_y;
+        for ascii in ascii_str.chars() {
+            if ascii == '\n' {
+                x = start_x;
+                y += 16 * size as u32;
+            } else {
+                draw_font(x, y, color, alpha, ascii, size);
+                x += 8 * size as u32;
+            }
         }
+        GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
     }
 }
 
@@ -241,9 +244,9 @@ pub fn update_cursor(start_x: u32, start_y: u32, is_init: bool) {
         FB_CURSOR[0] = (idx_cursor / 5) as u32;
         draw_line(Horizontal, (max(10, start_x) - 10) as u32, (max(1, start_y) - 1) as u32, min(21, start_x + 10), BLACK, 255, 3);
         draw_line(Vertical, (max(1, start_x) - 1) as u32, (max(10, start_y) - 10) as u32, min(21, start_y + 10), BLACK, 255, 3);
+        GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
     }
 }
-
 pub unsafe fn draw_select(start_x: u32, start_y: u32, color: Color) {
     draw_line(Horizontal, start_x + 5, start_y + 5, 65, color, 255, 1);
     draw_line(Horizontal, start_x + 5, start_y + 70, 65, color, 255, 1);

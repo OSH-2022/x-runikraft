@@ -43,6 +43,7 @@ unsafe fn draw_sudoku_lattices() -> u8 {
                 draw_line(DIRECTION::Horizontal, 0, y * 75, 675, BLUE, 255, 1);
             }
         }
+        GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
         1
     } else { 0 }
 }
