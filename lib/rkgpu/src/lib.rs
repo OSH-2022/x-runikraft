@@ -90,6 +90,7 @@ pub unsafe fn init() {
     draw_clear(CYAN);
     printg("Hello, world!\nHello, OSH-2022!\nHello, Runikraft!\n", 700, 10, RED, 255, 4);
     update_cursor(100, 100, true);
+    draw_select(0, 0, RED);
     // rksched::this_thread::sleep_for(Duration::from_secs(1));
     // update_cursor(150, 100, false);
     // rksched::this_thread::sleep_for(Duration::from_secs(1));
@@ -243,9 +244,9 @@ pub fn update_cursor(start_x: u32, start_y: u32, is_init: bool) {
     }
 }
 
-pub unsafe fn draw_select(start_x: u32, start_y: u32) {
-    draw_line(Horizontal, start_x, start_y, 75, BLACK, 255, 3);
-    draw_line(Horizontal, start_x, start_y + 75, 75, BLACK, 255, 3);
-    draw_line(Vertical, start_x, start_y, 75, BLACK, 255, 3);
-    draw_line(Vertical, start_x + 75, start_y, 75, BLACK, 255, 3)
+pub unsafe fn draw_select(start_x: u32, start_y: u32, color: Color) {
+    draw_line(Horizontal, start_x + 5, start_y + 5, 65, color, 255, 1);
+    draw_line(Horizontal, start_x + 5, start_y + 70, 65, color, 255, 1);
+    draw_line(Vertical, start_x + 5, start_y + 5, 65, color, 255, 1);
+    draw_line(Vertical, start_x + 70, start_y + 5, 65, color, 255, 1)
 }

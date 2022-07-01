@@ -32,7 +32,7 @@
 
 
 use core::time::Duration;
-use rkgpu::{update_cursor, draw_select};
+use rkgpu::{update_cursor, draw_select, RED, CYAN};
 use rkplat::drivers::virtio::{GPU_DEIVCE, INPUT_DEIVCE, InputEvent};
 use rkplat::println;
 
@@ -46,8 +46,8 @@ const REL_Y: u16 = 0x01;
 pub static mut MOUSE_X: u32 = 0;
 pub static mut MOUSE_Y: u32 = 0;
 
-pub static mut SELECT_X: u32 = 1;
-pub static mut SELECT_Y: u32 = 1;
+pub static mut SELECT_X: u32 = 0;
+pub static mut SELECT_Y: u32 = 0;
 
 const EV_KEY: u16 = 0x01;
 const KEY_UP: u16 = 103;
@@ -73,24 +73,64 @@ pub fn input_handler(input_event: InputEvent) {
     unsafe {
         let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
         println!("{},{},{}", input_event.event_type, input_event.code, input_event.value);
+        let SELECT_OLD_X = SELECT_X;
+        let SELECT_OLD_Y = SELECT_Y;
         if input_event.event_type == EV_KEY &&input_event.value==1{
             match input_event.code {
-                KEY_UP => { if CURSOR_Y > SHORT_STEP { CURSOR_Y -= SHORT_STEP } }
-                KEY_DOWN => { if CURSOR_Y < height - SHORT_STEP { CURSOR_Y += SHORT_STEP } }
-                KEY_LEFT => { if CURSOR_X > SHORT_STEP { CURSOR_X -= SHORT_STEP } }
-                KEY_RIGHT => { if CURSOR_X < width - SHORT_STEP { CURSOR_X += SHORT_STEP } }
-                KEY_PAGEUP => { if CURSOR_Y > LONG_STEP { CURSOR_Y -= LONG_STEP } }
-                KEY_PAGEDOWN => { if CURSOR_Y < height - LONG_STEP { CURSOR_Y += LONG_STEP } }
-                KEY_HOME => { if CURSOR_X > LONG_STEP { CURSOR_X -= LONG_STEP } }
-                KEY_END => { if CURSOR_X < width - LONG_STEP { CURSOR_X += LONG_STEP } }
-                KEY_W => { if SELECT_Y > 75 { SELECT_Y -= 75} }
-                KEY_S => { if SELECT_Y < 600 { SELECT_Y += 75} }
-                KEY_A => { if SELECT_X > 75 { SELECT_X -= 75} }
-                KEY_D => { if SELECT_X < 600 { SELECT_X += 75} }
+                KEY_UP => { if CURSOR_Y > SHORT_STEP { 
+                    CURSOR_Y -= SHORT_STEP;
+                    update_cursor(CURSOR_X, CURSOR_Y, false); } 
+                }
+                KEY_DOWN => { if CURSOR_Y < height - SHORT_STEP { 
+                    CURSOR_Y += SHORT_STEP;
+                    update_cursor(CURSOR_X, CURSOR_Y, false); } 
+                }
+                KEY_LEFT => { if CURSOR_X > SHORT_STEP { 
+                    CURSOR_X -= SHORT_STEP;
+                    update_cursor(CURSOR_X, CURSOR_Y, false); } 
+                }
+                KEY_RIGHT => { if CURSOR_X < width - SHORT_STEP { 
+                    CURSOR_X += SHORT_STEP;
+                    update_cursor(CURSOR_X, CURSOR_Y, false); } 
+                }
+                KEY_PAGEUP => { if CURSOR_Y > LONG_STEP { 
+                    CURSOR_Y -= LONG_STEP;
+                    update_cursor(CURSOR_X, CURSOR_Y, false); } 
+                }
+                KEY_PAGEDOWN => { if CURSOR_Y < height - LONG_STEP { 
+                    CURSOR_Y += LONG_STEP;
+                    update_cursor(CURSOR_X, CURSOR_Y, false); } 
+                }
+                KEY_HOME => { if CURSOR_X > LONG_STEP { 
+                    CURSOR_X -= LONG_STEP;
+                    update_cursor(CURSOR_X, CURSOR_Y, false); } 
+                }
+                KEY_END => { if CURSOR_X < width - LONG_STEP { 
+                    CURSOR_X += LONG_STEP;
+                    update_cursor(CURSOR_X, CURSOR_Y, false); } 
+                }
+                KEY_W => { if SELECT_Y >= 75 {   
+                    SELECT_Y -= 75;
+                    draw_select(SELECT_OLD_X, SELECT_OLD_Y, CYAN);
+                    draw_select(SELECT_X, SELECT_Y, RED); } 
+                }
+                KEY_S => { if SELECT_Y < 600 { 
+                    SELECT_Y += 75; 
+                    draw_select(SELECT_OLD_X, SELECT_OLD_Y, CYAN);
+                    draw_select(SELECT_X, SELECT_Y, RED);} 
+                }
+                KEY_A => { if SELECT_X >= 75 { 
+                    SELECT_X -= 75;
+                    draw_select(SELECT_OLD_X, SELECT_OLD_Y, CYAN);
+                    draw_select(SELECT_X, SELECT_Y, RED);} 
+                }
+                KEY_D => { if SELECT_X < 600 { 
+                    SELECT_X += 75;
+                    draw_select(SELECT_OLD_X, SELECT_OLD_Y, CYAN);
+                    draw_select(SELECT_X, SELECT_Y, RED);} 
+                }   
                 _ => {}
             }
-            update_cursor(CURSOR_X, CURSOR_Y, false);
-            draw_select(SELECT_X, SELECT_Y);
         }
     }
 }
