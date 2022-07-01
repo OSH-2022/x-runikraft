@@ -65,7 +65,7 @@ mod uart_based_io
     }
 }
 
-#[cfg(not(all(feature="driver_uart")))]
+#[cfg(not(any(feature="driver_uart")))]
 mod bios_io {
     use super::*;
     fn putchar(ch: usize) -> bool {
@@ -105,7 +105,7 @@ mod bios_io {
 #[cfg(feature="driver_uart")]
 pub use uart_based_io::*;
 
-#[cfg(not(all(feature="driver_uart")))]
+#[cfg(not(any(feature="driver_uart")))]
 pub use bios_io::*;
 
 ///////////////////

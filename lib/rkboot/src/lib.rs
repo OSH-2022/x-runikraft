@@ -42,6 +42,7 @@ use rksched::RKsched;
 use runikraft::align_as;
 use runikraft::config::HEAP_SIZE;
 
+#[cfg(any(feature="alloc_buddy"))]
 static mut HEAP:align_as::A4096<[u8;HEAP_SIZE]> = align_as::A4096::new([0;HEAP_SIZE]);
 
 extern "Rust" {
@@ -75,10 +76,35 @@ mod virtio_alloc{
     }
 }
 
+#[cfg(not(any(feature="alloc_buddy")))]
+struct NullAllocator;
+
+#[cfg(not(any(feature="alloc_buddy")))]
+unsafe impl RKalloc for NullAllocator {
+    unsafe fn alloc(&self, _: usize, _: usize) -> *mut u8 {
+        unimplemented!();
+    }
+    unsafe fn dealloc(&self, _: *mut u8, _: usize, _: usize) {
+        unimplemented!();
+    }
+}
+
+#[cfg(not(any(feature="alloc_buddy")))]
+impl rkalloc::RKallocState for NullAllocator {
+    fn free_size(&self) -> usize {
+        0
+    }
+    fn total_size(&self) -> usize {
+        0
+    }
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn rkplat_entry(argc: i32, argv: *mut *mut u8) -> ! {
     #[cfg(feature="alloc_buddy")]
     let a = rkalloc_buddy::RKallocBuddy::new(HEAP.data.as_mut_ptr(), HEAP.data.len());
+    #[cfg(not(any(feature="alloc_buddy")))]
+    let a = NullAllocator;
 
     rkalloc::register(addr_of!(a));
     rkalloc::register_state(addr_of!(a));

@@ -12,7 +12,6 @@ authors = [
 ]
 
 [features]
-    # default = ["has_smp","driver_ns16550","driver_virtio_all","driver_goldfish_rtc"]
     has_smp = []            # 对称多处理器支持
     save_fp = []            # 在线程切换时保存浮点寄存器
     driver_uart = []        # 串口设备驱动
