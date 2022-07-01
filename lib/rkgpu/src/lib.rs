@@ -2,7 +2,8 @@
 // rkgpu/lib.rs
 
 // Authors:  郭耸霄 <logname@mail.ustc.edu.cn>
-//
+// Authors:  蓝俊玮 <ljw13@mail.ustc.edu.cn>
+
 // Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
 // Redistribution and use in source and binary forms, with or without
