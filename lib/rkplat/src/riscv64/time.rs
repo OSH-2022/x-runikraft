@@ -25,17 +25,12 @@ pub const TICK_NANOSEC: u64 = 100;
 static mut INIT_TIME: u64 = 0;
 
 fn timer_irq_handler(_: *mut u8) -> bool {
-    unsafe {arch::asm!("
-        li t0,32
-        csrc sie, t0");}
+    super::irq::ack_irq(0x5);
     true
 }
 
 /// 初始化时钟和时钟中断
-//TODO: 未完成
 pub fn init() {
-    // OpenSBI启动时的输出 Platform Timer Device     : aclint-mtimer @ 10000000Hz
-    // unsafe { TICK_NANOSEC = 100 };
     unsafe {
         INIT_TIME = get_time_counter();
         super::irq::register(get_irq(), timer_irq_handler, null_mut()).unwrap();
@@ -83,7 +78,7 @@ pub(crate) fn block(until: Duration) {
     let time_now = monotonic_clock();
     if until <= time_now {return;}
     //Set Timer
-    sbi::sbi_call(0x54494D45, 0, ((until.as_nanos() as u64 + unsafe{INIT_TIME})/TICK_NANOSEC) as usize, 0, 0).unwrap();
+    set_timer(until);
     lcpu::halt_irq();
 }
 
@@ -95,4 +90,9 @@ pub fn sleep_until(until: Duration) {
         if monotonic_clock() >= until {break;}
     }
     lcpu::restore_irqf(flag);
+}
+
+/// 在until时刻触发时钟中断
+pub fn set_timer(until: Duration) {
+    sbi::sbi_call(0x54494D45, 0, ((until.as_nanos() as u64 + unsafe{INIT_TIME})/TICK_NANOSEC) as usize, 0, 0).unwrap();
 }
