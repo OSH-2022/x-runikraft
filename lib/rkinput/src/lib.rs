@@ -72,13 +72,13 @@ pub fn input_handler(input_event: InputEvent) {
         println!("{},{},{}", input_event.event_type, input_event.code, input_event.value);
         if input_event.event_type == EV_KEY &&input_event.value==1{
             match input_event.code {
-                KEY_UP => { if CURSOR_Y > 0 { CURSOR_Y -= SHORT_STEP } }
+                KEY_UP => { if CURSOR_Y > SHORT_STEP { CURSOR_Y -= SHORT_STEP } }
                 KEY_DOWN => { if CURSOR_Y < height - SHORT_STEP { CURSOR_Y += SHORT_STEP } }
-                KEY_LEFT => { if CURSOR_X > 0 { CURSOR_X -= SHORT_STEP } }
+                KEY_LEFT => { if CURSOR_X > SHORT_STEP { CURSOR_X -= SHORT_STEP } }
                 KEY_RIGHT => { if CURSOR_X < width - SHORT_STEP { CURSOR_X += SHORT_STEP } }
-                KEY_PAGEUP => { if CURSOR_Y > 0 { CURSOR_Y -= LONG_STEP } }
+                KEY_PAGEUP => { if CURSOR_Y > LONG_STEP { CURSOR_Y -= LONG_STEP } }
                 KEY_PAGEDOWN => { if CURSOR_Y < height - LONG_STEP { CURSOR_Y += LONG_STEP } }
-                KEY_HOME => { if CURSOR_X > 0 { CURSOR_X -= LONG_STEP } }
+                KEY_HOME => { if CURSOR_X > LONG_STEP { CURSOR_X -= LONG_STEP } }
                 KEY_END => { if CURSOR_X < width - LONG_STEP { CURSOR_X += LONG_STEP } }
                 _ => {}
             }

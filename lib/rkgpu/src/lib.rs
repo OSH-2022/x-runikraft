@@ -207,8 +207,8 @@ pub fn update_cursor(start_x: u32, start_y: u32, is_init: bool) {
             }
         }
         let mut idx_cursor = 1;
-        for y in max(start_y, 1) - 1..min(start_y + 1, height) + 1 {
-            for x in max(start_x, 10) - 10..min(start_x + 10, width) + 1 {
+        for y in max(start_y, 1) - 1..min(start_y + 1, height - 1) + 1 {
+            for x in max(start_x, 10) - 10..min(start_x + 10, width - 1) + 1 {
                 let idx = (y * width + x) * 4;
                 FB_CURSOR[idx_cursor] = idx;
                 idx_cursor += 1;
@@ -222,8 +222,8 @@ pub fn update_cursor(start_x: u32, start_y: u32, is_init: bool) {
                 idx_cursor += 1;
             }
         }
-        for x in max(start_x, 1) - 1..min(start_x + 1, width) + 1 {
-            for y in max(start_y, 10) - 10..min(start_y + 10, height) + 1 {
+        for x in max(start_x, 1) - 1..min(start_x + 1, width - 1) + 1 {
+            for y in max(start_y, 10) - 10..min(start_y + 10, height - 1) + 1 {
                 let idx = (y * width + x) * 4;
                 FB_CURSOR[idx_cursor] = idx;
                 idx_cursor += 1;
@@ -238,7 +238,7 @@ pub fn update_cursor(start_x: u32, start_y: u32, is_init: bool) {
             }
         }
         FB_CURSOR[0] = (idx_cursor / 5) as u32;
-        draw_line(Horizontal, max(0, start_x - 10) as u32, max(0, start_y - 1) as u32, 21, BLACK, 255, 3);
-        draw_line(Vertical, max(0, start_x - 1) as u32, max(0, start_y - 10) as u32, 21, BLACK, 255, 3);
+        draw_line(Horizontal, (max(10, start_x) - 10) as u32, (max(1, start_y) - 1) as u32, min(21, start_x + 10), BLACK, 255, 3);
+        draw_line(Vertical, (max(1, start_x) - 1) as u32, (max(10, start_y) - 10) as u32, min(21, start_y + 10), BLACK, 255, 3);
     }
 }
