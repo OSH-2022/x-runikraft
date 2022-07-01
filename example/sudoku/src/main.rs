@@ -112,7 +112,7 @@ pub fn findnext_empty(map: &[[usize; 9]; 9], row: usize, nextrow: & mut usize, n
 }
 
 /*
- * 检查该位置填入的数字是否合法，若合法则返回 rrue
+ * 检查该位置填入的数字是否合法，若合法则返回 true
  * 检测内容：在 (@x, @y) 位置填入 @number
  * @if_checkself 为 true 时，如果目标位置存在数字则视作不合法
  */
@@ -195,6 +195,7 @@ pub fn sudoku_solve(map: & mut [[usize; 9]; 9], answer: &mut [[usize; 9]; 9], ro
     false
 }
 
+
 // 挖洞函数： 对于生成的数独进行随机挖空
 // 以 @map 为模板，将挖空的结果写入 @map
 // @num 为留下的非空格数字数目，最低为 10
@@ -228,6 +229,47 @@ pub fn hole_dig(map:& mut [[usize; 9]; 9], num: usize) {
     sudoku_copy(map, & hole_map);
 
 }
+
+/*
+    添加数字的函数
+    向 @map 中 (@row, @col) 的位置上写入 @num。 [0~8]
+    如果该位置原先有数字，则写入失败
+    @ifcheck 为 true 时，如果填入的数字破坏了数独规则也写入失败
+*/
+pub fn add_num(map: &mut [[usize; 9]; 9], row:usize, col:usize, num: usize, ifcheck:bool) -> bool {
+    if row > 8 || col > 8 {
+        // 访问越界
+        return false;
+    }
+    if map[row][col] != 0 {
+        return false;
+    }
+    if ifcheck && !(if_fit_check(map, row, col, num, false)) {
+        return false;
+    }
+
+    map[row][col] = num;
+    return true;
+}
+
+/*
+    删除数字的函数
+    将 @map 中 (@row, @col) 的位置上数字删除（写入 0）
+    如果该位置原先就是 0，则删除失败
+*/
+pub fn del_num(map: &mut [[usize; 9]; 9], row:usize, col:usize) -> bool {
+    if row > 8 || col > 8  {
+        // 访问越界
+        return false;
+    }
+    if map[row][col] != 0 {
+        return false;
+    }
+    
+    map[row][col] = 0;
+    return true;
+}
+
 
 #[no_mangle]
 fn main() {
