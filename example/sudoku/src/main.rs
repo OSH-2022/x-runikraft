@@ -16,6 +16,13 @@ extern crate rkboot;
 use rkgpu::*;
 use rkswrand::fast_random;
 use rkinput::*;
+use rksched::*;
+use core::time::Duration;
+use core::ptr::null_mut;
+
+
+
+
 
 
 pub struct Sudoku {
@@ -32,10 +39,11 @@ impl Sudoku {
         for i in 0..9 {
             for j in 0..9 {
                 // show_sudoku_number(pos_x: u8, pos_y: u8, number: u8);
-                // if map[i][j] == 0 {
-                //     continue;
-                // }
-                show_sudoku_number(i as u8, j as u8, self.map[i][j] as u8, GRAY);
+                if self.map[i][j] == 0 {
+                    show_sudoku_number(i as u8, j as u8, self.map[i][j] as u8, GRAY);
+                    continue;
+                }
+                show_sudoku_number(i as u8, j as u8, self.map[i][j] as u8, BLACK);
                 // print!("{} ", self.map[i][j]);
             }
             // println!("");
@@ -207,7 +215,7 @@ pub fn sudoku_solve(map: & mut [[usize; 9]; 9], row: usize, col: usize) -> bool{
 pub fn hole_dig(map:& mut [[usize; 9]; 9], num: usize) {
     let mut hole_map = [[0; 9]; 9];
 
-    let number_num = num % 81;
+    let mut number_num = num % 81;
     if number_num < 10 {
         number_num = 10;
     }
@@ -306,32 +314,40 @@ pub fn hint(map: &mut [[usize; 9]; 9]) -> bool{
 fn main() {
     unsafe{
     
+    rksched::sched::create_thread("", rkalloc::get_default().unwrap(),
+                                  rksched::thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),
+                                  input_tracer,null_mut());
+    
     let mut sudoku = sudoku_init_zero();
     let mut map_old:[[usize; 9]; 9] = [[0; 9]; 9];
+    
+    init();
+    draw_sudoku_lattices(PURPLE, BLACK);
 
     row_random(& mut sudoku.map, 0);
     sudoku_solve(& mut sudoku.map, 1, 1);
     
-    hole_dig(& mut sudoku.map, 10);
+    hole_dig(& mut sudoku.map, 15);
     sudoku.map_print();
 
     sudoku_copy(& mut map_old, & sudoku.map);
+    
+    
 
-    rksched::sched::create_thread("", rkalloc::get_default().unwrap(),
-                                  rksched::thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),
-                                  input_tracer,null_mut());
-    init();
-    draw_sudoku_lattices(PURPLE, GREEN);
-
+    
+    
     loop {
-        rksched::this_thread::sleep_for(Duration::from_millis(10));
+        rksched::this_thread::sleep_for(Duration::from_millis(1));
 
         if add_num(&mut sudoku.map, SELECT_X as usize / 75 , SELECT_Y as usize / 75, INPUT_NUMBER, true) {
-            show_sudoku_number(SELECT_X / 75, SELECT_Y / 75, INPUT_NUMBER, BLACK);
+        //if add_num(&mut sudoku.map, 0 , 0, INPUT_NUMBER, true) {
+            show_sudoku_number(SELECT_X as u8 / 75, SELECT_Y as u8 / 75, (INPUT_NUMBER - 1) as u8, GRAY);
+            //show_sudoku_number(0, 0, INPUT_NUMBER as u8, GRAY);
         }
 
         if INPUT_NUMBER == 0 && del_num(&mut sudoku.map, SELECT_X as usize / 75, SELECT_Y as usize / 75) {
-            show_sudoku_number(SELECT_X / 75, SELECT_Y / 75, 255, BLACK)
+            show_sudoku_number(SELECT_X as u8 / 75, SELECT_Y as u8 / 75, 0, GRAY);
+            //show_sudoku_number(SELECT_X as u8 / 75, SELECT_Y as u8 / 75, 255, BLACK);
         }
     }
     // sudoku_solve(& mut sudoku.map, & mut sudoku.answer, 0, 0);

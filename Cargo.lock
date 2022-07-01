@@ -220,6 +220,7 @@ dependencies = [
  "rkgpu",
  "rkinput",
  "rkplat",
+ "rksched",
  "rkswrand",
 ]
 

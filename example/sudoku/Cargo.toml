@@ -13,3 +13,4 @@ rkalloc = {path = "../../lib/rkalloc"}
 rkboot = {path = "../../lib/rkboot"}
 rkswrand = {path = "../../lib/rkswrand"}
 rkinput = {path = "../../lib/rkinput"}
+rksched = {path = "../../lib/rksched"}

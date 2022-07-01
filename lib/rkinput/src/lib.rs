@@ -49,7 +49,7 @@ pub static mut MOUSE_Y: u32 = 0;
 
 pub static mut SELECT_X: u32 = 0;
 pub static mut SELECT_Y: u32 = 0;
-pub static mut INPUT_NUMBER: usize = 0;
+pub static mut INPUT_NUMBER: usize = 100;
 
 const EV_KEY: u16 = 0x01;
 const KEY_UP: u16 = 103;
@@ -124,21 +124,25 @@ pub fn input_handler(input_event: InputEvent) {
                     SELECT_Y -= 75;
                     draw_select(SELECT_OLD_X, SELECT_OLD_Y, CYAN);
                     draw_select(SELECT_X, SELECT_Y, RED); } 
+                    INPUT_NUMBER = 100;
                 }
                 KEY_S => { if SELECT_Y < 600 { 
                     SELECT_Y += 75; 
                     draw_select(SELECT_OLD_X, SELECT_OLD_Y, CYAN);
                     draw_select(SELECT_X, SELECT_Y, RED);} 
+                    INPUT_NUMBER = 100;
                 }
                 KEY_A => { if SELECT_X >= 75 { 
                     SELECT_X -= 75;
                     draw_select(SELECT_OLD_X, SELECT_OLD_Y, CYAN);
                     draw_select(SELECT_X, SELECT_Y, RED);} 
+                    INPUT_NUMBER = 100;
                 }
                 KEY_D => { if SELECT_X < 600 { 
                     SELECT_X += 75;
                     draw_select(SELECT_OLD_X, SELECT_OLD_Y, CYAN);
                     draw_select(SELECT_X, SELECT_Y, RED);} 
+                    INPUT_NUMBER = 100;
                 }   
                 KEY_1 => { 
                     INPUT_NUMBER = 1;
