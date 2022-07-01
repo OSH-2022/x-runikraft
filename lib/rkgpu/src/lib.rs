@@ -251,5 +251,6 @@ pub unsafe fn draw_select(start_x: u32, start_y: u32, color: Color) {
     draw_line(Horizontal, start_x + 5, start_y + 5, 65, color, 255, 1);
     draw_line(Horizontal, start_x + 5, start_y + 70, 65, color, 255, 1);
     draw_line(Vertical, start_x + 5, start_y + 5, 65, color, 255, 1);
-    draw_line(Vertical, start_x + 70, start_y + 5, 65, color, 255, 1)
+    draw_line(Vertical, start_x + 70, start_y + 5, 65, color, 255, 1);
+    GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
 }

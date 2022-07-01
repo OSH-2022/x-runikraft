@@ -1,0 +1,1 @@
+-device virtio-gpu-device,xres=1280,yres=800 -device virtio-keyboard-device -serial mon:stdio
