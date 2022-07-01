@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: MIT
+# rkalloc_mi/Cargo.toml
+# Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
+
+[package]
+name = "rkalloc_mi"
+version = "0.1.0"
+authors = [ 
+    "Daan Leijen",
+    "张子辰 <zichen350@gmail.com>" ,
+]
+license = "MIT"
+edition = "2021"
+
+[dependencies]
+    runikraft = {path = "../../core", default-features = false}
+    rkalloc = {path = "../rkalloc", default-features = false}
+    rkplat = {path = "../rkplat", default-features = false}
+    bitflags = "1.3"
+
+[features]
+    debug_lv1 = ["stat_lv2"]
+    debug_lv2 = ["debug_lv1"]
+    debug_lv3 = ["debug_lv2"]
+    stat_lv1 = []
+    stat_lv2 = ["stat_lv1"]

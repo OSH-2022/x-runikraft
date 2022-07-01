@@ -15,6 +15,8 @@ extern crate rkboot;
 // use rkplat::time::wall_clock;
 use rkgpu::*;
 use rkswrand::fast_random;
+use rkinput::*;
+
 
 pub struct Sudoku {
     // 当前数独信息(玩家显示)
@@ -323,3 +325,4 @@ unsafe fn show_sudoku_number(pos_x: u8, pos_y: u8, number: u8,color:Color) -> u8
         0
     } else { 1 }
 }
+

@@ -92,6 +92,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "rkalloc_mi"
+version = "0.1.0"
+dependencies = [
+ "bitflags",
+ "rkalloc",
+ "rkplat",
+ "runikraft",
+]
+
+[[package]]
 name = "rkboot"
 version = "0.1.0"
 dependencies = [
@@ -116,7 +126,9 @@ dependencies = [
 name = "rkinput"
 version = "0.1.0"
 dependencies = [
+ "rkgpu",
  "rkplat",
+ "rksched",
 ]
 
 [[package]]
@@ -205,6 +217,7 @@ dependencies = [
  "rkalloc",
  "rkboot",
  "rkgpu",
+ "rkinput",
  "rkplat",
  "rkswrand",
 ]

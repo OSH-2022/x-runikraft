@@ -10,6 +10,7 @@ members = [
     "lib/rkboot",
     "lib/rkalloc",
     "lib/rkalloc_buddy",
+    "lib/rkalloc_mi",
     "lib/rkring",
     "lib/rkmbox",
     "lib/rklock",
