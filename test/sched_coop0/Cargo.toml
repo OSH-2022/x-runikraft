@@ -6,8 +6,8 @@
 [workspace]
 
 [dependencies]
-    rkplat = {path = "../../lib/rkplat"}
+    rkplat = {path = "../../lib/rkplat", features = ["has_smp","driver_ns16550"]}
     rkalloc = {path = "../../lib/rkalloc"}
-    rkboot = {path = "../../lib/rkboot"}
+    rkboot = {path = "../../lib/rkboot", features = ["alloc_buddy","sched_coop"]}
     rksched = {path = "../../lib/rksched"}
-    rkinput = {path = "../../lib/rkinput"}
+

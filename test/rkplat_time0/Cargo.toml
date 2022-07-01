@@ -6,6 +6,5 @@
 [workspace]
 
 [dependencies]
-    rkplat = {path = "../../lib/rkplat", default-features = false, features=["driver_ns16550","driver_goldfish_rtc"]}
-    rkalloc = {path = "../../lib/rkalloc"}
-    rkboot = {path = "../../lib/rkboot", default-features = false, features=["alloc_buddy"]}
+    rkplat = {path = "../../lib/rkplat", features=["driver_ns16550","driver_goldfish_rtc"]}
+    rkboot = {path = "../../lib/rkboot", features=["alloc_buddy"]}

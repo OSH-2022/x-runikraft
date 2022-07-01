@@ -10,7 +10,4 @@ license = "BSD-3-Clause"
 edition = "2021"
 
 [dependencies]
-    runikraft = {path = "../../core", default-features = false}
-
-[features]
-    __alloc_error_handler=[] #内部使用: 防止rust-analyzer报错
+    runikraft = {path = "../../core"}

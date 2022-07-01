@@ -10,17 +10,16 @@ license = "BSD-3-Clause"
 edition = "2021"
 
 [features]
-    default = ["alloc_buddy","sched_coop"]
     alloc_buddy = ["rkalloc_buddy"]
     have_scheduler = ["rksched"]
     sched_coop = ["have_scheduler","rkschedcoop"]
     sched_preem = ["have_scheduler","rkschedpreem"]
 
 [dependencies]
-    runikraft = {path = "../../core", default-features = false}
-    rkalloc = {path = "../rkalloc", default-features = false}
-    rkalloc_buddy = {path = "../rkalloc_buddy", default-features = false, optional = true}
-    rkplat = {path = "../rkplat", default-features = false}
-    rksched = {path = "../rksched", default-features = false, optional = true}
-    rkschedcoop = {path = "../rkschedcoop", default-features = false, optional = true}
-    rkschedpreem = {path = "../rkschedpreem", default-features = false, optional = true}
+    runikraft = {path = "../../core"}
+    rkalloc = {path = "../rkalloc"}
+    rkalloc_buddy = {path = "../rkalloc_buddy", optional = true}
+    rkplat = {path = "../rkplat"}
+    rksched = {path = "../rksched", optional = true}
+    rkschedcoop = {path = "../rkschedcoop", optional = true}
+    rkschedpreem = {path = "../rkschedpreem", optional = true}

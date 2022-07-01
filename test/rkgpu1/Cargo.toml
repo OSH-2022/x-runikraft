@@ -7,11 +7,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rkboot = { path = "../../lib/rkboot" }
-rkplat = { path = "../../lib/rkplat" }
+rkboot = { path = "../../lib/rkboot", features = ["alloc_buddy","sched_coop"] }
+rkplat = { path = "../../lib/rkplat", features = ["driver_ns16550","driver_virtio_all"] }
 rkgpu = { path = "../../lib/rkgpu" }
 rkalloc = { path = "../../lib/rkalloc" }
 rksched = { path = "../../lib/rksched" }
 rkinput = { path = "../../lib/rkinput"}
-
-

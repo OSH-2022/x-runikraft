@@ -12,6 +12,6 @@ license = "BSD-3-Clause"
 edition = "2021"
 
 [dependencies]
-    runikraft = {path = "../../core", default-features = false}
-    rkplat = {path = "../rkplat", default-features = false}
-    rksched = {path = "../rksched", default-features = false}
+    runikraft = {path = "../../core"}
+    rkplat = {path = "../rkplat"}
+    rksched = {path = "../rksched"}

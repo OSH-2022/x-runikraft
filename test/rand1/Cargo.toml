@@ -6,8 +6,7 @@
 [workspace]
 
 [dependencies]
-    rkplat = {path = "../../lib/rkplat"}
-    rkalloc = {path = "../../lib/rkalloc"}
-    rkboot = {path = "../../lib/rkboot"}
+    rkplat = {path = "../../lib/rkplat", features = ["driver_ns16550","driver_virtio_entropy"]}
+    rkboot = {path = "../../lib/rkboot", features = ["alloc_buddy"]}
     rkswrand = {path = "../../lib/rkswrand"}
     rand = {version = "0.8", default-features = false, features = ["alloc"]}

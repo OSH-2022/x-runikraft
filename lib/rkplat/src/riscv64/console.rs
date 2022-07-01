@@ -18,9 +18,6 @@ fn putchar_bios(ch: usize) -> bool {
 //     sbi_call(SBI_CONSOLE_GETCHAR, 0, 0, 0, 0)
 // }
 
-#[cfg(all(feature="driver_uart",feature="bios_io"))]
-compile_error!("feature \"driver_uart\" and \"bios_io\" cannot be enabled at the same time");
-
 #[cfg(feature="driver_uart")]
 mod uart_based_io
 {
@@ -68,7 +65,7 @@ mod uart_based_io
     }
 }
 
-#[cfg(feature="bios_io")]
+#[cfg(not(all(feature="driver_uart")))]
 mod bios_io {
     use super::*;
     fn putchar(ch: usize) -> bool {
@@ -108,7 +105,7 @@ mod bios_io {
 #[cfg(feature="driver_uart")]
 pub use uart_based_io::*;
 
-#[cfg(feature="bios_io")]
+#[cfg(not(all(feature="driver_uart")))]
 pub use bios_io::*;
 
 ///////////////////
