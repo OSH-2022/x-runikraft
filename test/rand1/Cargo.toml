@@ -1,0 +1,13 @@
+[package]
+    name = "test-rand1"
+    version = "0.1.0"
+    edition = "2021"
+
+[workspace]
+
+[dependencies]
+    rkplat = {path = "../../lib/rkplat"}
+    rkalloc = {path = "../../lib/rkalloc"}
+    rkboot = {path = "../../lib/rkboot"}
+    rkswrand = {path = "../../lib/rkswrand"}
+    rand = {version = "0.8", default-features = false, features = ["alloc"]}

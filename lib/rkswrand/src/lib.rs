@@ -45,33 +45,30 @@ static STD_LOCK: Lock = Lock::new();
 static mut FAST_GEN: Option<SmallRng> = None;
 static FAST_LOCK: Lock = Lock::new();
 
-fn random_device(buf: &mut [u8]) -> Result<(),getrandom::Error> {
+#[no_mangle]
+extern "C" fn __getrandom_custom(mut dst: *mut u8, len: usize) -> u32 {
     if let Some(rng) = unsafe{&mut ENTROPY_DEIVCE} {
         let mut size = 0;
-        let mut buf_head = buf.as_mut_ptr();
-        let len = buf.len();
         while size<len {
-            let buf = unsafe{slice::from_raw_parts_mut(buf_head, len-size)};
+            let buf = unsafe{slice::from_raw_parts_mut(dst, len-size)};
             let size_received = 
                 match rng.recv(buf) {
                     Ok(size) => size,
                     Err(_) => {
-                        unsafe{return Err(getrandom::Error::from(core::num::NonZeroU32::new_unchecked(getrandom::Error::CUSTOM_START)));}
+                        return getrandom::Error::CUSTOM_START+1;
                     }
                 };
             size+=size_received;
-            buf_head = unsafe{buf_head.add(size_received)};
+            dst = unsafe{dst.add(size_received)};
         }
-        Ok(())
+        0
     }
     else {
-        Err(getrandom::Error::UNSUPPORTED)
+        getrandom::Error::CUSTOM_START+2
     }
 }
 
-getrandom::register_custom_getrandom!(random_device);
-
-pub fn hardward_random<T>() -> T
+pub fn hardware_random<T>() -> T
 where
     Standard: Distribution<T>,
 {
