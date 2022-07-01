@@ -63,7 +63,7 @@ pub fn row_random(map: &mut [[usize; 9]; 9], row: usize) {
     for i in 0..9 {
         // let mut rng = rand::thread_rng();
         // let index = rng.gen_range(0..9);
-        let index: usize = fast_random() % 9;
+        let index: usize = fast_random::<usize>() % 9;
         let temp = rowtable[i];
         rowtable[i] = rowtable[index];
         rowtable[index] = temp;
@@ -210,7 +210,7 @@ pub fn hole_dig(map:& mut [[usize; 9]; 9], num: usize) {
         // let mut index = rng.gen_range(0..81);
         // let time = wall_clock();
         // let mut index = (time.as_nanos() % 81) as usize;
-        let index:usize = fast_random() % 81;
+        let mut index:usize = fast_random::<usize>() % 81;
         loop {
             if index >= 81 {
                 index %= 81;
