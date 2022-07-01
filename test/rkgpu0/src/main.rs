@@ -5,18 +5,23 @@
 extern crate rkboot;
 
 use rkgpu::*;
+use rkinput::*;
 use rkplat::drivers::virtio::GPU_DEIVCE;
 use core::time::Duration;
+use core::ptr::null_mut;
 // use core::slice;
 // use core::mem::{size_of, align_of};
 // use core::ptr::NonNull;
 
 #[no_mangle]
 unsafe fn main(_args: &mut [&str]) -> i32 {
+    rksched::sched::create_thread("", rkalloc::get_default().unwrap(),
+                                  rksched::thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),
+                                  input_tracer,null_mut());
     init();
     draw_sudoku_lattices();
     // printg("asdfh\n\nansi", 100, 100, RED ,255, 8);
-    rksched::this_thread::sleep_for(Duration::from_secs(5));
+    rksched::this_thread::sleep_for(Duration::from_secs(5000));
     rkplat::println!("\nTest rkgpu0 passed!\n");
     return 0;
 }

@@ -1,1 +1,1 @@
--device virtio-gpu-device -serial mon:stdio
+-device virtio-gpu-device -device virtio-keyboard-device -serial mon:stdio

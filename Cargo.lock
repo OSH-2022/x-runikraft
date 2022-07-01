@@ -116,7 +116,9 @@ dependencies = [
 name = "rkinput"
 version = "0.1.0"
 dependencies = [
+ "rkgpu",
  "rkplat",
+ "rksched",
 ]
 
 [[package]]

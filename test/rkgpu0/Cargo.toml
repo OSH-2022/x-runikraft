@@ -12,5 +12,6 @@ rkplat = { path = "../../lib/rkplat" }
 rkgpu = { path = "../../lib/rkgpu" }
 rkalloc = { path = "../../lib/rkalloc" }
 rksched = { path = "../../lib/rksched" }
+rkinput = { path = "../../lib/rkinput"}
 
 

@@ -2,7 +2,7 @@
 // rkgpu/lib.rs
 
 // Authors:  郭耸霄 <logname@mail.ustc.edu.cn>
-//           蓝俊玮 <ljw13@mail.ustc.edu.cn>
+//
 // Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
 // Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,7 @@
 
 #![no_std]
 
-use core::cmp::min;
+use core::cmp::{max, min};
 use core::time::Duration;
 use rkplat::drivers::virtio::GPU_DEIVCE;
 use crate::DIRECTION::{Horizontal, Vertical};
@@ -63,19 +63,19 @@ pub const PURPLE: Color = Color::new(255, 0, 255);
 static mut _EMPTY: [u8; 0] = [0; 0];
 
 static mut FB: &mut [u8] = unsafe { &mut _EMPTY };
-
-static CURSOR: [u8; 16 * 16 * 4] = include!("cursor.txt");
+static mut FB_CURSOR: &mut [u32] = &mut [0; 1000];
+//static CURSOR: [u8; 16 * 16 * 4] = include!("cursor.txt");
 
 pub unsafe fn init() {
-    static mut CURSOR_NEW: [u8; 64 * 64 * 4] = [0; 64 * 64 * 4];
-    for i in 0..16 {
-        for j in 0..16 {
-            CURSOR_NEW[(i * 64 + j) * 4 + 0] = CURSOR[(i * 16 + j) * 4 + 0];
-            CURSOR_NEW[(i * 64 + j) * 4 + 1] = CURSOR[(i * 16 + j) * 4 + 1];
-            CURSOR_NEW[(i * 64 + j) * 4 + 2] = CURSOR[(i * 16 + j) * 4 + 2];
-            CURSOR_NEW[(i * 64 + j) * 4 + 3] = CURSOR[(i * 16 + j) * 4 + 3];
-        }
-    }
+    // static mut CURSOR_NEW: [u8; 64 * 64 * 4] = [0; 64 * 64 * 4];
+    // for i in 0..16 {
+    //     for j in 0..16 {
+    //         CURSOR_NEW[(i * 64 + j) * 4 + 0] = CURSOR[(i * 16 + j) * 4 + 0];
+    //         CURSOR_NEW[(i * 64 + j) * 4 + 1] = CURSOR[(i * 16 + j) * 4 + 1];
+    //         CURSOR_NEW[(i * 64 + j) * 4 + 2] = CURSOR[(i * 16 + j) * 4 + 2];
+    //         CURSOR_NEW[(i * 64 + j) * 4 + 3] = CURSOR[(i * 16 + j) * 4 + 3];
+    //     }
+    // }
     FB = GPU_DEIVCE.as_mut().unwrap().setup_framebuffer().expect("failed to get FB");
     let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
     // draw_font(width / 2 - 4 * 16, height / 2 - 8 * 16, (0, 0, 0, 1), 3 + 48, 16);
@@ -88,8 +88,14 @@ pub unsafe fn init() {
     GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
     rksched::this_thread::sleep_for(Duration::from_secs(1));
     draw_clear(CYAN);
-    printg("Hello, world!\nHello, OSH-2022!\nHello, Runikraft!\n", 700, 10, RED ,255, 4);
-    GPU_DEIVCE.as_mut().unwrap().setup_cursor(&CURSOR_NEW, 50, 50, 0, 0).expect("failed to set up cursor.");
+    printg("Hello, world!\nHello, OSH-2022!\nHello, Runikraft!\n", 700, 10, RED, 255, 4);
+    update_cursor(100, 100, true);
+    // rksched::this_thread::sleep_for(Duration::from_secs(1));
+    // update_cursor(150, 100, false);
+    // rksched::this_thread::sleep_for(Duration::from_secs(1));
+    // update_cursor(200, 100, false);
+    // rksched::this_thread::sleep_for(Duration::from_secs(1));
+    //GPU_DEIVCE.as_mut().unwrap().setup_cursor(&CURSOR_NEW, 50, 50, 0, 0).expect("failed to set up cursor.");
     GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
 }
 
@@ -109,7 +115,7 @@ pub fn draw_line(direction: DIRECTION, start_x: u32, start_y: u32, length: u32, 
             Horizontal => {
                 for y in 0..min(line_width, height - start_y) {
                     for x in 0..min(length, width - start_x) {
-                        let idx = ((start_y + y) * width + x) * 4;
+                        let idx = ((start_y + y) * width + x + start_x) * 4;
                         FB[idx as usize + 2] = color.red;
                         FB[idx as usize + 1] = color.green;
                         FB[idx as usize + 0] = color.blue;
@@ -118,9 +124,9 @@ pub fn draw_line(direction: DIRECTION, start_x: u32, start_y: u32, length: u32, 
                 }
             }
             Vertical => {
-                for x in 0..min(line_width, height - start_x) {
+                for x in 0..min(line_width, width - start_x) {
                     for y in 0..min(length, height - start_y) {
-                        let idx = (y * width + x + start_x) * 4;
+                        let idx = ((y + start_y) * width + x + start_x) * 4;
                         FB[idx as usize + 2] = color.red;
                         FB[idx as usize + 1] = color.green;
                         FB[idx as usize + 0] = color.blue;
@@ -185,5 +191,54 @@ pub fn printg(ascii_str: &str, start_x: u32, start_y: u32, color: Color, alpha: 
             draw_font(x, y, color, alpha, ascii, size);
             x += 8 * size as u32;
         }
+    }
+}
+
+
+pub fn update_cursor(start_x: u32, start_y: u32, is_init: bool) {
+    unsafe {
+        let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
+        if !is_init {
+            for i in 1..(FB_CURSOR[0] + 1) as usize {
+                FB[FB_CURSOR[5 * i - 4] as usize + 2] = FB_CURSOR[5 * i - 4 + 1] as u8;
+                FB[FB_CURSOR[5 * i - 4] as usize + 1] = FB_CURSOR[5 * i - 4 + 2] as u8;
+                FB[FB_CURSOR[5 * i - 4] as usize + 0] = FB_CURSOR[5 * i - 4 + 3] as u8;
+                FB[FB_CURSOR[5 * i - 4] as usize + 3] = FB_CURSOR[5 * i - 4 + 4] as u8;
+            }
+        }
+        let mut idx_cursor = 1;
+        for y in max(start_y, 1) - 1..min(start_y + 1, height) + 1 {
+            for x in max(start_x, 10) - 10..min(start_x + 10, width) + 1 {
+                let idx = (y * width + x) * 4;
+                FB_CURSOR[idx_cursor] = idx;
+                idx_cursor += 1;
+                FB_CURSOR[idx_cursor] = FB[idx as usize + 2] as u32;
+                idx_cursor += 1;
+                FB_CURSOR[idx_cursor] = FB[idx as usize + 1] as u32;
+                idx_cursor += 1;
+                FB_CURSOR[idx_cursor] = FB[idx as usize + 0] as u32;
+                idx_cursor += 1;
+                FB_CURSOR[idx_cursor] = FB[idx as usize + 3] as u32;
+                idx_cursor += 1;
+            }
+        }
+        for x in max(start_x, 1) - 1..min(start_x + 1, width) + 1 {
+            for y in max(start_y, 10) - 10..min(start_y + 10, height) + 1 {
+                let idx = (y * width + x) * 4;
+                FB_CURSOR[idx_cursor] = idx;
+                idx_cursor += 1;
+                FB_CURSOR[idx_cursor] = FB[idx as usize + 2] as u32;
+                idx_cursor += 1;
+                FB_CURSOR[idx_cursor] = FB[idx as usize + 1] as u32;
+                idx_cursor += 1;
+                FB_CURSOR[idx_cursor] = FB[idx as usize + 0] as u32;
+                idx_cursor += 1;
+                FB_CURSOR[idx_cursor] = FB[idx as usize + 3] as u32;
+                idx_cursor += 1;
+            }
+        }
+        FB_CURSOR[0] = (idx_cursor / 5) as u32;
+        draw_line(Horizontal, max(0, start_x - 10) as u32, max(0, start_y - 1) as u32, 21, BLACK, 255, 3);
+        draw_line(Vertical, max(0, start_x - 1) as u32, max(0, start_y - 10) as u32, 21, BLACK, 255, 3);
     }
 }

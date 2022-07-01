@@ -31,7 +31,71 @@
 #![no_std]
 
 
+use core::time::Duration;
+use rkgpu::update_cursor;
+use rkplat::drivers::virtio::{GPU_DEIVCE, INPUT_DEIVCE, InputEvent};
+use rkplat::println;
 
-use rkplat::drivers::virtio::INPUT_DEIVCE;
+const EV_REL: u16 = 0x02;
+const BTN_LEFT: u16 = 0x110;
+const BTN_RIGHT: u16 = 0x111;
+const BTN_MIDDLE: u16 = 0x112;
+const REL_X: u16 = 0x00;
+const REL_Y: u16 = 0x01;
 
+pub static mut MOUSE_X: u32 = 0;
+pub static mut MOUSE_Y: u32 = 0;
 
+const EV_KEY: u16 = 0x01;
+const KEY_UP: u16 = 103;
+const KEY_DOWN: u16 = 108;
+const KEY_LEFT: u16 = 105;
+const KEY_RIGHT: u16 = 106;
+const KEY_PAGEUP: u16 = 104;
+const KEY_PAGEDOWN: u16 = 109;
+const KEY_HOME: u16 = 102;
+const KEY_END: u16 = 107;
+const KEY_W: u16 = 17;
+const KEY_S: u16 = 31;
+const KEY_A: u16 = 30;
+const KEY_D: u16 = 32;
+
+const SHORT_STEP: u32 = 1;
+const LONG_STEP: u32 = 20;
+
+pub static mut CURSOR_X: u32 = 100;
+pub static mut CURSOR_Y: u32 = 100;
+
+pub fn input_handler(input_event: InputEvent) {
+    unsafe {
+        let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
+        println!("{},{},{}", input_event.event_type, input_event.code, input_event.value);
+        if input_event.event_type == EV_KEY &&input_event.value==1{
+            match input_event.code {
+                KEY_UP => { if CURSOR_Y > 0 { CURSOR_Y -= SHORT_STEP } }
+                KEY_DOWN => { if CURSOR_Y < height - SHORT_STEP { CURSOR_Y += SHORT_STEP } }
+                KEY_LEFT => { if CURSOR_X > 0 { CURSOR_X -= SHORT_STEP } }
+                KEY_RIGHT => { if CURSOR_X < width - SHORT_STEP { CURSOR_X += SHORT_STEP } }
+                KEY_PAGEUP => { if CURSOR_Y > 0 { CURSOR_Y -= LONG_STEP } }
+                KEY_PAGEDOWN => { if CURSOR_Y < height - LONG_STEP { CURSOR_Y += LONG_STEP } }
+                KEY_HOME => { if CURSOR_X > 0 { CURSOR_X -= LONG_STEP } }
+                KEY_END => { if CURSOR_X < width - LONG_STEP { CURSOR_X += LONG_STEP } }
+                _ => {}
+            }
+            update_cursor(CURSOR_X, CURSOR_Y, false);
+        }
+    }
+}
+
+pub fn input_tracer(_null: *mut u8) {
+    unsafe {
+        loop {
+            let input_event_wrapped = INPUT_DEIVCE.as_mut().unwrap().pop_pending_event();
+            match input_event_wrapped {
+                Some(input_event) => input_handler(input_event),
+                //None => rksched::this_thread::sleep_for(Duration::from_millis(1))
+                None => { rksched::this_thread::r#yield() }
+            }
+        }
+    }
+}
