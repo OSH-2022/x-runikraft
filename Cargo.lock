@@ -92,16 +92,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rkalloc_mi"
-version = "0.1.0"
-dependencies = [
- "bitflags",
- "rkalloc",
- "rkplat",
- "runikraft",
-]
-
-[[package]]
 name = "rkboot"
 version = "0.1.0"
 dependencies = [
@@ -110,6 +100,7 @@ dependencies = [
  "rkplat",
  "rksched",
  "rkschedcoop",
+ "rkschedpreem",
  "runikraft",
 ]
 
@@ -180,6 +171,16 @@ dependencies = [
 
 [[package]]
 name = "rkschedcoop"
+version = "0.1.0"
+dependencies = [
+ "rkalloc",
+ "rkplat",
+ "rksched",
+ "runikraft",
+]
+
+[[package]]
+name = "rkschedpreem"
 version = "0.1.0"
 dependencies = [
  "rkalloc",

@@ -14,7 +14,6 @@ pub mod spinlock;
 pub mod thread;
 pub mod device;
 
-mod intctrl;
 mod exception;
 
 pub mod constants;

@@ -137,6 +137,8 @@ unsafe fn rkboot_entry(alloc: &dyn RKalloc, args: &mut [&str]) -> ! {
         for i in 0..cpu_cnt {
             #[cfg(feature="sched_coop")]
             {scheds[i] = rkalloc::alloc_type(alloc,rkschedcoop::RKschedcoop::new(i));}
+            #[cfg(feature="sched_preem")]
+            {scheds[i] = rkalloc::alloc_type(alloc,rkschedpreem::RKschedpreem::new(i));}
             rksched::sched::register(&mut *scheds[i]);
         }
         for i in 0..cpu_cnt {
@@ -148,7 +150,7 @@ unsafe fn rkboot_entry(alloc: &dyn RKalloc, args: &mut [&str]) -> ! {
             use runikraft::config::STACK_SIZE_SCALE as SSS;
             rksched::sched::create_thread_on_sched("empty", rkalloc::make_static(alloc),
                 i,
-                ThreadAttr::new(WAITABLE, true,PRIO_EMPTY, Duration::MAX, Duration::MAX, 4096*SSS, 0),
+                ThreadAttr::new(WAITABLE, true,PRIO_EMPTY, Duration::from_secs(10), Duration::MAX, 4096*SSS, 0),
                 ThreadLimit::default(),
                 rksched::sched::__empty_thread_function,
                 null_mut()).unwrap();

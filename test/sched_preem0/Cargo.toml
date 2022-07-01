@@ -1,0 +1,13 @@
+[package]
+    name = "test-sched_preem0"
+    version = "0.1.0"
+    edition = "2021"
+
+[workspace]
+
+[dependencies]
+    rkplat = {path = "../../lib/rkplat"}
+    rkalloc = {path = "../../lib/rkalloc"}
+    rkboot = {path = "../../lib/rkboot", default-features = false, features = ["alloc_buddy","sched_preem"]}
+    rksched = {path = "../../lib/rksched"}
+    rkinput = {path = "../../lib/rkinput"}

@@ -11,7 +11,7 @@ use runikraft::compat_list::{Slist,SlistNode};
 use crate::bootstrap;
 
 use super::constants::*;
-use super::{lcpu,intctrl};
+use super::lcpu;
 use super::reg::RegGenInt;
 
 
@@ -71,7 +71,7 @@ pub unsafe fn register(irq: usize, func: IRQHandlerFunc, arg: *mut u8) -> Result
     //interruption
     IRQ_HANDLERS[irq].as_mut().unwrap().push_front(NonNull::new(alloc_type(allocator(),SlistNode::new(handler))).unwrap());
     lcpu::restore_irqf(flags);
-    if irq&1<<63 !=0 { intctrl::clear_irq(irq); }
+    if irq&1<<63 !=0 { clear_irq(irq); }
     Ok(())
 }
 
@@ -80,7 +80,7 @@ pub unsafe fn register(irq: usize, func: IRQHandlerFunc, arg: *mut u8) -> Result
 unsafe extern "C" fn __rkplat_irq_handle(regs: &mut RegGenInt, irq: usize) {
     for i in IRQ_HANDLERS[irq].as_ref().unwrap().iter() {
         if (i.element.func)(i.element.arg) {
-            intctrl::ack_irq(irq);
+            ack_irq(irq);
             let rpc = bootstrap::hart_local().recovery_pc;
             if rpc !=0 {
                 regs.pc = rpc;
@@ -91,4 +91,27 @@ unsafe extern "C" fn __rkplat_irq_handle(regs: &mut RegGenInt, irq: usize) {
     }
     println!("Unhandled irq={}",irq);
     // panic!();
+}
+
+/// 确认已处理IRQ
+pub fn ack_irq(irq: usize) {
+    clear_irq(irq);
+}
+
+/// 强制触发IRQ
+pub fn raise_irq(irq: usize) {
+    let irq = 1usize<<irq;
+    unsafe {
+        core::arch::asm!("csrs sip, {irq}",
+        irq=in(reg)irq);
+    }
+}
+
+/// 清除正在等待处理的IRQ
+pub fn clear_irq(irq: usize) {
+    let irq = 1usize<<irq;
+    unsafe {
+        core::arch::asm!("csrc sip, {irq}",
+        irq=in(reg)irq);
+    }
 }
