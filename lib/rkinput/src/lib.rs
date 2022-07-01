@@ -48,6 +48,7 @@ pub static mut MOUSE_Y: u32 = 0;
 
 pub static mut SELECT_X: u32 = 0;
 pub static mut SELECT_Y: u32 = 0;
+pub static mut INPUT_NUMBER: usize = 0;
 
 const EV_KEY: u16 = 0x01;
 const KEY_UP: u16 = 103;
@@ -62,7 +63,16 @@ const KEY_W: u16 = 17;
 const KEY_S: u16 = 31;
 const KEY_A: u16 = 30;
 const KEY_D: u16 = 32;
-
+const KEY_1: u16 = 1;
+const KEY_2: u16 = 2;
+const KEY_3: u16 = 3;
+const KEY_4: u16 = 4;
+const KEY_5: u16 = 5;
+const KEY_6: u16 = 6;
+const KEY_7: u16 = 7;
+const KEY_8: u16 = 8;
+const KEY_9: u16 = 9;
+const KEY_BACKSPACE: u16 = 14;
 const SHORT_STEP: u32 = 1;
 const LONG_STEP: u32 = 20;
 
@@ -129,6 +139,36 @@ pub fn input_handler(input_event: InputEvent) {
                     draw_select(SELECT_OLD_X, SELECT_OLD_Y, CYAN);
                     draw_select(SELECT_X, SELECT_Y, RED);} 
                 }   
+                KEY_1 => { 
+                    INPUT_NUMBER = 1;
+                } 
+                KEY_2 => { 
+                    INPUT_NUMBER = 2;
+                } 
+                KEY_3 => { 
+                    INPUT_NUMBER = 3;
+                } 
+                KEY_4 => { 
+                    INPUT_NUMBER = 4;
+                } 
+                KEY_5 => { 
+                    INPUT_NUMBER = 5;
+                } 
+                KEY_6 => { 
+                    INPUT_NUMBER = 6;
+                } 
+                KEY_7 => { 
+                    INPUT_NUMBER = 7;
+                } 
+                KEY_8 => { 
+                    INPUT_NUMBER = 8;
+                } 
+                KEY_9 => { 
+                    INPUT_NUMBER = 9;
+                } 
+                KEY_BACKSPACE => { 
+                    INPUT_NUMBER = 0;
+                } 
                 _ => {}
             }
         }
