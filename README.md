@@ -15,6 +15,8 @@ USTC 011705 (OSH) Course Project of Runikraft Group
 
 Runikraft is a unikernel written in Rust language that runs on RISC-V architecture + QEMU platform. It is based on Unikraft implemented in C language; while inheriting the efficiency, customizability, good-compatibility and security of Unikraft, it further simplifies the building process of the OS image, adds support to RISC-V and enhances the kernel security via Rust language.
 
+[Timeline](https://osh-2022.github.io/x-runikraft/report/0_timeline/)　　　　　[Research report](https://osh-2022.github.io/x-runikraft/report/2_research/)　　　　　[Feasibility report](https://osh-2022.github.io/x-runikraft/report/3_feasibility/)　　　　　[Midterm report](https://osh-2022.github.io/x-runikraft/report/4_midterm)
+
 ## Directories Description
 
 - `report`: project reports for submission purpose
@@ -26,7 +28,7 @@ Runikraft is a unikernel written in Rust language that runs on RISC-V architectu
 
 ### Quick Guideline
 
-For Ubuntu 22.04 users, the following command will download, build and test Ruikraft:
+For Ubuntu 22.04 users, the following commands will download, build and test Ruikraft:
 
 ```
 sudo apt install git curl crossbuild-essential-riscv64 qemu-system-misc qemu-system-gui
