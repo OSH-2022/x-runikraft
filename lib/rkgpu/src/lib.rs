@@ -60,6 +60,7 @@ pub const GREEN: Color = Color::new(0, 255, 0);
 pub const BLUE: Color = Color::new(0, 0, 255);
 pub const CYAN: Color = Color::new(0, 255, 255);
 pub const PURPLE: Color = Color::new(255, 0, 255);
+pub const GRAY: Color = Color::new(105, 105, 105);
 
 static mut _EMPTY: [u8; 0] = [0; 0];
 
@@ -172,6 +173,11 @@ pub fn draw_font(start_x: u32, start_y: u32, color: Color, alpha: u8, ch: char, 
                         FB[idx + 1] = color.green;
                         FB[idx + 0] = color.blue;
                         FB[idx + 3] = alpha;
+                    } else {
+                        FB[idx + 2] = CYAN.red;
+                        FB[idx + 1] = CYAN.green;
+                        FB[idx + 0] = CYAN.blue;
+                        FB[idx + 3] = 255;
                     }
                 }
             }

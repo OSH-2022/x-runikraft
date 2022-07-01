@@ -32,8 +32,10 @@ impl Sudoku {
         for i in 0..9 {
             for j in 0..9 {
                 // show_sudoku_number(pos_x: u8, pos_y: u8, number: u8);
-                show_sudoku_number(i as u8, j as u8, self.map[i][j] as u8,GREEN);
-
+                // if map[i][j] == 0 {
+                //     continue;
+                // }
+                show_sudoku_number(i as u8, j as u8, self.map[i][j] as u8, GRAY);
                 // print!("{} ", self.map[i][j]);
             }
             // println!("");
@@ -249,7 +251,7 @@ pub fn add_num(map: &mut [[usize; 9]; 9], row:usize, col:usize, num: usize, ifch
     if map[row][col] != 0 {
         return false;
     }
-    if num > 9 {
+    if num > 9 || num <= 0{
         return false;
     }
     if ifcheck && !(if_fit_check(map, row, col, num, false)) {
@@ -302,20 +304,39 @@ pub fn hint(map: &mut [[usize; 9]; 9]) -> bool{
 
 #[no_mangle]
 fn main() {
-    unsafe{rkgpu::init();draw_sudoku_lattices(BLACK,BLUE);}
+    unsafe{
     
     let mut sudoku = sudoku_init_zero();
+    let mut map_old:[[usize; 9]; 9] = [[0; 9]; 9];
 
     row_random(& mut sudoku.map, 0);
     sudoku_solve(& mut sudoku.map, 1, 1);
     
     hole_dig(& mut sudoku.map, 10);
-    unsafe { sudoku.map_print(); }
+    sudoku.map_print();
+
+    sudoku_copy(& mut map_old, & sudoku.map);
+
+    rksched::sched::create_thread("", rkalloc::get_default().unwrap(),
+                                  rksched::thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),
+                                  input_tracer,null_mut());
+    init();
+    draw_sudoku_lattices(PURPLE, GREEN);
+
     loop {
-        
+        rksched::this_thread::sleep_for(Duration::from_millis(10));
+
+        if add_num(&mut sudoku.map, SELECT_X as usize / 75 , SELECT_Y as usize / 75, INPUT_NUMBER, true) {
+            show_sudoku_number(SELECT_X / 75, SELECT_Y / 75, INPUT_NUMBER, BLACK);
+        }
+
+        if INPUT_NUMBER == 0 && del_num(&mut sudoku.map, SELECT_X as usize / 75, SELECT_Y as usize / 75) {
+            show_sudoku_number(SELECT_X / 75, SELECT_Y / 75, 255, BLACK)
+        }
     }
     // sudoku_solve(& mut sudoku.map, & mut sudoku.answer, 0, 0);
     // unsafe { sudoku.map_print(); }
+    }
 }
 
 use rkplat::drivers::virtio::GPU_DEIVCE;
@@ -345,7 +366,11 @@ unsafe fn show_sudoku_number(pos_x: u8, pos_y: u8, number: u8,color:Color) -> u8
     if pos_x <= 8 && pos_y <= 8 {
         let start_x: u32 = 75 * pos_x as u32 + 20;
         let start_y: u32 = 75 * pos_y as u32 + 8;
-        draw_font(start_x, start_y, color, 255,(number + 48).into(), 4);
+        if number == 255 {
+            draw_font(start_x, start_y, CYAN, 255,' ', 4);
+        } else {
+            draw_font(start_x, start_y, color, 255,(number + 48).into(), 4);
+        }
         0
     } else { 1 }
 }
