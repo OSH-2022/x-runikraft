@@ -29,10 +29,10 @@ Runikraft is a unikernel written in Rust language that runs on RISC-V architectu
 For Ubuntu 22.04 users, the following command will download, build and test Ruikraft:
 
 ```
-sudo apt install git curl crossbuild-essential-riscv64 qemu-system-misc qemu-system-gui
+sudo apt install git curl crossbuild-essential-riscv64 qemu-system-misc qemu-system-gui libncurses-dev bison flex socat
 curl https://sh.rustup.rs | sh
-rustup target add riscv64gc-unknown-none-elf
 source ~/.cargo/env
+rustup target add riscv64gc-unknown-none-elf
 git clone --recursive https://github.com/OSH-2022/x-runikraft.git
 cd x-runikraft
 cargo fetch
