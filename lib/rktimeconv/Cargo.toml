@@ -1,0 +1,10 @@
+[package]
+name = "rktimeconv"
+version = "0.1.0"
+authors = [ "蓝俊玮 <ljw13@mail.ustc.edu.cn>" ]
+license = "BSD-3-Clause"
+edition = "2021"
+
+[dependencies]
+runikraft = {path = "../../core"}
+

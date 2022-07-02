@@ -2,7 +2,7 @@
 // rkmbox/lib.rs
 
 // Authors: Simon Kuenzer <simon.kuenzer@neclab.eu>
-//          蓝俊玮 <ljw13@mail.ustc.edu.cn>
+//          张子辰 <zichen350@gmail.com>
 
 // Copyright (c) 2018, NEC Europe Ltd., NEC Corporation.
 // Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.

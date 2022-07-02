@@ -1,6 +1,8 @@
 [package]
 name = "rkswrand"
 version = "0.1.0"
+authors = [ "张子辰 <zichen350@gmail.com>" ]
+license = "BSD-3-Clause"
 edition = "2021"
 
 [dependencies]
