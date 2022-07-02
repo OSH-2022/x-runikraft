@@ -5,7 +5,7 @@
 [package]
 name = "rkargparse"
 version = "0.1.0"
-authors = [ "吴骏东 <1904346407@qq.com>" ]
+authors = [ "张子辰 <zichen350@gmail.com>" ]
 license = "BSD-3-Clause"
 edition = "2021"
 
