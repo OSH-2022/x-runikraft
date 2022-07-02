@@ -20,7 +20,7 @@ pub struct VirtIOInput<'a> {
     event_queue: VirtQueue<'a>,
     status_queue: VirtQueue<'a>,
     event_buf: Box<[InputEvent; 32]>,
-    name: [u8;32],
+    name: [u8; 32],
     name_size: usize,
 }
 
@@ -45,7 +45,7 @@ impl<'a> VirtIOInput<'a> {
 
         header.finish_init();
 
-        let mut name1: [u8;32] = [0;32];
+        let mut name1: [u8; 32] = [0; 32];
         for i in 0..name.len() {
             name1[i] = name.as_bytes()[i];
         }
@@ -55,7 +55,7 @@ impl<'a> VirtIOInput<'a> {
             status_queue,
             event_buf,
             name: name1,
-            name_size: name.len()
+            name_size: name.len(),
         })
     }
 
@@ -96,7 +96,7 @@ impl<'a> VirtIOInput<'a> {
 
 impl crate::drivers::Device for VirtIOInput<'_> {
     fn name<'a>(&'a self) -> &'a str {
-        unsafe {core::str::from_utf8_unchecked(core::slice::from_raw_parts(self.name.as_ptr(), self.name_size))}
+        unsafe { core::str::from_utf8_unchecked(core::slice::from_raw_parts(self.name.as_ptr(), self.name_size)) }
     }
 }
 

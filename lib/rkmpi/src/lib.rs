@@ -34,7 +34,7 @@
 use runikraft::errno::Errno;
 use core::cell::UnsafeCell;
 use core::mem::{size_of, align_of};
-use core::sync::atomic::{AtomicUsize,Ordering::SeqCst};
+use core::sync::atomic::{AtomicUsize, Ordering::SeqCst};
 use core::time::Duration;
 use rkalloc::*;
 use rklock::Semaphore;
@@ -49,17 +49,17 @@ pub struct Mbox<'a, T> {
     alloc: &'a dyn RKalloc,
 }
 
-unsafe impl<T> Sync for Mbox<'_,T> {}
+unsafe impl<T> Sync for Mbox<'_, T> {}
 
-impl<'a,T> Mbox<'a,T> {
-    pub fn new( size: usize, a: &'a dyn RKalloc) -> Option<Self>{
-        let msgs_data = unsafe{a.alloc_zeroed((size+1)*size_of::<T>(),align_of::<T>()) as *mut Option<T>};
+impl<'a, T> Mbox<'a, T> {
+    pub fn new(size: usize, a: &'a dyn RKalloc) -> Option<Self> {
+        let msgs_data = unsafe { a.alloc_zeroed((size + 1) * size_of::<T>(), align_of::<T>()) as *mut Option<T> };
         if msgs_data.is_null() {
             return None;
         }
-        let msgs = unsafe{core::slice::from_raw_parts_mut(msgs_data, size+1)};
+        let msgs = unsafe { core::slice::from_raw_parts_mut(msgs_data, size + 1) };
         Some(Self {
-            len: size+1,
+            len: size + 1,
             readsem: Semaphore::new(0),
             writesem: Semaphore::new(size as i32),
             readpos: AtomicUsize::new(0),
@@ -69,16 +69,17 @@ impl<'a,T> Mbox<'a,T> {
         })
     }
 
-    fn do_mbox_recv(& self) -> T {
-        let ret = unsafe{(*self.msgs.get())[self.readpos.fetch_update(SeqCst, SeqCst, 
-            |x| {
-                if x+1 != self.len {
-                    Some(x+1)
-                }
-                else {
-                    Some(0)
-                }
-            }).unwrap()].take()};
+    fn do_mbox_recv(&self) -> T {
+        let ret = unsafe {
+            (*self.msgs.get())[self.readpos.fetch_update(SeqCst, SeqCst,
+                                                         |x| {
+                                                             if x + 1 != self.len {
+                                                                 Some(x + 1)
+                                                             } else {
+                                                                 Some(0)
+                                                             }
+                                                         }).unwrap()].take()
+        };
 
         self.writesem.signal();
 
@@ -86,15 +87,16 @@ impl<'a,T> Mbox<'a,T> {
     }
 
     fn do_mbox_post(&self, msg: T) {
-        unsafe{(*self.msgs.get())[self.writepos.fetch_update(SeqCst, SeqCst, 
-            |x| {
-                if x+1 != self.len {
-                    Some(x+1)
-                }
-                else {
-                    Some(0)
-                }
-            }).unwrap()]=Some(msg);}
+        unsafe {
+            (*self.msgs.get())[self.writepos.fetch_update(SeqCst, SeqCst,
+                                                          |x| {
+                                                              if x + 1 != self.len {
+                                                                  Some(x + 1)
+                                                              } else {
+                                                                  Some(0)
+                                                              }
+                                                          }).unwrap()] = Some(msg);
+        }
 
         self.readsem.signal();
     }
@@ -104,7 +106,7 @@ impl<'a,T> Mbox<'a,T> {
         self.do_mbox_post(msg);
     }
 
-    pub fn mbox_post_try(&self, msg: T) -> Result<(),Errno> {
+    pub fn mbox_post_try(&self, msg: T) -> Result<(), Errno> {
         if !(self.writesem.try_wait()) {
             return Err(Errno::NoBufS);
         }
@@ -113,7 +115,7 @@ impl<'a,T> Mbox<'a,T> {
         Ok(())
     }
 
-    pub fn mbox_post_to(&self, msg: T, duration: Duration) -> Result<(),Errno> {
+    pub fn mbox_post_to(&self, msg: T, duration: Duration) -> Result<(), Errno> {
         if !(self.writesem.wait_for(duration)) {
             return Err(Errno::NoBufS);
         }
@@ -122,34 +124,32 @@ impl<'a,T> Mbox<'a,T> {
         Ok(())
     }
 
-    pub fn mbox_recv(&self) -> T{
+    pub fn mbox_recv(&self) -> T {
         self.readsem.wait();
         self.do_mbox_recv()
     }
 
-    pub fn mbox_recv_try(&self) -> Result<T,Errno> {
+    pub fn mbox_recv_try(&self) -> Result<T, Errno> {
         if !(self.readsem.try_wait()) {
             Err(Errno::NoBufS)
-        }
-        else {
+        } else {
             Ok(self.do_mbox_recv())
         }
     }
 
-    pub fn mbox_recv_to(&self, duration: Duration) -> Result<T,Errno> {
+    pub fn mbox_recv_to(&self, duration: Duration) -> Result<T, Errno> {
         if !(self.readsem.wait_for(duration)) {
             Err(Errno::NoBufS)
-        }
-        else {
+        } else {
             Ok(self.do_mbox_recv())
         }
     }
 }
 
-impl<T> Drop for Mbox<'_,T> {
+impl<T> Drop for Mbox<'_, T> {
     fn drop(&mut self) {
         unsafe {
-            self.alloc.dealloc(self.msgs.get_mut().as_ptr() as *mut u8, self.msgs.get_mut().len()*size_of::<T>(), align_of::<T>());
+            self.alloc.dealloc(self.msgs.get_mut().as_ptr() as *mut u8, self.msgs.get_mut().len() * size_of::<T>(), align_of::<T>());
         }
     }
 }

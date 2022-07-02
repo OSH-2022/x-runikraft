@@ -1,8 +1,8 @@
-#[cfg(feature="driver_uart")]
+#[cfg(feature = "driver_uart")]
 pub mod uart;
-#[cfg(feature="driver_virtio")]
+#[cfg(feature = "driver_virtio")]
 pub mod virtio;
-#[cfg(feature="driver_rtc")]
+#[cfg(feature = "driver_rtc")]
 pub mod rtc;
 pub mod device_tree;
 
@@ -16,7 +16,7 @@ pub trait Device: Sync {
         None
     }
     /// 中断处理函数，如果设备不支持中断，则返回None
-    fn irq_handler(&self) -> Option<DriverIntHandler>{
+    fn irq_handler(&self) -> Option<DriverIntHandler> {
         None
     }
 }
