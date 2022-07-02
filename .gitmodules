@@ -4,3 +4,6 @@
 [submodule "support/scripts/kconfig"]
 	path = support/scripts/kconfig
 	url = https://github.com/linux-kdevops/kconfig.git
+[submodule "runikraft-lab4"]
+	path = runikraft-lab4
+	url = https://github.com/OSH-2022/runikraft-lab4.git
