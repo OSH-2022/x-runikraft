@@ -91,7 +91,7 @@ pub unsafe fn init() {
     rksched::this_thread::sleep_for(Duration::from_secs(1));
     draw_clear(CYAN);
     printg("Hello, world!\nHello, OSH-2022!\nHello, Runikraft!\n", 700, 10, RED, 255, 4);
-    update_cursor(100, 100, true);
+    update_cursor(900, 500, true);
     draw_select(0, 0, RED);
     // rksched::this_thread::sleep_for(Duration::from_secs(1));
     // update_cursor(150, 100, false);

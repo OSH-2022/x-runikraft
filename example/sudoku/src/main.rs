@@ -32,7 +32,7 @@ pub struct Sudoku {
     tag: [[usize; 9]; 9]
 
 }
- 
+
 impl Sudoku {
     // 打印当前数独信息
     pub unsafe fn map_print(&self) {
@@ -209,10 +209,10 @@ pub fn sudoku_solve(map: & mut [[usize; 9]; 9], row: usize, col: usize) -> bool{
 
 /* 
     挖洞函数： 对于生成的数独进行随机挖空
-    以 @map 为模板，将挖空的结果写入 @map， 原生数据的结果写入 @tag
+    以 @map 为模板，将挖空的结果写入 @map
     @num 为留下的非空格数字数目，最低为 10
 */
-pub fn hole_dig(map:& mut [[usize; 9]; 9], tag:& mut [[usize; 9]; 9], num: usize) {
+pub fn hole_dig(map:& mut [[usize; 9]; 9], num: usize) {
     let mut hole_map = [[0; 9]; 9];
 
     let mut number_num = num % 81;
@@ -274,7 +274,7 @@ pub fn add_num(map: &mut [[usize; 9]; 9], row:usize, col:usize, num: usize, ifch
 /*
     删除数字的函数
     将 @map 中 (@row, @col) 的位置上数字删除（写入 0）
-    如果该位置原先就是 0，或为原生数据， 则删除失败
+    如果该位置原先就是 0，则删除失败
 */
 pub fn del_num(map: &mut [[usize; 9]; 9], tag: &[[usize; 9]; 9], row:usize, col:usize) -> bool {
     if row > 8 || col > 8  {
@@ -288,7 +288,7 @@ pub fn del_num(map: &mut [[usize; 9]; 9], tag: &[[usize; 9]; 9], row:usize, col:
     if tag[row][col] == 1 {
         return false;
     }
-    
+
     map[row][col] = 0;
     return true;
 }
@@ -317,23 +317,23 @@ pub fn hint(map: &mut [[usize; 9]; 9]) -> bool{
 
 #[no_mangle]
 fn main() {
-    unsafe{
-    
-    rksched::sched::create_thread("", rkalloc::get_default().unwrap(),
-                                  rksched::thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),
-                                  input_tracer,null_mut());
-    
-    let mut sudoku = sudoku_init_zero();
-    let mut map_old:[[usize; 9]; 9] = [[0; 9]; 9];
-    
-    init();
-    draw_sudoku_lattices(PURPLE, BLACK);
-    screen_flush();
-    row_random(& mut sudoku.map, 0);
-    sudoku_solve(& mut sudoku.map, 1, 1);
-    
-    hole_dig(& mut sudoku.map, &mut sudoku.tag, 15);
-    sudoku.map_print();
+    unsafe {
+        rksched::sched::create_thread("", rkalloc::get_default().unwrap(),
+                                      rksched::thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),
+                                      input_tracer, null_mut());
+
+        let mut sudoku = sudoku_init_zero();
+        let mut map_old: [[usize; 9]; 9] = [[0; 9]; 9];
+
+        init();
+        printg("Use W, A, S, and D to move selecting rectangle.\nUse up, left, down, and right to move cursor.",0,700,BLACK,255,2);
+        draw_sudoku_lattices(PURPLE, BLACK);
+        screen_flush();
+        row_random(&mut sudoku.map, 0);
+        sudoku_solve(&mut sudoku.map, 1, 1);
+
+        hole_dig(&mut sudoku.map, 15);
+        sudoku.map_print();
 
     sudoku_copy(& mut map_old, & sudoku.map);
     
