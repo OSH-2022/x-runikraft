@@ -45,82 +45,8 @@ menu "Memory and CPU Configuration"
 endmenu
 
 menu "Library Configuration"
-    menu "rkplat features"
-        config has_smp
-            bool "Symmetric multiprocessor support"
-			default y
-            
-        config save_fp
-            bool "Save floating point registers when thread switches"
-			default n
-
-        config driver_uart
-            bool "Uart device driver"
-			default n
-
-        config driver_ns16550
-            bool "ns16550 driver"
-			default y
-            select driver_uart
-
-        config driver_virtio
-            bool "Virtio driver"
-			default n
-            help
-              Depend on volatile-v0.3 and bitflags-v1.3
-
-        config driver_virtio_blk
-            bool "Virtio block driver"
-			default y
-            select driver_virtio
-
-        config driver_virtio_console
-            bool "Virtio console driver"
-			default y
-            select driver_virtio
-
-        config driver_virtio_gpu
-            bool "Virtio GPU driver"
-			default y
-            select driver_virtio
-
-        config driver_virtio_input
-            bool "Virtio input driver"
-			default y
-            select driver_virtio
-
-        config driver_virtio_net
-            bool "Virtio net driver"
-			default y
-            select driver_virtio
-
-        config driver_rtc
-            bool "Real time clock driver"
-			default n
-
-        config driver_goldfish_rtc
-            bool "Goldfish real time clock driver"
-			default y
-            select driver_rtc
-
-        config bios_io
-            bool "Use BIOS to output"
-			default n
-    endmenu
-
-	menu "rkboot features"
-        config have_scheduler
-            bool "Have scheduler"
-            help
-              Depend on rksched
-
-        config sched_coop
-            bool "Cooperative scheduler"
-			default y
-            select have_scheduler
-            help
-              Depend on rksched and rkschedcoop
-	endmenu
+    source "lib/rkplat/config"
+	source "lib/rkboot/config"
 endmenu
 
 menu "Make Build Configuration"

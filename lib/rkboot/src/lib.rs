@@ -34,13 +34,13 @@
 use core::time::Duration;
 use core::{slice,str};
 use core::mem::{align_of, size_of};
-use core::ptr::{addr_of, null_mut};
+use core::ptr::{addr_of, null_mut, addr_of_mut};
 use rkalloc::RKalloc;
 use rkplat::{irq,time,bootstrap,device, lcpu};
 #[cfg(feature="have_scheduler")]
 use rksched::RKsched;
 use runikraft::align_as;
-use runikraft::config::HEAP_SIZE;
+use runikraft::config::{HEAP_SIZE,rkboot::*};
 
 #[cfg(any(feature="alloc_buddy"))]
 static mut HEAP:align_as::A4096<[u8;HEAP_SIZE]> = align_as::A4096::new([0;HEAP_SIZE]);
@@ -97,6 +97,16 @@ impl rkalloc::RKallocState for NullAllocator {
     fn total_size(&self) -> usize {
         0
     }
+}
+
+static mut ARGV: [*mut u8;MAX_ARGS_CNT] = [null_mut();MAX_ARGS_CNT];
+
+#[no_mangle]
+pub unsafe extern "C" fn rkplat_entry_argp(arg0: *mut u8, argb: *mut u8, argb_len: usize) -> ! {
+    let argc = rkargparse::argnparse(argb, if argb_len==0 {usize::MAX/1024} else {argb_len}, 
+        addr_of_mut!(ARGV[1]), MAX_ARGS_CNT-1);
+    ARGV[0] = arg0;
+    rkplat_entry(argc, ARGV.as_mut_ptr())
 }
 
 #[no_mangle]

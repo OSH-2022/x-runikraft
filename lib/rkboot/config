@@ -1,0 +1,17 @@
+menu "rkboot features"
+    config have_scheduler
+        bool "Have scheduler"
+        help
+            Depend on rksched
+
+    config sched_coop
+        bool "Cooperative scheduler"
+		default y
+        select have_scheduler
+        help
+            Depend on rksched and rkschedcoop
+    
+    config MAX_ARGS_CNT
+        int "maximum kernel argmuents count"
+        default 64
+endmenu

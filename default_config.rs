@@ -7,6 +7,10 @@
 
 pub const HEAP_SIZE: usize = 16<<20;
 
+pub mod rkboot {
+    pub const MAX_ARGS_CNT: usize = 64;
+}
+
 pub mod rksched {
     pub const STACK_SIZE_PAGE_ORDER: usize = 4;
     pub const STACK_SIZE: usize = super::rkplat::PAGE_SIZE*(1<<STACK_SIZE_PAGE_ORDER);
