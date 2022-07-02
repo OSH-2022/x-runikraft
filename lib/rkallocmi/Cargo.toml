@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: MIT
-# rkalloc_mi/Cargo.toml
+# rkallocmi/Cargo.toml
 # Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
 [package]
-name = "rkalloc_mi"
+name = "rkallocmi"
 version = "0.1.0"
 authors = [ 
     "Daan Leijen",

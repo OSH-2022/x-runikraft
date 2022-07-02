@@ -1,15 +1,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
-# rkmbox/Cargo.toml
+# rkargparse/Cargo.toml
 # Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
 [package]
-name = "rkmbox"
+name = "rkargparse"
 version = "0.1.0"
-authors = [ "蓝俊玮 <ljw13@mail.ustc.edu.cn>" ]
+authors = [ "吴骏东 <1904346407@qq.com>" ]
 license = "BSD-3-Clause"
 edition = "2021"
 
 [dependencies]
     runikraft = {path = "../../core"}
-    rkalloc = {path = "../rkalloc"}
-    rkplat = {path = "../rkplat"}

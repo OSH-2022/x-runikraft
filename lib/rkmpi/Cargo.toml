@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: BSD-3-Clause
+# rkmpi/Cargo.toml
+# Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
+
+[package]
+name = "rkmpi"
+version = "0.1.0"
+authors = [ "蓝俊玮 <ljw13@mail.ustc.edu.cn>" ]
+license = "BSD-3-Clause"
+edition = "2021"
+
+[dependencies]
+    runikraft = {path = "../../core"}
+    rkalloc = {path = "../rkalloc"}
+    rkplat = {path = "../rkplat"}

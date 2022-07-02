@@ -102,7 +102,7 @@ impl rkalloc::RKallocState for NullAllocator {
 #[no_mangle]
 pub unsafe extern "C" fn rkplat_entry(argc: i32, argv: *mut *mut u8) -> ! {
     #[cfg(feature="alloc_buddy")]
-    let a = rkalloc_buddy::RKallocBuddy::new(HEAP.data.as_mut_ptr(), HEAP.data.len());
+    let a = rkallocbuddy::RKallocBuddy::new(HEAP.data.as_mut_ptr(), HEAP.data.len());
     #[cfg(not(any(feature="alloc_buddy")))]
     let a = NullAllocator;
 

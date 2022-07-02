@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// rkparam/lib.rs
+// rkargparse/lib.rs
 
 // Authors: 吴骏东 <1904346407@qq.com>
 
@@ -35,6 +35,8 @@
 //! 自动删除 \n \t \r 等转转义字符
 //! 允许多条管道进行命令分割
 //! 重定向符号后要有文件名(
+
+#![no_std]
 
 pub const MAX_ARGS_NUM: usize = 20;    // 单条指令参数个数上限
 

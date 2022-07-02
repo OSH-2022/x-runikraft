@@ -83,7 +83,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rkalloc_buddy"
+name = "rkallocbuddy"
 version = "0.1.0"
 dependencies = [
  "rkalloc",
@@ -92,11 +92,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "rkargparse"
+version = "0.1.0"
+dependencies = [
+ "runikraft",
+]
+
+[[package]]
 name = "rkboot"
 version = "0.1.0"
 dependencies = [
  "rkalloc",
- "rkalloc_buddy",
+ "rkallocbuddy",
  "rkplat",
  "rksched",
  "rkschedcoop",
@@ -132,7 +139,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rkmbox"
+name = "rkmpi"
 version = "0.1.0"
 dependencies = [
  "rkalloc",

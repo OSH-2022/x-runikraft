@@ -1,13 +1,13 @@
-// test rkalloc_buddy::RKallocExt
+// test rkallocbuddy::RKallocExt
 
 #![no_std]
 #![no_main]
 extern crate rkalloc;
-extern crate rkalloc_buddy;
+extern crate rkallocbuddy;
 extern crate runikraft;
 
 use rkalloc::{RKalloc, RKallocExt};
-use rkalloc_buddy::RKallocBuddy;
+use rkallocbuddy::RKallocBuddy;
 use runikraft::align_as;
 use core::mem::{size_of, align_of};
 use core::slice;
