@@ -239,6 +239,7 @@ dependencies = [
  "rkplat",
  "rksched",
  "rkswrand",
+ "rktimeconv",
 ]
 
 [[package]]

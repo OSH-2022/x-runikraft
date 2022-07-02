@@ -46,8 +46,9 @@
 #![no_std]
 #![no_main]
 extern crate rkboot;
+extern crate alloc;
 
-// use rkplat::time::wall_clock;
+use rkplat::time::wall_clock;
 use rkgpu::*;
 use rkswrand::fast_random;
 use rkinput::*;
@@ -55,6 +56,7 @@ use rksched::*;
 use core::time::Duration;
 use core::ptr::null_mut;
 use rklock::*;
+use rktimeconv::TimePoint;
 
 
 static mut mutex: Semaphore = Semaphore::new(0);
@@ -371,6 +373,10 @@ fn main() {
                              rksched::thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),
                              error_hinter, null_mut()).expect("TODO: panic message");
 
+        sched::create_thread("", rkalloc::get_default().unwrap(),
+                             rksched::thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),
+                             show_time, null_mut()).expect("TODO: panic message");
+
         let mut sudoku = sudoku_init_zero();
         let mut map_old: [[usize; 9]; 9] = [[0; 9]; 9];
 
@@ -454,3 +460,10 @@ unsafe fn show_sudoku_number(pos_x: u8, pos_y: u8, number: u8, color: Color) -> 
     } else { 1 }
 }
 
+fn show_time(_null: *mut u8) {
+    let timepoint_from_unix: Duration = wall_clock();
+    let timepoint: TimePoint = TimePoint::from_unix_time(timepoint_from_unix);
+    let time = alloc::format!("{}-{}-{} {}:{}:{}", timepoint.year(), timepoint.month() + 1, 
+        timepoint.day(), timepoint.hour(), timepoint.min(), timepoint.second());
+    printg(time.as_str(), 0, 700, BLACK, 255, 2)
+}
