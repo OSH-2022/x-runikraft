@@ -39,7 +39,7 @@ impl Sudoku {
         for i in 0..9 {
             for j in 0..9 {
                 // show_sudoku_number(pos_x: u8, pos_y: u8, number: u8);
-                if tag.map[i][j] == 0 {
+                if self.tag[i][j] == 0 {
                     show_sudoku_number(i as u8, j as u8, self.map[i][j] as u8, GRAY);
                     continue;
                 } else {
@@ -313,7 +313,7 @@ pub fn hint(map: &mut [[usize; 9]; 9]) -> bool{
 
     add_num(map, nextrow, nextcol, map_allzero[nextrow][nextcol], false);
 
-    unsafe{show_sudoku_number(nextrow, nextcol, map_allzero[nextrow][nextcol], GOLD);}
+    unsafe{show_sudoku_number(nextrow as u8, nextcol as u8, map_allzero[nextrow][nextcol] as u8, GOLD);}
 
     return true;
 }
@@ -359,11 +359,11 @@ fn main() {
             //show_sudoku_number(SELECT_X as u8 / 75, SELECT_Y as u8 / 75, 255, BLACK);
         }
 
-        if INPUT_NUMBER == KEY_H as usize {
+        if INPUT_NUMBER == 35 {
             hint(&mut &mut sudoku.map);
         }
 
-        if INPUT_NUMBER == KEY_O as usize {
+        if INPUT_NUMBER == 24 {
             sudoku_solve(& mut sudoku.map, 0, 0);
             sudoku.map_print();
         }
