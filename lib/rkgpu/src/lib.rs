@@ -61,6 +61,7 @@ pub const BLUE: Color = Color::new(0, 0, 255);
 pub const CYAN: Color = Color::new(0, 255, 255);
 pub const PURPLE: Color = Color::new(255, 0, 255);
 pub const GRAY: Color = Color::new(105, 105, 105);
+pub const GOLD: Color = Color::new(255, 215, 0);
 
 static mut _EMPTY: [u8; 0] = [0; 0];
 

@@ -39,12 +39,13 @@ impl Sudoku {
         for i in 0..9 {
             for j in 0..9 {
                 // show_sudoku_number(pos_x: u8, pos_y: u8, number: u8);
-                if self.map[i][j] == 0 {
+                if tag.map[i][j] == 0 {
                     show_sudoku_number(i as u8, j as u8, self.map[i][j] as u8, GRAY);
                     continue;
-                }
-                show_sudoku_number(i as u8, j as u8, self.map[i][j] as u8, BLACK);
+                } else {
+                    show_sudoku_number(i as u8, j as u8, self.map[i][j] as u8, BLACK);
                 // print!("{} ", self.map[i][j]);
+                }
             }
             // println!("");
         }
@@ -311,6 +312,9 @@ pub fn hint(map: &mut [[usize; 9]; 9]) -> bool{
     sudoku_solve(& mut map_allzero, nextrow, nextcol);
 
     add_num(map, nextrow, nextcol, map_allzero[nextrow][nextcol], false);
+
+    unsafe{show_sudoku_number(nextrow, nextcol, map_allzero[nextrow][nextcol], GOLD);}
+
     return true;
 }
 
@@ -344,7 +348,7 @@ fn main() {
     loop {
         rksched::this_thread::sleep_for(Duration::from_millis(1));
 
-        if INPUT_NUMBER != 0 && add_num(&mut sudoku.map, SELECT_X as usize / 75 , SELECT_Y as usize / 75, INPUT_NUMBER - 1, true) {
+        if INPUT_NUMBER >= 1 && INPUT_NUMBER <= 9 && add_num(&mut sudoku.map, SELECT_X as usize / 75 , SELECT_Y as usize / 75, INPUT_NUMBER - 1, true) {
         //if add_num(&mut sudoku.map, 0 , 0, INPUT_NUMBER, true) {
             show_sudoku_number((SELECT_X / 75) as u8, (SELECT_Y / 75) as u8, (INPUT_NUMBER - 1) as u8, GRAY);
             //show_sudoku_number(0, 0, INPUT_NUMBER as u8, GRAY);
@@ -353,6 +357,15 @@ fn main() {
         if INPUT_NUMBER == 0 && del_num(&mut sudoku.map, &sudoku.tag, SELECT_X as usize / 75, SELECT_Y as usize / 75) {
             show_sudoku_number((SELECT_X / 75) as u8, (SELECT_Y / 75) as u8, 0, GRAY);
             //show_sudoku_number(SELECT_X as u8 / 75, SELECT_Y as u8 / 75, 255, BLACK);
+        }
+
+        if INPUT_NUMBER == KEY_H && hint(&mut &mut sudoku.map){
+            1
+        }
+
+        if INPUT_NUMBER == KEY_O {
+            sudoku_solve(& mut sudoku.map, 0, 0);
+            sudoku.map_print();
         }
 
     }

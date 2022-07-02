@@ -64,6 +64,8 @@ const KEY_W: u16 = 17;
 const KEY_S: u16 = 31;
 const KEY_A: u16 = 30;
 const KEY_D: u16 = 32;
+const KEY_H: u16 = 35;
+const KEY_O: u16 = 24;
 const KEY_1: u16 = 1;
 const KEY_2: u16 = 2;
 const KEY_3: u16 = 3;
@@ -144,6 +146,12 @@ pub fn input_handler(input_event: InputEvent) {
                     draw_select(SELECT_X, SELECT_Y, RED);} 
                     INPUT_NUMBER = 100;
                 }   
+                KEY_H => { 
+                    INPUT_NUMBER = KEY_H;
+                } 
+                KEY_O => { 
+                    INPUT_NUMBER = KEY_O;
+                } 
                 KEY_1 => { 
                     INPUT_NUMBER = 1;
                 } 
