@@ -55,13 +55,13 @@ SUPPORT_DIR			:= $(SRC_ROOT_DIR)/support
 SCRIPTS_DIR			:= $(SUPPORT_DIR)/scripts
 export KCONFIG_DIR	:= $(SCRIPTS_DIR)/kconfig
 
-.PHNOY: all
+.PHONY: all
 all: test
 
-.PHNOY: everything
+.PHONY: everything
 everything: all report
 
-.PHNOY: report
+.PHONY: report
 report: $(MAKE_ROOT_DIR)/report/makefile
 	cd "$(MAKE_ROOT_DIR)/report" && $(MAKE)
 
@@ -69,11 +69,11 @@ $(MAKE_ROOT_DIR)/report/makefile: makefiles/report.mk
 	-mkdir --parents "$(MAKE_ROOT_DIR)/report"
 	cp makefiles/report.mk "$(MAKE_ROOT_DIR)/report/makefile"
 
-.PHNOY: test
+.PHONY: test
 test: $(MAKE_ROOT_DIR)/test/makefile opensbi
 	cd "$(MAKE_ROOT_DIR)/test" && $(MAKE)
 
-.PHNOY: build_test
+.PHONY: build_test
 build_test: $(MAKE_ROOT_DIR)/test/makefile
 	cd "$(MAKE_ROOT_DIR)/test" && $(MAKE) build
 
@@ -94,7 +94,7 @@ $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.
 	@-mkdir --parents $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/deps/
 	@cp $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/deps/liballoc_error_handler.rlib
 
-.PHNOY: example
+.PHONY: example
 example: $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/deps/liballoc_error_handler.rlib .config
 ifeq ($(shell cat $(CONFIG_DIR)/features2.txt), release)
 	cd example/sudoku && env RUSTFLAGS="-Clink-arg=-T$(SRC_ROOT_DIR)/linker.ld --cfg __alloc_error_handler --extern __alloc_error_handler=$(MAKE_ROOT_DIR)/liballoc_error_handler.rlib" cargo build --release $(shell cat $(CONFIG_DIR)/features1.txt)
@@ -108,17 +108,18 @@ endif
 endif
 	$(CROSS_COMPILE)objcopy --strip-all "$(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/sudoku" -O binary "$(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/sudoku.bin"
 
-.PHNOY: run
+.PHONY: run
 run: .config
 	qemu-system-riscv64 -machine virt -kernel "$(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/sudoku.bin" -device virtio-gpu-device,xres=1280,yres=800 -serial mon:stdio -device virtio-keyboard-device -device virtio-rng-device -bios "$(MAKE_ROOT_DIR)/opensbi/platform/generic/firmware/fw_jump.bin"
 
-.PHNOY: menuconfig
+.PHONY: menuconfig
 menuconfig: .config
 
 .config: $(CONFIG_DIR)/handle_config
 	$(MAKE) -f $(KCONFIG_DIR)/kconfig.Makefile menuconfig
 	@mkdir -p $(CONFIG_DIR)
 	@$(CONFIG_DIR)/handle_config $(SRC_ROOT_DIR) $(CONFIG_DIR)
+	touch .config
 
 include $(SCRIPTS_DIR)/objects.Makefile
 
