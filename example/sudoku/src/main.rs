@@ -359,11 +359,11 @@ fn main() {
             //show_sudoku_number(SELECT_X as u8 / 75, SELECT_Y as u8 / 75, 255, BLACK);
         }
 
-        if INPUT_NUMBER == KEY_H && hint(&mut &mut sudoku.map){
+        if INPUT_NUMBER == KEY_H as usize && hint(&mut &mut sudoku.map){
             1
         }
 
-        if INPUT_NUMBER == KEY_O {
+        if INPUT_NUMBER == KEY_O as usize {
             sudoku_solve(& mut sudoku.map, 0, 0);
             sudoku.map_print();
         }
