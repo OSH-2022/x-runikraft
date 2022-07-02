@@ -13,3 +13,4 @@ edition = "2021"
     runikraft = {path = "../../core"}
     rkalloc = {path = "../rkalloc"}
     rkplat = {path = "../rkplat"}
+    rklock = {path = "../rklock"}
