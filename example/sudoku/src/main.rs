@@ -323,7 +323,7 @@ fn main() {
     
     init();
     draw_sudoku_lattices(PURPLE, BLACK);
-
+    screen_flush();
     row_random(& mut sudoku.map, 0);
     sudoku_solve(& mut sudoku.map, 1, 1);
     
@@ -349,6 +349,7 @@ fn main() {
             show_sudoku_number((SELECT_X / 75) as u8, (SELECT_Y / 75) as u8, 0, GRAY);
             //show_sudoku_number(SELECT_X as u8 / 75, SELECT_Y as u8 / 75, 255, BLACK);
         }
+
     }
     // sudoku_solve(& mut sudoku.map, & mut sudoku.answer, 0, 0);
     // unsafe { sudoku.map_print(); }
@@ -387,6 +388,7 @@ unsafe fn show_sudoku_number(pos_x: u8, pos_y: u8, number: u8,color:Color) -> u8
         } else {
             draw_font(start_x, start_y, color, 255,(number + 48).into(), 4);
         }
+        screen_flush();
         0
     } else { 1 }
 }

@@ -83,7 +83,7 @@ pub static mut CURSOR_Y: u32 = 100;
 pub fn input_handler(input_event: InputEvent) {
     unsafe {
         let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
-        println!("{},{},{}", input_event.event_type, input_event.code, input_event.value);
+        //println!("{},{},{}", input_event.event_type, input_event.code, input_event.value);
         let SELECT_OLD_X = SELECT_X;
         let SELECT_OLD_Y = SELECT_Y;
         if input_event.event_type == EV_KEY &&input_event.value==1{

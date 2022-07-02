@@ -8,9 +8,9 @@ edition = "2021"
 [dependencies]
 
 rkgpu = {path = "../../lib/rkgpu"}
-rkplat = {path = "../../lib/rkplat"}
+rkplat = {path = "../../lib/rkplat", features = ["has_smp","driver_virtio_all","driver_ns16550","driver_goldfish_rtc"]}
 rkalloc = {path = "../../lib/rkalloc"}
-rkboot = {path = "../../lib/rkboot"}
+rkboot = {path = "../../lib/rkboot", features = ["alloc_buddy","sched_preem"]}
 rkswrand = {path = "../../lib/rkswrand"}
 rkinput = {path = "../../lib/rkinput"}
 rksched = {path = "../../lib/rksched"}
