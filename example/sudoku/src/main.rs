@@ -314,12 +314,29 @@ pub fn hint(map: &mut [[usize; 9]; 9]) -> bool {
 
     let mut nextrow: usize = 0;
     let mut nextcol: usize = 0;
-
-    if !(findnext_empty(map, 0, &mut nextrow, &mut nextcol)) {
-        // 没有空位了 
+    if !findnext_empty(map, 0, &mut nextrow, &mut nextcol) {
         return false;
     }
     sudoku_solve(&mut map_allzero, nextrow, nextcol);
+
+    let mut index: usize = fast_random::<usize>() % 81;
+    loop {
+        if index >= 81 {
+            index %= 81;
+        }
+        if map[index / 9][index % 9] != 0 {
+            index += 1;
+            continue;
+        }
+        nextrow = index / 9;
+        nextcol = index % 9;
+        break;
+    }
+
+    // if !(findnext_empty(map, 0, &mut nextrow, &mut nextcol)) {
+    //     // 没有空位了
+    //     return false;
+    // }
 
     add_num(map, nextrow, nextcol, map_allzero[nextrow][nextcol], false);
 

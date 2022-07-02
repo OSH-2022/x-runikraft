@@ -76,7 +76,7 @@ pub fn show_time(_null: *mut u8) {
     loop {
         let timepoint_from_unix: Duration = wall_clock();
         let timepoint: TimePoint = TimePoint::from_unix_time(timepoint_from_unix);
-        let time = alloc::format!("Time: {:04}-{:02}-{:02} {:02}:{:02}:{:02}", timepoint.year(), timepoint.month() + 1,
+        let time = alloc::format!("Time: {:04}-{:02}-{:02} {:02}:{:02}:{:02}(UTC)", timepoint.year(), timepoint.month() + 1,
                                   timepoint.day(), timepoint.hour(), timepoint.min(), timepoint.second());
         printg(time.as_str(), 700, 300, BLUE, 255, 2);
         rksched::this_thread::sleep_for(Duration::from_secs(1));
