@@ -31,7 +31,7 @@
 
 use core::slice;
 
-use rkplat::drivers::virtio::ENTROPY_DEIVCE;
+use rkplat::drivers::virtio::__ENTROPY_DEIVCE;
 use rand::{prelude::*, distributions::Standard, rngs::OsRng};
 
 #[cfg(feature="have_scheduler")]
@@ -47,7 +47,7 @@ static FAST_LOCK: Lock = Lock::new();
 
 #[no_mangle]
 extern "C" fn __getrandom_custom(mut dst: *mut u8, len: usize) -> u32 {
-    if let Some(rng) = unsafe{&mut ENTROPY_DEIVCE} {
+    if let Some(rng) = unsafe{&mut __ENTROPY_DEIVCE } {
         let mut size = 0;
         while size<len {
             let buf = unsafe{slice::from_raw_parts_mut(dst, len-size)};

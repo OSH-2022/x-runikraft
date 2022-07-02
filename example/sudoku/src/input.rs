@@ -35,7 +35,7 @@
 
 pub use key::*;
 use rkgpu::*;
-use rkplat::drivers::virtio::{GPU_DEIVCE, INPUT_DEIVCE, InputEvent};
+use rkplat::drivers::virtio::{__GPU_DEIVCE, __INPUT_DEIVCE, InputEvent};
 use crate::*;
 
 const EV_REL: u16 = 0x02;
@@ -62,7 +62,7 @@ pub static mut CURSOR_Y: u32 = 500;
 
 pub fn input_handler(input_event: InputEvent) {
     unsafe {
-        let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
+        let (width, height) = __GPU_DEIVCE.as_mut().unwrap().resolution();
         //println!("{},{},{}", input_event.event_type, input_event.code, input_event.value);
         let SELECT_OLD_X = SELECT_X;
         let SELECT_OLD_Y = SELECT_Y;
@@ -193,7 +193,7 @@ pub fn input_handler(input_event: InputEvent) {
 pub fn input_tracer(_null: *mut u8) {
     unsafe {
         loop {
-            let input_event_wrapped = INPUT_DEIVCE.as_mut().unwrap().pop_pending_event();
+            let input_event_wrapped = __INPUT_DEIVCE.as_mut().unwrap().pop_pending_event();
             match input_event_wrapped {
                 Some(input_event) => input_handler(input_event),
                 //None => rksched::this_thread::sleep_for(Duration::from_millis(1))

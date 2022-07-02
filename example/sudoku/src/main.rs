@@ -97,12 +97,12 @@ impl Sudoku {
 // 数独零初始化
 // 生成一个 9x9 零矩阵
 pub fn sudoku_init_zero() -> Sudoku {
-    let map_allzero = [[0; 9]; 9];
-    let sudoku = Sudoku {
-        map: map_allzero,
-        tag: map_allzero,
-    };
-    sudoku
+        let map_allzero = [[0; 9]; 9];
+        let sudoku = Sudoku {
+            map: map_allzero,
+            tag: map_allzero,
+        };
+        sudoku
 }
 
 // 数独行随机填充：
@@ -369,8 +369,7 @@ pub fn error_hinter(_null: *mut u8) {
     }
 }
 
-#[no_mangle]
-fn main() {
+fn init(sudoku:&mut Sudoku) {
     unsafe {
         sched::create_thread("", rkalloc::get_default().unwrap(),
                              rksched::thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),
@@ -383,11 +382,7 @@ fn main() {
         sched::create_thread("", rkalloc::get_default().unwrap(),
                              rksched::thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),
                              show_time, null_mut()).expect("TODO: panic message");
-
-        let mut sudoku = sudoku_init_zero();
-        let mut map_old: [[usize; 9]; 9] = [[0; 9]; 9];
-
-        init();
+        rkgpu::init();
         printg("Hello, world!\nHello, OSH-2022!\nHello, Runikraft!\n", 700, 10, RED, 255, 4);
         update_cursor(900, 500, true);
         draw_select(0, 0, RED);
@@ -396,15 +391,18 @@ fn main() {
         screen_flush();
         row_random(&mut sudoku.map, 0);
         sudoku_solve(&mut sudoku.map, 1, 1);
-
         hole_dig(&mut sudoku.map, 15, &mut sudoku.tag);
         sudoku.map_print();
+    }
+}
 
-        sudoku_copy(&mut map_old, &sudoku.map);
-
-
+#[no_mangle]
+fn main() {
+   let mut sudoku: Sudoku = sudoku_init_zero();
+    init(&mut sudoku);
+   unsafe{
         loop {
-            rksched::this_thread::sleep_for(Duration::from_millis(1));
+            this_thread::sleep_for(Duration::from_millis(1));
 
             if INPUT_NUMBER >= 1 && INPUT_NUMBER <= 9 && add_num(&mut sudoku.map, SELECT_X as usize / 75, SELECT_Y as usize / 75, INPUT_NUMBER, true) {
                 //if add_num(&mut sudoku.map, 0 , 0, INPUT_NUMBER, true) {
@@ -432,11 +430,11 @@ fn main() {
     }
 }
 
-use rkplat::drivers::virtio::GPU_DEIVCE;
+use rkplat::drivers::virtio::__GPU_DEIVCE;
 use rkgpu::{draw_font, DIRECTION, draw_line};
 
 unsafe fn draw_sudoku_lattices(color0: Color, color1: Color) -> u8 {
-    let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
+    let (width, height) = __GPU_DEIVCE.as_mut().unwrap().resolution();
     if width >= 750 && height >= 750 {
         for x in 0..10 {
             if x % 3 == 0 {
@@ -477,6 +475,6 @@ fn show_time(_null: *mut u8) {
         let time = alloc::format!("Time: {:04}-{:02}-{:02} {:02}:{:02}:{:02}", timepoint.year(), timepoint.month() + 1, 
         timepoint.day(), timepoint.hour(), timepoint.min(), timepoint.second());
         printg(time.as_str(), 700, 300, ORANGE, 255, 2);
-        rksched::this_thread::sleep_for(Duration::from_secs(1));
+        this_thread::sleep_for(Duration::from_secs(1));
     }
 }

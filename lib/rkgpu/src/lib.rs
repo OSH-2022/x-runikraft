@@ -38,7 +38,7 @@ pub use output::*;
 
 use core::cmp::{max, min};
 use core::time::Duration;
-use rkplat::drivers::virtio::GPU_DEIVCE;
+use rkplat::drivers::virtio::__GPU_DEIVCE;
 use crate::DIRECTION::{Horizontal, Vertical};
 
 static mut _EMPTY: [u8; 0] = [0; 0];
@@ -58,18 +58,18 @@ pub unsafe fn init() {
     //         CURSOR_NEW[(i * 64 + j) * 4 + 3] = CURSOR[(i * 16 + j) * 4 + 3];
     //     }
     // }
-    FB = GPU_DEIVCE.as_mut().unwrap().setup_framebuffer().expect("failed to get FB");
-    let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
+    FB = __GPU_DEIVCE.as_mut().unwrap().setup_framebuffer().expect("failed to get FB");
+    let (width, height) = __GPU_DEIVCE.as_mut().unwrap().resolution();
     draw_clear(CYAN);
 }
 
 pub fn resolution() -> (u32, u32) {
-    unsafe { GPU_DEIVCE.as_mut().unwrap().resolution() }
+    unsafe { __GPU_DEIVCE.as_mut().unwrap().resolution() }
 }
 
 pub fn draw_clear(color: Color) {
     unsafe {
-        let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
+        let (width, height) = __GPU_DEIVCE.as_mut().unwrap().resolution();
         for y in 0..height as usize {
             for x in 0..width as usize {
                 let idx = (y * width as usize + x) * 4;
@@ -79,12 +79,12 @@ pub fn draw_clear(color: Color) {
                 FB[idx + 3] = 255;
             }
         }
-        GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
+        __GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
     }
 }
 
 pub fn screen_flush() {
     unsafe {
-        GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
+        __GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
     }
 }

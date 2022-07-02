@@ -303,19 +303,19 @@ fn parse_device(#[allow(unused_variables)]a: &dyn RKalloc, #[allow(unused_variab
                     #[cfg(feature="driver_virtio_gpu")]
                     virtio::DeviceType::GPU => {
                         unsafe {
-                            virtio::GPU_DEIVCE = Some(&mut *alloc_type(a,virtio::VirtIOGpu::new(name,header).unwrap()));
+                            virtio::__GPU_DEIVCE = Some(&mut *alloc_type(a, virtio::VirtIOGpu::new(name, header).unwrap()));
                         }
                     },
                     #[cfg(feature="driver_virtio_input")]
                     virtio::DeviceType::Input => {
                         unsafe {
-                            virtio::INPUT_DEIVCE = Some(&mut *alloc_type(a,virtio::VirtIOInput::new(name,header).unwrap()));
+                            virtio::__INPUT_DEIVCE = Some(&mut *alloc_type(a, virtio::VirtIOInput::new(name, header).unwrap()));
                         }
                     },
                     #[cfg(feature="driver_virtio_entropy")]
                     virtio::DeviceType::EntropySource => {
                         unsafe {
-                            virtio::ENTROPY_DEIVCE = Some(&mut *alloc_type(a,virtio::VirtIOEntropy::new(name,header).unwrap()));
+                            virtio::__ENTROPY_DEIVCE = Some(&mut *alloc_type(a, virtio::VirtIOEntropy::new(name, header).unwrap()));
                         }
                     },
                     #[cfg(feature="driver_virtio_net")]
