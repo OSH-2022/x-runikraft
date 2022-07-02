@@ -85,7 +85,7 @@ $(MAKE_ROOT_DIR)/test/makefile: makefiles/test.mk.sh makefiles/test.mk.0 makefil
 opensbi:
 #FW_OPTIONS=1 indicates quiet boot
 	-mkdir --parents "$(MAKE_ROOT_DIR)/opensbi"
-	cd opensbi && $(MAKE) PLATFORM=generic FW_OPTIONS=1 FW_DYNAMIC=n FW_JUMP=y FW_PAYLOAD=n O="$(MAKE_ROOT_DIR)/opensbi"
+	cd opensbi && $(MAKE) -j $(shell nproc) PLATFORM=generic FW_OPTIONS=1 FW_DYNAMIC=n FW_JUMP=y FW_PAYLOAD=n O="$(MAKE_ROOT_DIR)/opensbi"
 
 $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib: $(SRC_ROOT_DIR)/lib/rkalloc/alloc_error_handler.rs
 	@env RUSTC_BOOTSTRAP=1 rustc --edition=2021 $(SRC_ROOT_DIR)/lib/rkalloc/alloc_error_handler.rs --crate-type lib --target riscv64gc-unknown-none-elf -o $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib
@@ -95,7 +95,7 @@ $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.
 	@cp $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/deps/liballoc_error_handler.rlib
 
 .PHONY: example
-example: $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/deps/liballoc_error_handler.rlib .config
+example: .config opensbi $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/deps/liballoc_error_handler.rlib
 ifeq ($(shell cat $(CONFIG_DIR)/features2.txt), release)
 	cd example/sudoku && env RUSTFLAGS="-Clink-arg=-T$(SRC_ROOT_DIR)/linker.ld --cfg __alloc_error_handler --extern __alloc_error_handler=$(MAKE_ROOT_DIR)/liballoc_error_handler.rlib" cargo build --release $(shell cat $(CONFIG_DIR)/features1.txt)
 else
@@ -113,13 +113,17 @@ run: .config
 	qemu-system-riscv64 -machine virt -kernel "$(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/sudoku.bin" -device virtio-gpu-device,xres=1280,yres=800 -serial mon:stdio -device virtio-keyboard-device -device virtio-rng-device -bios "$(MAKE_ROOT_DIR)/opensbi/platform/generic/firmware/fw_jump.bin"
 
 .PHONY: menuconfig
-menuconfig: .config
-
-.config: $(CONFIG_DIR)/handle_config
-	$(MAKE) -f $(KCONFIG_DIR)/kconfig.Makefile menuconfig
+menuconfig: $(CONFIG_DIR)/handle_config
+	@$(MAKE) -f $(KCONFIG_DIR)/kconfig.Makefile menuconfig
 	@mkdir -p $(CONFIG_DIR)
 	@$(CONFIG_DIR)/handle_config $(SRC_ROOT_DIR) $(CONFIG_DIR)
-	touch .config
+	@touch .config
+
+.config: $(CONFIG_DIR)/handle_config
+	@$(MAKE) -f $(KCONFIG_DIR)/kconfig.Makefile menuconfig
+	@mkdir -p $(CONFIG_DIR)
+	@$(CONFIG_DIR)/handle_config $(SRC_ROOT_DIR) $(CONFIG_DIR)
+	@touch .config
 
 include $(SCRIPTS_DIR)/objects.Makefile
 
@@ -130,6 +134,7 @@ $(CONFIG_DIR)/handle_config: $(SUPPORT_DIR)/handle_config.cpp
 .PHONY: clean
 clean:
 	$(MAKE) -f $(SCRIPTS_DIR)/build.Makefile $@
+	-rm -rf build
 
 .PHONY: help
 help:
