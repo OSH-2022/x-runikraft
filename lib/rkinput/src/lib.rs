@@ -49,7 +49,7 @@ pub static mut MOUSE_Y: u32 = 0;
 
 pub static mut SELECT_X: u32 = 0;
 pub static mut SELECT_Y: u32 = 0;
-pub static mut INPUT_NUMBER: usize = 100;
+pub static mut INPUT_NUMBER: usize = 200;
 
 const EV_KEY: u16 = 0x01;
 const KEY_UP: u16 = 103;

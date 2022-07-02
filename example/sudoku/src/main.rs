@@ -361,11 +361,13 @@ fn main() {
 
         if INPUT_NUMBER == 35 {
             hint(&mut &mut sudoku.map);
+            INPUT_NUMBER = 200;
         }
 
         if INPUT_NUMBER == 24 {
             sudoku_solve(& mut sudoku.map, 0, 0);
             sudoku.map_print();
+            INPUT_NUMBER = 200;
         }
 
     }
