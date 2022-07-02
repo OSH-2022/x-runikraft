@@ -50,7 +50,7 @@ export PATCHLEVEL = 1
 export SUBLEVEL = 0
 export EXTRAVERSION =
 
-CONFIG_DIR			:= $(MAKE_ROOT_DIR)/config
+export CONFIG_DIR			:= $(MAKE_ROOT_DIR)/config
 SUPPORT_DIR			:= $(SRC_ROOT_DIR)/support
 SCRIPTS_DIR			:= $(SUPPORT_DIR)/scripts
 export KCONFIG_DIR	:= $(SCRIPTS_DIR)/kconfig
@@ -95,17 +95,8 @@ $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.
 	@cp $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/deps/liballoc_error_handler.rlib
 
 .PHONY: example
-example: .config opensbi $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/deps/liballoc_error_handler.rlib
-ifeq ($(shell cat $(CONFIG_DIR)/features2.txt), release)
-	cd example/sudoku && env RUSTFLAGS="-Clink-arg=-T$(SRC_ROOT_DIR)/linker.ld --cfg __alloc_error_handler --extern __alloc_error_handler=$(MAKE_ROOT_DIR)/liballoc_error_handler.rlib" cargo build --release $(shell cat $(CONFIG_DIR)/features1.txt)
-else
-ifeq ($(shell cat $(CONFIG_DIR)/features2.txt), debug)
-	cd example/sudoku && env RUSTFLAGS="-Clink-arg=-T$(SRC_ROOT_DIR)/linker.ld --cfg __alloc_error_handler --extern __alloc_error_handler=$(MAKE_ROOT_DIR)/liballoc_error_handler.rlib" cargo build $(shell cat $(CONFIG_DIR)/features1.txt)
-else
-	@echo "Unknown build type, expect release/debug."
-	false
-endif
-endif
+example: .config opensbi $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/deps/liballoc_error_handler.rlib $(SUPPORT_DIR)/make_example.sh
+	$(SUPPORT_DIR)/make_example.sh
 	$(CROSS_COMPILE)objcopy --strip-all "$(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/sudoku" -O binary "$(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/sudoku.bin"
 
 .PHONY: run
@@ -141,3 +132,4 @@ help:
 	@echo "Configuration options:"
 	@echo "menuconfig        - demos the menuconfig functionality"
 	@echo "		    configuration options will be written in $(CONFIG_DIR)/config.rs"
+	@echo "clean             - cleans all output files"
