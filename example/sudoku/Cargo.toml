@@ -2,16 +2,19 @@
 name = "sudoku"
 version = "0.1.0"
 edition = "2021"
-
+authors = [
+    "吴骏东 <1904346407@qq.com>",
+    "郭耸霄 <logname@mail.ustc.edu.cn>",
+]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 
-rkgpu = {path = "../../lib/rkgpu"}
-rkplat = {path = "../../lib/rkplat", features = ["has_smp","driver_virtio_all","driver_ns16550","driver_goldfish_rtc"]}
-rkalloc = {path = "../../lib/rkalloc"}
-rkboot = {path = "../../lib/rkboot", features = ["alloc_buddy","sched_preem"]}
-rkswrand = {path = "../../lib/rkswrand"}
-rkinput = {path = "../../lib/rkinput"}
-rksched = {path = "../../lib/rksched"}
-rklock = {path = "../../lib/rklock"}
+rkgpu = { path = "../../lib/rkgpu" }
+rkplat = { path = "../../lib/rkplat", features = ["has_smp", "driver_virtio_all", "driver_ns16550", "driver_goldfish_rtc"] }
+rkalloc = { path = "../../lib/rkalloc" }
+rkboot = { path = "../../lib/rkboot", features = ["alloc_buddy", "sched_preem"] }
+rkswrand = { path = "../../lib/rkswrand" }
+rkinput = { path = "../../lib/rkinput" }
+rksched = { path = "../../lib/rksched" }
+rklock = { path = "../../lib/rklock" }
