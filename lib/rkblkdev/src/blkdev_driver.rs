@@ -107,7 +107,7 @@ pub fn rk_blkdev_drv_queue_event(dev: &RkBlkdev, queue_id: u16) {
     queue_handler = dev._data.queue_handler[queue_id];
     //TODO #[cfg(feature = "dispatcherthreads")]
     // uk_semaphore_up(&queue_handler->events);
-    #[cfg(not (feature = "dispatcherthreads"))]
+    #[cfg(not(feature = "dispatcherthreads"))]
     (queue_handler.callback)(dev, queue_id, queue_handler.cookie);
 }
 

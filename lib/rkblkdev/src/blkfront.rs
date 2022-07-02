@@ -50,13 +50,14 @@ pub struct RkBlkdevQueue {
     /* Allocator for this queue. */
     a: dyn RKalloc,
     /* The libukblkdev queue identifier */
-    queue_id:u16,
+    queue_id: u16,
     /* The flag to interrupt on the queue */
-    intr_enabled:isize,
+    intr_enabled: isize,
     /* Reference to the Blkfront Device */
     /* Grant refs pool. */
     //TODO struct blkfront_grefs_pool ref_pool,
 }
+
 #[cfg(not(feature = "xen_blkfront_grefpool"))]
 pub struct RkBlkdevQueue {
     /* Front_ring structure */
@@ -68,33 +69,34 @@ pub struct RkBlkdevQueue {
     /* Allocator for this queue. */
     a: *const dyn RKalloc,
     /* The libukblkdev queue identifier */
-    queue_id:u16,
+    queue_id: u16,
     /* The flag to interrupt on the queue */
-    intr_enabled:isize,
+    intr_enabled: isize,
     /* Reference to the Blkfront Device */
 }
+
 /**
  * Structure used to describe the Blkfront device.
  */
-pub struct BlkfrontDev <'a>{
+pub struct BlkfrontDev<'a> {
     /* Xenbus Device. */
     //TODO struct xenbus_device *xendev;
     /* Blkdev Device. */
-    blkdev:RkBlkdev<'a>,
+    blkdev: RkBlkdev<'a>,
     /* Blkfront device number from Xenstore path. */
     //TODO blkif_vdev_t	handle;
     /* Value which indicates that the backend can process requests with the
      * BLKIF_OP_WRITE_BARRIER request opcode.
      */
-    barrier:isize,
+    barrier: isize,
     /* Value which indicates that the backend can process requests with the
      * BLKIF_OP_WRITE_FLUSH_DISKCACHE request opcode.
      */
-    flush:i32,
+    flush: i32,
     /* Number of configured queues used for requests */
-    nb_queues:u16,
+    nb_queues: u16,
     /* Vector of queues used for communication with backend */
-    queues:*mut RkBlkdevQueue,
+    queues: *mut RkBlkdevQueue,
     /* The blkdev identifier */
-    uid:u16,
+    uid: u16,
 }

@@ -56,14 +56,14 @@ static mut BLKDEV_COUNT: Option<i16> = None;
 const CONFIG_LIBUKBLKDEV_MAXNBQUEUES: u16 = 1;
 
 pub unsafe fn _alloc_data<'a>(a: &'a (dyn RKalloc + 'a), blkdev_id: u16, drv_name: &'a str) -> *mut RkBlkdevData<'a> {
-    let mut data: *mut RkBlkdevData = alloc_type::<RkBlkdevData>(a, RkBlkdevData{
+    let mut data: *mut RkBlkdevData = alloc_type::<RkBlkdevData>(a, RkBlkdevData {
         id: blkdev_id,
         state: RkBlkdevState::RkBlkdevUnconfigured,
         queue_handler: [],
         drv_name,
-        a
+        a,
     });
-    if !data.is_null(){
+    if !data.is_null() {
         return null_mut();
     }
     //这仅仅会发生在我们设置设备身份的时候
@@ -127,11 +127,11 @@ pub fn _destory_event_handler(h: &mut RkBlkdevEventHandler) {
         assert!(!h.dispatcher_s.is_null());
         h.dispatcher.kill();
         h.dispatcher.wait();
-        h.dispatcher=null_mut();
+        h.dispatcher = null_mut();
     }
-    if !h.dispatcher_name.is_null(){
-        unsafe {h.dispatcher_name;}
-        h.dispatcher_name=null_mut();
+    if !h.dispatcher_name.is_null() {
+        unsafe { h.dispatcher_name; }
+        h.dispatcher_name = null_mut();
     }
 }
 

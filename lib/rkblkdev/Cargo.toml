@@ -5,17 +5,17 @@
 [package]
 name = "rkblkdev"
 version = "0.1.0"
-authors = [ "郭耸霄 <logname@mail.ustc.edu.cn> "]
+authors = ["郭耸霄 <logname@mail.ustc.edu.cn> "]
 license = "BSD-3-Clause"
 edition = "2021"
 
 [dependencies]
-runikraft = {path = "../../core"}
-rkalloc = { path = "../rkalloc"}
-rksched = { path = "../rksched"}
-rkplat = {path = "../rkplat"}
+runikraft = { path = "../../core" }
+rkalloc = { path = "../rkalloc" }
+rksched = { path = "../rksched" }
+rkplat = { path = "../rkplat" }
 
 [features]
 dispatcherthreads = []
 sync_io_blocked_waiting = []
-xen_blkfront_grefpool=[]
+xen_blkfront_grefpool = []

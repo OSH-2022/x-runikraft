@@ -33,7 +33,7 @@
 use rksched::{RKsched, RKthread};
 use runikraft::compat_list::Tailq;
 use crate::blkfront::RkBlkdevQueue;
-use crate::blkreq::{RkBlkreq, RkBlkreqOp,Sector};
+use crate::blkreq::{RkBlkreq, RkBlkreqOp, Sector};
 use crate::CONFIG_LIBUKBLKDEV_MAXNBQUEUES;
 
 pub struct RkBlkdev<'a> {
@@ -93,7 +93,6 @@ pub struct RkBlkdevQueueInfo {
     ///该数字需要是2的幂
     nb_is_power_of_two: isize,
 }
-
 
 
 ///用于队列事件回调的函数类型

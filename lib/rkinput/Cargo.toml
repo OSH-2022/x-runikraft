@@ -2,10 +2,13 @@
 name = "rkinput"
 version = "0.1.0"
 edition = "2021"
-
+authors = [
+    "郭耸霄 <logname@mail.ustc.edu.cn>",
+    "蓝俊玮 <ljw13@mail.ustc.edu.cn>",
+]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rkplat = { path = "../rkplat", features = ["driver_virtio_gpu","driver_virtio_input"] }
+rkplat = { path = "../rkplat", features = ["driver_virtio_gpu", "driver_virtio_input"] }
 rksched = { path = "../rksched" }
-rkgpu = {path="../rkgpu"}
+rkgpu = { path = "../rkgpu" }
