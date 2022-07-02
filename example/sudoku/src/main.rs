@@ -28,8 +28,8 @@ use core::ptr::null_mut;
 pub struct Sudoku {
     // 当前数独信息(玩家显示)
     map: [[usize; 9]; 9],
-    // 当前数独的一个解
-    answer: [[usize; 9]; 9]
+    // 标记是不是原来的数字。 1 为 原始数字
+    tag: [[usize; 9]; 9]
 
 }
  
@@ -58,7 +58,7 @@ pub fn sudoku_init_zero () -> Sudoku {
     let map_allzero = [[0; 9]; 9];
     let sudoku = Sudoku {
         map: map_allzero,
-        answer: map_allzero
+        tag: map_allzero
     };
     sudoku
 }
@@ -209,10 +209,10 @@ pub fn sudoku_solve(map: & mut [[usize; 9]; 9], row: usize, col: usize) -> bool{
 
 /* 
     挖洞函数： 对于生成的数独进行随机挖空
-    以 @map 为模板，将挖空的结果写入 @map
+    以 @map 为模板，将挖空的结果写入 @map， 原生数据的结果写入 @tag
     @num 为留下的非空格数字数目，最低为 10
 */
-pub fn hole_dig(map:& mut [[usize; 9]; 9], num: usize) {
+pub fn hole_dig(map:& mut [[usize; 9]; 9], tag:& mut [[usize; 9]; 9], num: usize) {
     let mut hole_map = [[0; 9]; 9];
 
     let mut number_num = num % 81;
@@ -236,6 +236,7 @@ pub fn hole_dig(map:& mut [[usize; 9]; 9], num: usize) {
                 continue
             }
             hole_map[index / 9][index % 9] = map[index / 9][index % 9];
+            tag[index / 9][index % 9] = 1;
             break;
         }
         i += 1;
@@ -273,14 +274,18 @@ pub fn add_num(map: &mut [[usize; 9]; 9], row:usize, col:usize, num: usize, ifch
 /*
     删除数字的函数
     将 @map 中 (@row, @col) 的位置上数字删除（写入 0）
-    如果该位置原先就是 0，则删除失败
+    如果该位置原先就是 0，或为原生数据， 则删除失败
 */
-pub fn del_num(map: &mut [[usize; 9]; 9], row:usize, col:usize) -> bool {
+pub fn del_num(map: &mut [[usize; 9]; 9], tag: &[[usize; 9]; 9], row:usize, col:usize) -> bool {
     if row > 8 || col > 8  {
         // 访问越界
         return false;
     }
     if map[row][col] == 0 {
+        return false;
+    }
+
+    if tag[row][col] == 1 {
         return false;
     }
     
@@ -327,7 +332,7 @@ fn main() {
     row_random(& mut sudoku.map, 0);
     sudoku_solve(& mut sudoku.map, 1, 1);
     
-    hole_dig(& mut sudoku.map, 15);
+    hole_dig(& mut sudoku.map, &mut sudoku.tag, 15);
     sudoku.map_print();
 
     sudoku_copy(& mut map_old, & sudoku.map);
@@ -345,7 +350,7 @@ fn main() {
             //show_sudoku_number(0, 0, INPUT_NUMBER as u8, GRAY);
         }
 
-        if INPUT_NUMBER == 0 && del_num(&mut sudoku.map, SELECT_X as usize / 75, SELECT_Y as usize / 75) {
+        if INPUT_NUMBER == 0 && del_num(&mut sudoku.map, &sudoku.tag, SELECT_X as usize / 75, SELECT_Y as usize / 75) {
             show_sudoku_number((SELECT_X / 75) as u8, (SELECT_Y / 75) as u8, 0, GRAY);
             //show_sudoku_number(SELECT_X as u8 / 75, SELECT_Y as u8 / 75, 255, BLACK);
         }
