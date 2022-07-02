@@ -1,3 +1,6 @@
 [submodule "opensbi"]
 	path = opensbi
 	url = https://github.com/riscv-software-src/opensbi
+[submodule "support/scripts/kconfig"]
+	path = support/scripts/kconfig
+	url = https://github.com/linux-kdevops/kconfig.git

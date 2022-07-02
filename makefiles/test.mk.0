@@ -1,7 +1,7 @@
 # -*- makefile -*-
 # 在运行时，该文件将被复制到build/test
 
-TEST_BUILD_DIR := $(MAKE_ROOT_DIR)/test/riscv64gc-unknown-none-elf/$(MAKE_BUILD_TYPE)
+TEST_BUILD_DIR := $(MAKE_ROOT_DIR)/test/riscv64gc-unknown-none-elf/debug
 
 .PHONY: all build run
 

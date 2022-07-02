@@ -2,15 +2,6 @@
 .PHONY: @testname@.bin
 
 @testname@.bin: $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(TEST_BUILD_DIR)/deps/liballoc_error_handler.rlib
-ifeq ($(MAKE_BUILD_TYPE), release)
-	@cd $(TEST_ROOT_DIR)/@testname@ && env RUSTFLAGS="-Clink-arg=-T$(SRC_ROOT_DIR)/linker.ld --cfg __alloc_error_handler --extern __alloc_error_handler=$(MAKE_ROOT_DIR)/liballoc_error_handler.rlib" cargo build --offline --release
-else
-ifeq ($(MAKE_BUILD_TYPE), debug)
-	@cd $(TEST_ROOT_DIR)/@testname@ && env RUSTFLAGS="-Clink-arg=-T$(SRC_ROOT_DIR)/linker.ld --cfg __alloc_error_handler --extern __alloc_error_handler=$(MAKE_ROOT_DIR)/liballoc_error_handler.rlib" cargo build --offline
-else
-	@echo "Unknown build type, expect release/debug."
-	false
-endif
-endif
+	@cd $(TEST_ROOT_DIR)/@testname@ && env RUSTFLAGS="-Clink-arg=-T$(SRC_ROOT_DIR)/linker.ld  --cfg __alloc_error_handler --extern __alloc_error_handler=$(MAKE_ROOT_DIR)/liballoc_error_handler.rlib" cargo build --offline
 	@rm $(TEST_ROOT_DIR)/@testname@/Cargo.lock
 	@$(CROSS_COMPILE)objcopy --strip-all $(TEST_BUILD_DIR)/test-@testname@ -O binary @testname@.bin

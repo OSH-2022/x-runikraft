@@ -17,3 +17,10 @@
 .vScode*
 .Vscode*
 .VScode*
+/config/.config
+/config/.config.old
+.config
+.config.old
+/include/config
+/include/generated
+
