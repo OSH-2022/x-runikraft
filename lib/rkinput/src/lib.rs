@@ -147,10 +147,10 @@ pub fn input_handler(input_event: InputEvent) {
                     INPUT_NUMBER = 100;
                 }   
                 KEY_H => { 
-                    INPUT_NUMBER = KEY_H;
+                    INPUT_NUMBER = KEY_H as usize;
                 } 
                 KEY_O => { 
-                    INPUT_NUMBER = KEY_O;
+                    INPUT_NUMBER = KEY_O as usize;
                 } 
                 KEY_1 => { 
                     INPUT_NUMBER = 1;
