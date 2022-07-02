@@ -212,7 +212,7 @@ pub fn sudoku_solve(map: & mut [[usize; 9]; 9], row: usize, col: usize) -> bool{
     以 @map 为模板，将挖空的结果写入 @map
     @num 为留下的非空格数字数目，最低为 10
 */
-pub fn hole_dig(map:& mut [[usize; 9]; 9], num: usize) {
+pub fn hole_dig(map:& mut [[usize; 9]; 9], num: usize, tag: &mut [[usize; 9]; 9]) {
     let mut hole_map = [[0; 9]; 9];
 
     let mut number_num = num % 81;
@@ -332,7 +332,7 @@ fn main() {
         row_random(&mut sudoku.map, 0);
         sudoku_solve(&mut sudoku.map, 1, 1);
 
-        hole_dig(&mut sudoku.map, 15);
+        hole_dig(&mut sudoku.map, 15,&mut sudoku.tag);
         sudoku.map_print();
 
     sudoku_copy(& mut map_old, & sudoku.map);
@@ -387,8 +387,8 @@ unsafe fn draw_sudoku_lattices(color0:Color,color1:Color) -> u8 {
 unsafe fn show_sudoku_number(pos_x: u8, pos_y: u8, number: u8,color:Color) -> u8 {
     if pos_x <= 8 && pos_y <= 8 {
         let start_x: u32 = 75 * pos_x as u32 + 20;
-        let start_y: u32 = 75 * pos_y as u32 + 8;
-        if number == 255 {
+        let start_y: u32 = 75 * pos_y as u32 + 6;
+        if number == 0 {
             draw_font(start_x, start_y, CYAN, 255,' ', 4);
         } else {
             draw_font(start_x, start_y, color, 255,(number + 48).into(), 4);

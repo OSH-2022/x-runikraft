@@ -77,8 +77,8 @@ const KEY_BACKSPACE: u16 = 14;
 const SHORT_STEP: u32 = 1;
 const LONG_STEP: u32 = 20;
 
-pub static mut CURSOR_X: u32 = 100;
-pub static mut CURSOR_Y: u32 = 100;
+pub static mut CURSOR_X: u32 = 900;
+pub static mut CURSOR_Y: u32 = 500;
 
 pub fn input_handler(input_event: InputEvent) {
     unsafe {
