@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
                         features1 = features1 + "--features " + lib_name + "/" + line + " ";
                     } else if(!lib_name.empty() && line.find("=") != std::string::npos) {
                         message = empty + "\n" + mod_prefix + lib_name + mod_suffix;
-                        message += line + mod_end;
+                        message += const_prefix + line + mod_end;
                         OutputFile << message;
                         lib_name.clear();
                     } else if(line.find("=") == std::string::npos)
