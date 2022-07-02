@@ -226,6 +226,7 @@ dependencies = [
  "rkboot",
  "rkgpu",
  "rkinput",
+ "rklock",
  "rkplat",
  "rksched",
  "rkswrand",

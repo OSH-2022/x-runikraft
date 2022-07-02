@@ -138,7 +138,6 @@ pub fn draw_line(direction: DIRECTION, start_x: u32, start_y: u32, length: u32, 
                 }
             }
         }
-
     }
 }
 

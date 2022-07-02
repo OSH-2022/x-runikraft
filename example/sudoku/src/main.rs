@@ -19,11 +19,10 @@ use rkinput::*;
 use rksched::*;
 use core::time::Duration;
 use core::ptr::null_mut;
+use rklock::*;
 
 
-
-
-
+static mut mutex:Semaphore = Semaphore::new(0);
 
 pub struct Sudoku {
     // 当前数独信息(玩家显示)
@@ -259,12 +258,15 @@ pub fn add_num(map: &mut [[usize; 9]; 9], row:usize, col:usize, num: usize, ifch
         return false;
     }
     if map[row][col] != 0 {
+        unsafe{mutex.signal();}
         return false;
     }
     if num > 9 || num <= 0{
+        unsafe{mutex.signal();}
         return false;
     }
     if ifcheck && !(if_fit_check(map, row, col, num, false)) {
+        unsafe{mutex.signal();}
         return false;
     }
 
@@ -318,19 +320,36 @@ pub fn hint(map: &mut [[usize; 9]; 9]) -> bool{
     return true;
 }
 
+pub fn error_hinter(_null: *mut u8) {
+    unsafe {
+        loop {
+            mutex.wait();
+            printg("You can't write this number HERE!", 700, 500, RED, 255, 2);
+            rksched::this_thread::sleep_for(Duration::from_secs(1));
+            printg("                                 ", 700, 500, RED, 255, 2);
+        }
+    }
+}
 
 #[no_mangle]
 fn main() {
+
+
     unsafe {
-        rksched::sched::create_thread("", rkalloc::get_default().unwrap(),
-                                      rksched::thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),
-                                      input_tracer, null_mut());
+
+        sched::create_thread("", rkalloc::get_default().unwrap(),
+                             rksched::thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),
+                             input_tracer, null_mut()).expect("TODO: panic message");
+
+        sched::create_thread("", rkalloc::get_default().unwrap(),
+                             rksched::thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),
+                             error_hinter, null_mut()).expect("TODO: panic message");
 
         let mut sudoku = sudoku_init_zero();
         let mut map_old: [[usize; 9]; 9] = [[0; 9]; 9];
 
         init();
-        printg("Use W, A, S, and D to move selecting rectangle.\nUse up, left, down, and right to move cursor.",0,700,BLACK,255,2);
+        printg("Use W, A, S, and D to move selecting rectangle.\nUse up, left, down, and right to move cursor.\nUse H for hint, use O for solution.",0,700,BLACK,255,2);
         draw_sudoku_lattices(PURPLE, BLACK);
         screen_flush();
         row_random(&mut sudoku.map, 0);
@@ -348,10 +367,11 @@ fn main() {
     loop {
         rksched::this_thread::sleep_for(Duration::from_millis(1));
 
-        if INPUT_NUMBER >= 1 && INPUT_NUMBER <= 9 && add_num(&mut sudoku.map, SELECT_X as usize / 75 , SELECT_Y as usize / 75, INPUT_NUMBER - 1, true) {
+        if INPUT_NUMBER >= 1 && INPUT_NUMBER <= 9 && add_num(&mut sudoku.map, SELECT_X as usize / 75 , SELECT_Y as usize / 75, INPUT_NUMBER, true) {
         //if add_num(&mut sudoku.map, 0 , 0, INPUT_NUMBER, true) {
-            show_sudoku_number((SELECT_X / 75) as u8, (SELECT_Y / 75) as u8, (INPUT_NUMBER - 1) as u8, GRAY);
+            show_sudoku_number((SELECT_X / 75) as u8, (SELECT_Y / 75) as u8, (INPUT_NUMBER) as u8, GRAY);
             //show_sudoku_number(0, 0, INPUT_NUMBER as u8, GRAY);
+
         }
 
         if INPUT_NUMBER == 0 && del_num(&mut sudoku.map, &sudoku.tag, SELECT_X as usize / 75, SELECT_Y as usize / 75) {
@@ -361,15 +381,13 @@ fn main() {
 
         if INPUT_NUMBER == 35 {
             hint(&mut &mut sudoku.map);
-            INPUT_NUMBER = 200;
         }
 
         if INPUT_NUMBER == 24 {
             sudoku_solve(& mut sudoku.map, 0, 0);
             sudoku.map_print();
-            INPUT_NUMBER = 200;
         }
-
+        INPUT_NUMBER = 200;
     }
     // sudoku_solve(& mut sudoku.map, & mut sudoku.answer, 0, 0);
     // unsafe { sudoku.map_print(); }
