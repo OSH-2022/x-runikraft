@@ -81,9 +81,9 @@ pub fn draw_font(start_x: u32, start_y: u32, color: Color, alpha: u8, ch: char, 
                         FB[idx + 0] = color.blue;
                         FB[idx + 3] = alpha;
                     } else {
-                        FB[idx + 2] = CYAN.red;
-                        FB[idx + 1] = CYAN.green;
-                        FB[idx + 0] = CYAN.blue;
+                        FB[idx + 2] = LIGHT_CYAN.red;
+                        FB[idx + 1] = LIGHT_CYAN.green;
+                        FB[idx + 0] = LIGHT_CYAN.blue;
                         FB[idx + 3] = 255;
                     }
                 }

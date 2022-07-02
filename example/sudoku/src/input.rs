@@ -32,7 +32,6 @@
 #![no_std]
 
 
-
 pub use key::*;
 use rkgpu::*;
 use rkplat::drivers::virtio::{__GPU_DEIVCE, __INPUT_DEIVCE, InputEvent};
@@ -119,7 +118,7 @@ pub fn input_handler(input_event: InputEvent) {
                 KEY_W => {
                     if SELECT_Y >= 75 {
                         SELECT_Y -= 75;
-                        draw_select(SELECT_OLD_X, SELECT_OLD_Y, CYAN);
+                        draw_select(SELECT_OLD_X, SELECT_OLD_Y, LIGHT_CYAN);
                         draw_select(SELECT_X, SELECT_Y, RED);
                     }
                     INPUT_NUMBER = 100;
@@ -127,7 +126,7 @@ pub fn input_handler(input_event: InputEvent) {
                 KEY_S => {
                     if SELECT_Y < 600 {
                         SELECT_Y += 75;
-                        draw_select(SELECT_OLD_X, SELECT_OLD_Y, CYAN);
+                        draw_select(SELECT_OLD_X, SELECT_OLD_Y, LIGHT_CYAN);
                         draw_select(SELECT_X, SELECT_Y, RED);
                     }
                     INPUT_NUMBER = 100;
@@ -135,7 +134,7 @@ pub fn input_handler(input_event: InputEvent) {
                 KEY_A => {
                     if SELECT_X >= 75 {
                         SELECT_X -= 75;
-                        draw_select(SELECT_OLD_X, SELECT_OLD_Y, CYAN);
+                        draw_select(SELECT_OLD_X, SELECT_OLD_Y, LIGHT_CYAN);
                         draw_select(SELECT_X, SELECT_Y, RED);
                     }
                     INPUT_NUMBER = 100;
@@ -143,7 +142,7 @@ pub fn input_handler(input_event: InputEvent) {
                 KEY_D => {
                     if SELECT_X < 600 {
                         SELECT_X += 75;
-                        draw_select(SELECT_OLD_X, SELECT_OLD_Y, CYAN);
+                        draw_select(SELECT_OLD_X, SELECT_OLD_Y, LIGHT_CYAN);
                         draw_select(SELECT_X, SELECT_Y, RED);
                     }
                     INPUT_NUMBER = 100;
