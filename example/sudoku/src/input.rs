@@ -31,13 +31,12 @@
 
 #![no_std]
 
-mod key;
+
 
 pub use key::*;
-//use core::time::Duration;
-use rkgpu::{update_cursor, draw_select, RED, CYAN};
+use rkgpu::*;
 use rkplat::drivers::virtio::{GPU_DEIVCE, INPUT_DEIVCE, InputEvent};
-//use rkplat::println;
+use crate::*;
 
 const EV_REL: u16 = 0x02;
 const BTN_LEFT: u16 = 0x110;

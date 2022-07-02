@@ -15,7 +15,6 @@ rkplat = { path = "../../lib/rkplat", features = ["has_smp", "driver_virtio_all"
 rkalloc = { path = "../../lib/rkalloc" }
 rkboot = { path = "../../lib/rkboot", features = ["alloc_buddy", "sched_preem"] }
 rkswrand = { path = "../../lib/rkswrand" }
-rkinput = { path = "../../lib/rkinput" }
 rksched = { path = "../../lib/rksched" }
 rklock = { path = "../../lib/rklock" }
 rktimeconv = { path = "../../lib/rktimeconv" }

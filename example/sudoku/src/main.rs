@@ -51,13 +51,20 @@ extern crate alloc;
 use rkplat::time::wall_clock;
 use rkgpu::*;
 use rkswrand::fast_random;
-use rkinput::*;
+
 use rksched::*;
 use core::time::Duration;
 use core::ptr::null_mut;
 use rklock::*;
 use rktimeconv::TimePoint;
 
+pub mod key;
+pub mod input;
+pub mod cursor;
+
+pub use key::*;
+pub use input::*;
+pub use cursor::*;
 
 static mut mutex: Semaphore = Semaphore::new(0);
 
@@ -381,6 +388,9 @@ fn main() {
         let mut map_old: [[usize; 9]; 9] = [[0; 9]; 9];
 
         init();
+        printg("Hello, world!\nHello, OSH-2022!\nHello, Runikraft!\n", 700, 10, RED, 255, 4);
+        update_cursor(900, 500, true);
+        draw_select(0, 0, RED);
         printg("Use W, A, S, and D to move selecting rectangle.\nUse up, left, down, and right to move cursor.\nUse H for hint, use O for solution.", 0, 700, BLACK, 255, 2);
         draw_sudoku_lattices(PURPLE, BLACK);
         screen_flush();

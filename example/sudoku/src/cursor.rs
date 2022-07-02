@@ -31,7 +31,10 @@
 
 use core::cmp::{max, min};
 use rkplat::drivers::virtio::GPU_DEIVCE;
+use crate::DIRECTION::*;
 use crate::*;
+use rkgpu::*;
+
 
 pub fn update_cursor(start_x: u32, start_y: u32, is_init: bool) {
     unsafe {

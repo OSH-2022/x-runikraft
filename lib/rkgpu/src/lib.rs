@@ -31,11 +31,9 @@
 #![no_std]
 
 pub mod color;
-pub mod cursor;
 pub mod output;
 
 pub use color::*;
-pub use cursor::*;
 pub use output::*;
 
 use core::cmp::{max, min};
@@ -45,8 +43,8 @@ use crate::DIRECTION::{Horizontal, Vertical};
 
 static mut _EMPTY: [u8; 0] = [0; 0];
 static DIC: [u128; 127] = include!("dic.txt");
-static mut FB: &mut [u8] = unsafe { &mut _EMPTY };
-static mut FB_CURSOR: &mut [u32] = &mut [0; 1000];
+pub static mut FB: &mut [u8] = unsafe { &mut _EMPTY };
+pub static mut FB_CURSOR: &mut [u32] = &mut [0; 1000];
 
 //static CURSOR: [u8; 16 * 16 * 4] = include!("cursor.txt");
 
@@ -62,19 +60,7 @@ pub unsafe fn init() {
     // }
     FB = GPU_DEIVCE.as_mut().unwrap().setup_framebuffer().expect("failed to get FB");
     let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
-    // draw_font(width / 2 - 4 * 16, height / 2 - 8 * 16, (0, 0, 0, 1), 3 + 48, 16);
-    // GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
-    // rksched::this_thread::sleep_for(Duration::from_secs(1));
-    // draw_font(width / 2 - 4 * 16, height / 2 - 8 * 16, (0, 0, 0, 1), 2 + 48, 16);
-    // GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
-    // rksched::this_thread::sleep_for(Duration::from_secs(1));
-    draw_font(width / 2 - 4 * 16, height / 2 - 8 * 16, WHITE, 255, '1', 16);
-    GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
-    rksched::this_thread::sleep_for(Duration::from_secs(1));
     draw_clear(CYAN);
-    printg("Hello, world!\nHello, OSH-2022!\nHello, Runikraft!\n", 700, 10, RED, 255, 4);
-    update_cursor(900, 500, true);
-    draw_select(0, 0, RED);
 }
 
 pub fn resolution() -> (u32, u32) {

@@ -19,7 +19,6 @@ members = [
     "lib/rkschedpreem",
     "lib/rksignal",
     "lib/rkgpu",
-    "lib/rkinput",
     "lib/rkswrand",
     "lib/rktimeconv",
     "example/sudoku"

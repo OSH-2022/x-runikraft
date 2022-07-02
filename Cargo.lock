@@ -122,15 +122,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rkinput"
-version = "0.1.0"
-dependencies = [
- "rkgpu",
- "rkplat",
- "rksched",
-]
-
-[[package]]
 name = "rklock"
 version = "0.1.0"
 dependencies = [
@@ -234,7 +225,6 @@ dependencies = [
  "rkalloc",
  "rkboot",
  "rkgpu",
- "rkinput",
  "rklock",
  "rkplat",
  "rksched",
