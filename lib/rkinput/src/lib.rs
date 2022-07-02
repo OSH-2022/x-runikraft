@@ -32,10 +32,10 @@
 #![no_std]
 
 
-use core::time::Duration;
+//use core::time::Duration;
 use rkgpu::{update_cursor, draw_select, RED, CYAN};
 use rkplat::drivers::virtio::{GPU_DEIVCE, INPUT_DEIVCE, InputEvent};
-use rkplat::println;
+//use rkplat::println;
 
 const EV_REL: u16 = 0x02;
 const BTN_LEFT: u16 = 0x110;
