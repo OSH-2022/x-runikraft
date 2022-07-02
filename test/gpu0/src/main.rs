@@ -5,7 +5,7 @@
 extern crate rkboot;
 
 use rkgpu::*;
-use rkplat::drivers::virtio::GPU_DEIVCE;
+use rkplat::drivers::virtio::__GPU_DEIVCE;
 use core::time::Duration;
 // use core::slice;
 // use core::mem::{size_of, align_of};
@@ -22,7 +22,7 @@ unsafe fn main(_args: &mut [&str]) -> i32 {
 }
 
 unsafe fn draw_sudoku_lattices() -> u8 {
-    let (width, height) = GPU_DEIVCE.as_mut().unwrap().resolution();
+    let (width, height) = __GPU_DEIVCE.as_mut().unwrap().resolution();
     if width >= 750 && height >= 750 {
         for x in 0..10 {
             if x % 3 == 0 {
