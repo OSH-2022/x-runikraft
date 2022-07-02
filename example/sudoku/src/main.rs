@@ -461,9 +461,11 @@ unsafe fn show_sudoku_number(pos_x: u8, pos_y: u8, number: u8, color: Color) -> 
 }
 
 fn show_time(_null: *mut u8) {
-    let timepoint_from_unix: Duration = wall_clock();
-    let timepoint: TimePoint = TimePoint::from_unix_time(timepoint_from_unix);
-    let time = alloc::format!("{}-{}-{} {}:{}:{}", timepoint.year(), timepoint.month() + 1, 
+    loop {
+        let timepoint_from_unix: Duration = wall_clock();
+        let timepoint: TimePoint = TimePoint::from_unix_time(timepoint_from_unix);
+        let time = alloc::format!("Time: {}-{}-{} {}:{}:{}", timepoint.year(), timepoint.month() + 1, 
         timepoint.day(), timepoint.hour(), timepoint.min(), timepoint.second());
-    printg(time.as_str(), 0, 700, BLACK, 255, 2)
+        printg(time.as_str(), 750, 300, YELLOW, 255, 2);
+    }
 }
