@@ -11,7 +11,7 @@ const std::string empty;
 std::string features1;
 std::string features2;
 
-std::string scope;
+std::string lib_name;
 unsigned int count = 0;
 
 std::string replace_content(std::string content, unsigned int flag);
@@ -20,8 +20,6 @@ int main(int argc, char* argv[]) {
     if(argc < 3) {
         std::cerr << "Too few arguments!\n";
     }
-    // const std::string SRC_ROOT_DIR = ".";
-    // const std::string BUILD_DIR = ".";
     const std::string SRC_ROOT_DIR = argv[1];
     const std::string BUILD_DIR = argv[2];
 
@@ -39,8 +37,9 @@ int main(int argc, char* argv[]) {
     
     std::string line;
     while(std::getline(InputFile, line)) {
-        if(line.length() > 2 && line.substr(0, 2) == "# ") {
-            scope = line.substr(2, 6);
+        if(line.length() > 3 && line.substr(0, 4) == "# rk") {
+            std::string subline = line.substr(2);
+            lib_name = subline.substr(0, std::min(subline.find(" "), subline.length()));
         } else if(line.length() > 2 && line[0] != '#') {
             if(line.find("CPU_TIME") != std::string::npos)
                 line = replace_content(line, 0);
@@ -102,8 +101,10 @@ int main(int argc, char* argv[]) {
                     break;
                 }
                 default: {
-                    if(scope == "rkplat" || scope == "rkboot")
-                        features1 += scope + "/" + line + " ";
+                    if(!lib_name.empty()) {
+                        features1 = features1 + "--features " + lib_name + "/" + line + " ";
+                        lib_name.clear();
+                    }
                     else
                         features2 = line;
                     break;

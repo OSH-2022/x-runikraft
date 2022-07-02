@@ -55,13 +55,13 @@ SUPPORT_DIR			:= $(SRC_ROOT_DIR)/support
 SCRIPTS_DIR			:= $(SUPPORT_DIR)/scripts
 export KCONFIG_DIR	:= $(SCRIPTS_DIR)/kconfig
 
-PHNOY += all
+.PHNOY: all
 all: test
 
-PHNOY += everything
+.PHNOY: everything
 everything: all report
 
-PHNOY += report
+.PHNOY: report
 report: $(MAKE_ROOT_DIR)/report/makefile
 	cd "$(MAKE_ROOT_DIR)/report" && $(MAKE)
 
@@ -69,20 +69,19 @@ $(MAKE_ROOT_DIR)/report/makefile: makefiles/report.mk
 	-mkdir --parents "$(MAKE_ROOT_DIR)/report"
 	cp makefiles/report.mk "$(MAKE_ROOT_DIR)/report/makefile"
 
-PHNOY += test
+.PHNOY: test
 test: $(MAKE_ROOT_DIR)/test/makefile opensbi
 	cd "$(MAKE_ROOT_DIR)/test" && $(MAKE)
 
-PHNOY += build_test
+.PHNOY: build_test
 build_test: $(MAKE_ROOT_DIR)/test/makefile
 	cd "$(MAKE_ROOT_DIR)/test" && $(MAKE) build
 
-PHNOY += $(MAKE_ROOT_DIR)/test/makefile
 $(MAKE_ROOT_DIR)/test/makefile: makefiles/test.mk.sh makefiles/test.mk.0 makefiles/test.mk.1
 	-mkdir --parents "$(MAKE_ROOT_DIR)/test"
 	makefiles/test.mk.sh makefiles/test.mk "$(MAKE_ROOT_DIR)/test/makefile" "$(TEST_ROOT_DIR)" "$(TEST_LIST)" "$(IGNORED_LIST)" "$(MAKE_ROOT_DIR)/opensbi/platform/generic/firmware/fw_jump.bin"
 
-PHNOY += opensbi
+.PHONY: opensbi
 opensbi:
 #FW_OPTIONS=1 indicates quiet boot
 	-mkdir --parents "$(MAKE_ROOT_DIR)/opensbi"
@@ -91,12 +90,12 @@ opensbi:
 $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib: $(SRC_ROOT_DIR)/lib/rkalloc/alloc_error_handler.rs
 	@env RUSTC_BOOTSTRAP=1 rustc --edition=2021 $(SRC_ROOT_DIR)/lib/rkalloc/alloc_error_handler.rs --crate-type lib --target riscv64gc-unknown-none-elf -o $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib
 
-$(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/deps/liballoc_error_handler.rlib: $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(CONFIG_DIR)/features2.txt
-	@-mkdir --parents $(TEST_BUILD_DIR)/deps
+$(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/deps/liballoc_error_handler.rlib: $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib .config
+	@-mkdir --parents $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/deps/
 	@cp $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/deps/liballoc_error_handler.rlib
 
-PHNOY += example
-example: $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/deps/liballoc_error_handler.rlib $(CONFIG_DIR)/features1.txt $(CONFIG_DIR)/features2.txt
+.PHNOY: example
+example: $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/deps/liballoc_error_handler.rlib .config
 ifeq ($(shell cat $(CONFIG_DIR)/features2.txt), release)
 	cd example/sudoku && env RUSTFLAGS="-Clink-arg=-T$(SRC_ROOT_DIR)/linker.ld --cfg __alloc_error_handler --extern __alloc_error_handler=$(MAKE_ROOT_DIR)/liballoc_error_handler.rlib" cargo build --release $(shell cat $(CONFIG_DIR)/features1.txt)
 else
@@ -109,16 +108,15 @@ endif
 endif
 	$(CROSS_COMPILE)objcopy --strip-all "$(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/sudoku" -O binary "$(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/sudoku.bin"
 
-PHNOY += run
-run:
+.PHNOY: run
+run: .config
 	qemu-system-riscv64 -machine virt -kernel "$(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/sudoku.bin" -device virtio-gpu-device,xres=1280,yres=800 -serial mon:stdio -device virtio-keyboard-device -device virtio-rng-device -bios "$(MAKE_ROOT_DIR)/opensbi/platform/generic/firmware/fw_jump.bin"
 
-$(CONFIG_DIR)/features1.txt: menuconfig
-$(CONFIG_DIR)/features2.txt: menuconfig
+.PHNOY: menuconfig
+menuconfig: .config
 
-PHNOY += menuconfig
-menuconfig: $(KCONFIG_DIR)/mconf include/config/project.release $(CONFIG_DIR)/handle_config
-	@$< Kconfig
+.config: $(CONFIG_DIR)/handle_config
+	$(MAKE) -f $(KCONFIG_DIR)/kconfig.Makefile menuconfig
 	@mkdir -p $(CONFIG_DIR)
 	@$(CONFIG_DIR)/handle_config $(SRC_ROOT_DIR) $(CONFIG_DIR)
 
@@ -128,14 +126,12 @@ $(CONFIG_DIR)/handle_config: $(SUPPORT_DIR)/handle_config.cpp
 	@mkdir -p $(CONFIG_DIR)
 	@g++ $(SUPPORT_DIR)/handle_config.cpp -o $(CONFIG_DIR)/handle_config
 
-PHONY += clean
+.PHONY: clean
 clean:
 	$(MAKE) -f $(SCRIPTS_DIR)/build.Makefile $@
 
-PHONY += help
+.PHONY: help
 help:
 	@echo "Configuration options:"
 	@echo "menuconfig        - demos the menuconfig functionality"
 	@echo "		    configuration options will be written in $(CONFIG_DIR)/config.rs"
-
-.PHONY: $(PHONY)
