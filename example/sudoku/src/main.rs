@@ -55,6 +55,7 @@ pub use key::*;
 pub use input::*;
 pub use cursor::*;
 pub use output::*;
+use rkplat::println;
 
 static mutex: Semaphore = Semaphore::new(0);
 
@@ -190,6 +191,7 @@ pub fn sudoku_solve(map: &mut [[usize; 9]; 9], row: usize, col: usize, depth: us
     let mut nextrow: usize = 0;
     let mut nextcol: usize = 0;
     if depth > 81 {
+        println!("Out of depth!");
         return false;
     }
 
@@ -320,17 +322,21 @@ pub fn hint(map: &mut [[usize; 9]; 9]) -> bool {
     let mut nextrow: usize = 0;
     let mut nextcol: usize = 0;
     if !findnext_empty(map, 0, &mut nextrow, &mut nextcol) {
+        println!("Full!");
         return false;
     }
     if !sudoku_solve(&mut map_allzero, nextrow, nextcol, 0) {
+        println!("No solution!");
         return false;
     }
+    println!("Got a answer!");
 
     let mut index: usize = fast_random::<usize>() % 81;
     let mut times = 0;
     loop {
         times += 1;
         if times > 81 {
+            println!("Random times out!");
             return false;
         }
         if index >= 81{
@@ -394,6 +400,7 @@ fn init(sudoku: &mut Sudoku) {
         sudoku_solve(&mut sudoku.map, 1, 1, 0);
         hole_dig(&mut sudoku.map, 15, &mut sudoku.tag);
         sudoku.map_print();
+        println!("Hello sudoku!");
     }
 }
 
@@ -417,6 +424,7 @@ fn main() {
             }
 
             if INPUT_NUMBER == 35 {
+                println!("Want a hint!");
                 hint(&mut sudoku.map);
             }
 
