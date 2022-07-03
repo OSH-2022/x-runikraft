@@ -49,6 +49,8 @@ int main(int argc, char* argv[]) {
                 line = replace_content(line, 2);
             switch (count) {
                 case 0: {
+                    auto pos = line.find(";");
+                    line = line.replace(pos, 1, "<<20;");
                     message = const_prefix + line + "\n";
                     OutputFile << message;
                     ++count;
