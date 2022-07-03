@@ -118,10 +118,10 @@ int main(int argc, char* argv[]) {
     OutputFile.close();
     InputFile.close();
 
-    std::string features_filename = BUILD_DIR + "/features1.txt";
+    std::string features_filename = BUILD_DIR + "/.features1";
     std::ofstream FeaturesFile1(features_filename);
     FeaturesFile1 << features1;
-    features_filename = BUILD_DIR + "/features2.txt";
+    features_filename = BUILD_DIR + "/.features2";
     std::ofstream FeaturesFile2(features_filename);
     FeaturesFile2 << features2;
     FeaturesFile1.close();

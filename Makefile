@@ -50,7 +50,7 @@ export PATCHLEVEL = 1
 export SUBLEVEL = 0
 export EXTRAVERSION =
 
-export CONFIG_DIR			:= $(MAKE_ROOT_DIR)/config
+export CONFIG_DIR	:= $(MAKE_ROOT_DIR)/config
 SUPPORT_DIR			:= $(SRC_ROOT_DIR)/support
 SCRIPTS_DIR			:= $(SUPPORT_DIR)/scripts
 export KCONFIG_DIR	:= $(SCRIPTS_DIR)/kconfig
@@ -90,18 +90,18 @@ opensbi:
 $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib: $(SRC_ROOT_DIR)/lib/rkalloc/alloc_error_handler.rs
 	@env RUSTC_BOOTSTRAP=1 rustc --edition=2021 $(SRC_ROOT_DIR)/lib/rkalloc/alloc_error_handler.rs --crate-type lib --target riscv64gc-unknown-none-elf -o $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib
 
-$(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/deps/liballoc_error_handler.rlib: $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib .config
-	@-mkdir --parents $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/deps/
-	@cp $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/deps/liballoc_error_handler.rlib
+$(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/.features2)/deps/liballoc_error_handler.rlib: $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib .config
+	@-mkdir --parents $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/.features2)/deps/
+	@cp $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/.features2)/deps/liballoc_error_handler.rlib
 
 .PHONY: example
-example: .config opensbi $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/deps/liballoc_error_handler.rlib $(SUPPORT_DIR)/make_example.sh
+example: .config opensbi $(MAKE_ROOT_DIR)/liballoc_error_handler.rlib $(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/.features2)/deps/liballoc_error_handler.rlib $(SUPPORT_DIR)/make_example.sh
 	$(SUPPORT_DIR)/make_example.sh
-	$(CROSS_COMPILE)objcopy --strip-all "$(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/sudoku" -O binary "$(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/sudoku.bin"
+	$(CROSS_COMPILE)objcopy --strip-all "$(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/.features2)/sudoku" -O binary "$(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/.features2)/sudoku.bin"
 
 .PHONY: run
 run: .config
-	qemu-system-riscv64 -machine virt -kernel "$(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/features2.txt)/sudoku.bin" -device virtio-gpu-device,xres=1280,yres=800 -serial mon:stdio -device virtio-keyboard-device -device virtio-rng-device -bios "$(MAKE_ROOT_DIR)/opensbi/platform/generic/firmware/fw_jump.bin"
+	qemu-system-riscv64 -machine virt -kernel "$(MAKE_ROOT_DIR)/riscv64gc-unknown-none-elf/$(shell cat $(CONFIG_DIR)/.features2)/sudoku.bin" -device virtio-gpu-device,xres=1280,yres=800 -serial mon:stdio -device virtio-keyboard-device -device virtio-rng-device -bios "$(MAKE_ROOT_DIR)/opensbi/platform/generic/firmware/fw_jump.bin"
 
 .PHONY: menuconfig
 menuconfig: $(CONFIG_DIR)/handle_config
@@ -126,6 +126,8 @@ $(CONFIG_DIR)/handle_config: $(SUPPORT_DIR)/handle_config.cpp
 clean:
 	$(MAKE) -f $(SCRIPTS_DIR)/build.Makefile $@
 	-rm -rf build
+	-rm -rf .config.old
+	-mv .config .config.old
 
 .PHONY: help
 help:
