@@ -186,9 +186,12 @@ pub fn if_fit_check(map: &[[usize; 9]; 9], x: usize, y: usize, number: usize, if
  * 返回 true 为有解，返回 false 为无解
  */
 
-pub fn sudoku_solve(map: &mut [[usize; 9]; 9], row: usize, col: usize) -> bool {
+pub fn sudoku_solve(map: &mut [[usize; 9]; 9], row: usize, col: usize, depth: usize) -> bool {
     let mut nextrow: usize = 0;
     let mut nextcol: usize = 0;
+    if depth > 81 {
+        return false;
+    }
 
     let mut number = 0;
     loop {
@@ -208,7 +211,7 @@ pub fn sudoku_solve(map: &mut [[usize; 9]; 9], row: usize, col: usize) -> bool {
             return true;
         }
 
-        if !(sudoku_solve(map, nextrow, nextcol)) {
+        if !(sudoku_solve(map, nextrow, nextcol, depth + 1)) {
             map[row][col] = 0;
             continue;
         } else {
@@ -319,11 +322,18 @@ pub fn hint(map: &mut [[usize; 9]; 9]) -> bool {
     if !findnext_empty(map, 0, &mut nextrow, &mut nextcol) {
         return false;
     }
-    sudoku_solve(&mut map_allzero, nextrow, nextcol);
+    if !sudoku_solve(&mut map_allzero, nextrow, nextcol, 0) {
+        return false;
+    }
 
     let mut index: usize = fast_random::<usize>() % 81;
+    let mut times = 0;
     loop {
-        if index >= 81 {
+        times += 1;
+        if times > 81 {
+            return false;
+        }
+        if index >= 81{
             index %= 81;
         }
         if map[index / 9][index % 9] != 0 {
@@ -340,7 +350,9 @@ pub fn hint(map: &mut [[usize; 9]; 9]) -> bool {
     //     return false;
     // }
 
-    add_num(map, nextrow, nextcol, map_allzero[nextrow][nextcol], false);
+    if !add_num(map, nextrow, nextcol, map_allzero[nextrow][nextcol], false) {
+        return false;
+    }
 
     unsafe { show_sudoku_number(nextrow as u8, nextcol as u8, map_allzero[nextrow][nextcol] as u8, TAN); }
 
@@ -379,7 +391,7 @@ fn init(sudoku: &mut Sudoku) {
         draw_sudoku_lattices(PURPLE, BLACK);
         screen_flush();
         row_random(&mut sudoku.map, 0);
-        sudoku_solve(&mut sudoku.map, 1, 1);
+        sudoku_solve(&mut sudoku.map, 1, 1, 0);
         hole_dig(&mut sudoku.map, 15, &mut sudoku.tag);
         sudoku.map_print();
     }
@@ -405,11 +417,14 @@ fn main() {
             }
 
             if INPUT_NUMBER == 35 {
-                hint(&mut &mut sudoku.map);
+                hint(&mut sudoku.map);
             }
 
             if INPUT_NUMBER == 24 {
-                sudoku_solve(&mut sudoku.map, 0, 0);
+                if !sudoku_solve(&mut sudoku.map, 0, 0, 0) {
+                    INPUT_NUMBER = 200;
+                    continue;
+                }
                 sudoku.map_print();
             }
             INPUT_NUMBER = 200;
