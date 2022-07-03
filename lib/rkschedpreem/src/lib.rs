@@ -72,8 +72,9 @@ pub struct RKschedpreem {
 fn timer_irq_handler(_: *mut u8) -> bool {
     let mut flag = rkplat::lcpu::save_irqf();
     rkplat::irq::ack_irq(rkplat::time::get_irq());
-    flag &= !rkplat::time::get_irq();
+    flag &= !(1<<rkplat::time::get_irq());
     rkplat::lcpu::restore_irqf(flag);
+    rkplat::lcpu::disable_irq();
     this_thread::r#yield();
     true
 }
@@ -225,7 +226,7 @@ impl RKschedpreem {
                 front.as_mut().set_alone();
                 rkplat::lcpu::disable_irq();
                 let mut flag = rkplat::lcpu::save_irqf();
-                flag |= rkplat::time::get_irq();
+                flag |= 1<<rkplat::time::get_irq();
                 rkplat::lcpu::restore_irqf(flag);
                 rkplat::lcpu::enable_irq();
                 rkplat::time::set_timer(rkplat::time::monotonic_clock()+front.as_mut().element.attr.get_timeslice());
