@@ -12,4 +12,3 @@ authors = [
 runikraft = { path = "../../core" }
 rkplat = { path = "../rkplat", features = ["driver_virtio_gpu"] }
 rksched = { path = "../rksched" }
-

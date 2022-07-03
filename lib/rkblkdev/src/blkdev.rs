@@ -659,7 +659,3 @@ fn rk_blkdev_unconfigure(dev: &RkBlkdev) -> isize {
     }
     rc
 }
-
-
-
-

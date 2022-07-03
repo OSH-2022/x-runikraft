@@ -56,7 +56,7 @@ pub use input::*;
 pub use cursor::*;
 pub use output::*;
 
-static mut mutex: Semaphore = Semaphore::new(0);
+static mutex: Semaphore = Semaphore::new(0);
 
 pub struct Sudoku {
     // 当前数独信息(玩家显示)
@@ -362,15 +362,15 @@ fn init(sudoku: &mut Sudoku) {
     unsafe {
         sched::create_thread("", rkalloc::get_default().unwrap(),
                              thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),
-                             input_tracer, null_mut()).expect("TODO: panic message");
+                             input_tracer, null_mut()).unwrap();
 
         sched::create_thread("", rkalloc::get_default().unwrap(),
                              thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),
-                             error_hinter, null_mut()).expect("TODO: panic message");
+                             error_hinter, null_mut()).unwrap();
 
         sched::create_thread("", rkalloc::get_default().unwrap(),
                              thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),
-                             show_time, null_mut()).expect("TODO: panic message");
+                             show_time, null_mut()).unwrap();
         rkgpu::init();
         printg("Hello, world!\nHello, OSH-2022!\nHello, Runikraft!\n", 700, 10, RED, 255, 4);
         printg("Use W, A, S, and D to move selecting rectangle.\nUse up, left, down, and right to move cursor.\nUse H for hint, use O for solution.", 0, 700, BLACK, 255, 2);
