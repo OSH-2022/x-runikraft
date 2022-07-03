@@ -42,11 +42,11 @@ unsafe fn draw_sudoku_lattices() -> u8 {
     } else { 0 }
 }
 
-unsafe fn show_sudoku_number(pos_x: u8, pos_y: u8, number: u8) -> u8 {
-    if pos_x <= 8 && pos_y <= 8 {
-        let start_x: u32 = 75 * pos_x as u32 + 20;
-        let start_y: u32 = 75 * pos_y as u32 + 8;
-        draw_font(start_x, start_y, BLACK, 255, (number + 48).into(), 4);
-        0
-    } else { 1 }
-}
+// unsafe fn show_sudoku_number(pos_x: u8, pos_y: u8, number: u8) -> u8 {
+//     if pos_x <= 8 && pos_y <= 8 {
+//         let start_x: u32 = 75 * pos_x as u32 + 20;
+//         let start_y: u32 = 75 * pos_y as u32 + 8;
+//         draw_font(start_x, start_y, BLACK, 255, (number + 48).into(), 4);
+//         0
+//     } else { 1 }
+// }

@@ -30,7 +30,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #![no_std]
-
+#![allow(unused)]
+#![allow(non_upper_case_globals)]
 
 pub use key::*;
 use rkgpu::*;
@@ -63,8 +64,8 @@ pub fn input_handler(input_event: InputEvent) {
     unsafe {
         let (width, height) = __GPU_DEIVCE.as_mut().unwrap().resolution();
         //println!("{},{},{}", input_event.event_type, input_event.code, input_event.value);
-        let SELECT_OLD_X = SELECT_X;
-        let SELECT_OLD_Y = SELECT_Y;
+        let select_old_x = SELECT_X;
+        let select_old_y = SELECT_Y;
         if input_event.event_type == EV_KEY && input_event.value == 1 {
             match input_event.code {
                 KEY_UP => {
@@ -118,7 +119,7 @@ pub fn input_handler(input_event: InputEvent) {
                 KEY_W => {
                     if SELECT_Y >= 75 {
                         SELECT_Y -= 75;
-                        draw_select(SELECT_OLD_X, SELECT_OLD_Y, LIGHT_CYAN);
+                        draw_select(select_old_x, select_old_y, LIGHT_CYAN);
                         draw_select(SELECT_X, SELECT_Y, RED);
                     }
                     INPUT_NUMBER = 100;
@@ -126,7 +127,7 @@ pub fn input_handler(input_event: InputEvent) {
                 KEY_S => {
                     if SELECT_Y < 600 {
                         SELECT_Y += 75;
-                        draw_select(SELECT_OLD_X, SELECT_OLD_Y, LIGHT_CYAN);
+                        draw_select(select_old_x, select_old_y, LIGHT_CYAN);
                         draw_select(SELECT_X, SELECT_Y, RED);
                     }
                     INPUT_NUMBER = 100;
@@ -134,7 +135,7 @@ pub fn input_handler(input_event: InputEvent) {
                 KEY_A => {
                     if SELECT_X >= 75 {
                         SELECT_X -= 75;
-                        draw_select(SELECT_OLD_X, SELECT_OLD_Y, LIGHT_CYAN);
+                        draw_select(select_old_x, select_old_y, LIGHT_CYAN);
                         draw_select(SELECT_X, SELECT_Y, RED);
                     }
                     INPUT_NUMBER = 100;
@@ -142,7 +143,7 @@ pub fn input_handler(input_event: InputEvent) {
                 KEY_D => {
                     if SELECT_X < 600 {
                         SELECT_X += 75;
-                        draw_select(SELECT_OLD_X, SELECT_OLD_Y, LIGHT_CYAN);
+                        draw_select(select_old_x, select_old_y, LIGHT_CYAN);
                         draw_select(SELECT_X, SELECT_Y, RED);
                     }
                     INPUT_NUMBER = 100;

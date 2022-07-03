@@ -36,8 +36,8 @@ pub mod output;
 pub use color::*;
 pub use output::*;
 
-use core::cmp::{max, min};
-use core::time::Duration;
+//use core::cmp::{max, min};
+//use core::time::Duration;
 use rkplat::drivers::virtio::__GPU_DEIVCE;
 use crate::DIRECTION::{Horizontal, Vertical};
 

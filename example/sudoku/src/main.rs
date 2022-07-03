@@ -31,6 +31,8 @@
 
 #![no_std]
 #![no_main]
+#![allow(unused)]
+#![allow(non_upper_case_globals)]
 extern crate rkboot;
 extern crate alloc;
 
@@ -372,7 +374,7 @@ fn init(sudoku: &mut Sudoku) {
         rkgpu::init();
         printg("Hello, world!\nHello, OSH-2022!\nHello, Runikraft!\n", 700, 10, RED, 255, 4);
         printg("Use W, A, S, and D to move selecting rectangle.\nUse up, left, down, and right to move cursor.\nUse H for hint, use O for solution.", 0, 700, BLACK, 255, 2);
-        update_cursor(900, 500, true);
+        update_cursor(900, 400, true);
         draw_select(0, 0, RED);
         draw_sudoku_lattices(PURPLE, BLACK);
         screen_flush();
