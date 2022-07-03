@@ -64,6 +64,7 @@ pub struct Sudoku {
     map: [[usize; 9]; 9],
     // 标记是不是原来的数字。 1 为 原始数字
     tag: [[usize; 9]; 9],
+    // tag: [[usize; 9]; 9],
 }
 
 
@@ -187,40 +188,84 @@ pub fn if_fit_check(map: &[[usize; 9]; 9], x: usize, y: usize, number: usize, if
  * 返回 true 为有解，返回 false 为无解
  */
 
-pub fn sudoku_solve(map: &mut [[usize; 9]; 9], row: usize, col: usize, depth: usize) -> bool {
-    let mut nextrow: usize = 0;
-    let mut nextcol: usize = 0;
-    if depth > 81 {
-        println!("Out of depth!");
-        return false;
-    }
+static mut timepoint: Duration = Duration::new(0, 0);
 
-    let mut number = 0;
-    loop {
-        number += 1;
-        if number >= 10 {
-            break;
-        }
-
-        if !(if_fit_check(map, row, col, number, false)) {
-            continue;
-        }
-
-        map[row][col] = number;
-
-        if !(findnext_empty(map, row, &mut nextrow, &mut nextcol)) {
-            // 没有空位了，数独求解完成 
-            return true;
-        }
-
-        if !(sudoku_solve(map, nextrow, nextcol, depth + 1)) {
-            map[row][col] = 0;
-            continue;
+pub fn sudoku_solve(map: &mut [[usize; 9]; 9], row: usize, col: usize, depth: usize, is_init: bool) -> (bool, bool) {
+    unsafe {
+        let mut nextrow: usize = 0;
+        let mut nextcol: usize = 0;
+        if is_init {
+            if depth > 81 {
+                //println!("Out of depth!");
+                return (false, true);
+            }
+            let mut number = 0;
+            loop {
+                number += 1;
+                if number >= 10 {
+                    break;
+                }
+                if !(if_fit_check(map, row, col, number, false)) {
+                    continue;
+                }
+                map[row][col] = number;
+                if !(findnext_empty(map, row, &mut nextrow, &mut nextcol)) {
+                    // 没有空位了，数独求解完成
+                    return (true, true);
+                }
+                let result = sudoku_solve(map, nextrow, nextcol, depth + 1, is_init);
+                if !result.0 {
+                    map[row][col] = 0;
+                    continue;
+                } else {
+                    return (true, true);
+                }
+            }
+            (false, true)
         } else {
-            return true;
+            let mut current_time: Duration = Duration::new(0, 0);
+            if depth == 0 {
+                timepoint = wall_clock();
+            } else {
+                current_time = wall_clock();
+                if current_time.as_secs() > timepoint.as_secs() + 1 {
+                    timepoint = Duration::new(0, 0);
+                    return (false, false);
+                }
+            }
+            if depth > 81 {
+                //println!("Out of depth!");
+                return (false, true);
+            }
+            let mut number = 0;
+            loop {
+                number += 1;
+                if number >= 10 {
+                    break;
+                }
+                if !(if_fit_check(map, row, col, number, false)) {
+                    continue;
+                }
+                map[row][col] = number;
+                if !(findnext_empty(map, row, &mut nextrow, &mut nextcol)) {
+                    // 没有空位了，数独求解完成
+                    return (true, true);
+                }
+                let result = sudoku_solve(map, nextrow, nextcol, depth + 1, is_init);
+
+                if !result.1 {
+                    map[row][col] = 0;
+                    return (false, false);
+                } else if !result.0 {
+                    map[row][col] = 0;
+                    continue;
+                } else {
+                    return (true, true);
+                }
+            }
+            (false, true)
         }
     }
-    false
 }
 
 /* 
@@ -325,7 +370,7 @@ pub fn hint(map: &mut [[usize; 9]; 9]) -> bool {
         println!("Full!");
         return false;
     }
-    if !sudoku_solve(&mut map_allzero, nextrow, nextcol, 0) {
+    if !sudoku_solve(&mut map_allzero, nextrow, nextcol, 0, false).0 {
         println!("No solution!");
         return false;
     }
@@ -378,7 +423,7 @@ pub fn error_hinter(_null: *mut u8) {
 
 fn init(sudoku: &mut Sudoku) {
     unsafe {
-        sched::create_thread("", rkalloc::get_default().unwrap(),thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),input_tracer, null_mut()).unwrap();
+        sched::create_thread("", rkalloc::get_default().unwrap(), thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(), input_tracer, null_mut()).unwrap();
 
         sched::create_thread("", rkalloc::get_default().unwrap(), thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(), error_hinter, null_mut()).unwrap();
 
@@ -391,7 +436,7 @@ fn init(sudoku: &mut Sudoku) {
         draw_sudoku_lattices(PURPLE, BLACK);
         screen_flush();
         row_random(&mut sudoku.map, 0);
-        sudoku_solve(&mut sudoku.map, 1, 1, 0);
+        sudoku_solve(&mut sudoku.map, 1, 1, 0, true);
         hole_dig(&mut sudoku.map, 15, &mut sudoku.tag);
         sudoku.map_print();
         println!("Hello sudoku!\n");
@@ -420,11 +465,18 @@ fn main() {
 
             if INPUT_NUMBER == 35 {
                 println!("Want a hint!");
-                hint(&mut sudoku.map);
+                if !hint(&mut sudoku.map) {
+                    printg("No hint now!", 700, 500, BROWN, 255, 2);
+                    rksched::this_thread::sleep_for(Duration::from_secs(1));
+                    printg("            ", 700, 500, LIGHT_CYAN, 255, 2);
+                }
             }
 
             if INPUT_NUMBER == 24 {
-                if !sudoku_solve(&mut sudoku.map, 0, 0, 0) {
+                if !sudoku_solve(&mut sudoku.map, 0, 0, 0, false).0 {
+                    printg("No solution now!", 700, 500, BROWN, 255, 2);
+                    rksched::this_thread::sleep_for(Duration::from_secs(1));
+                    printg("               ", 700, 500, LIGHT_CYAN, 255, 2);
                     INPUT_NUMBER = 200;
                     continue;
                 }
