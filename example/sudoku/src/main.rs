@@ -476,7 +476,7 @@ fn main() {
                 if !sudoku_solve(&mut sudoku.map, 0, 0, 0, false).0 {
                     printg("No solution now!", 700, 500, BROWN, 255, 2);
                     rksched::this_thread::sleep_for(Duration::from_secs(1));
-                    printg("               ", 700, 500, LIGHT_CYAN, 255, 2);
+                    printg("                ", 700, 500, LIGHT_CYAN, 255, 2);
                     INPUT_NUMBER = 200;
                     continue;
                 }
