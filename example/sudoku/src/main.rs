@@ -339,7 +339,7 @@ pub fn hint(map: &mut [[usize; 9]; 9]) -> bool {
             println!("Random times out!");
             return false;
         }
-        if index >= 81{
+        if index >= 81 {
             index %= 81;
         }
         if map[index / 9][index % 9] != 0 {
@@ -378,17 +378,11 @@ pub fn error_hinter(_null: *mut u8) {
 
 fn init(sudoku: &mut Sudoku) {
     unsafe {
-        sched::create_thread("", rkalloc::get_default().unwrap(),
-                             thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),
-                             input_tracer, null_mut()).unwrap();
+        sched::create_thread("", rkalloc::get_default().unwrap(),thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),input_tracer, null_mut()).unwrap();
 
-        sched::create_thread("", rkalloc::get_default().unwrap(),
-                             thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),
-                             error_hinter, null_mut()).unwrap();
+        sched::create_thread("", rkalloc::get_default().unwrap(), thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(), error_hinter, null_mut()).unwrap();
 
-        sched::create_thread("", rkalloc::get_default().unwrap(),
-                             thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(),
-                             show_time, null_mut()).unwrap();
+        sched::create_thread("", rkalloc::get_default().unwrap(), thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(), show_time, null_mut()).unwrap();
         rkgpu::init();
         printg("Hello, world!\nHello, OSH-2022!\nHello, Runikraft!\n", 700, 10, RED, 255, 4);
         printg("Use W, A, S, and D to move selecting rectangle.\nUse up, left, down, and right to move cursor.\nUse H for hint, use O for solution.", 0, 700, BLACK, 255, 2);
@@ -400,12 +394,13 @@ fn init(sudoku: &mut Sudoku) {
         sudoku_solve(&mut sudoku.map, 1, 1, 0);
         hole_dig(&mut sudoku.map, 15, &mut sudoku.tag);
         sudoku.map_print();
-        println!("Hello sudoku!");
+        println!("Hello sudoku!\n");
     }
 }
 
 #[no_mangle]
 fn main() {
+    //println!("sudoku main\n");
     let mut sudoku: Sudoku = sudoku_init_zero();
     init(&mut sudoku);
     unsafe {
