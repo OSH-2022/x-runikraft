@@ -13,7 +13,7 @@ authors = [
 rkgpu = { path = "../../lib/rkgpu" }
 rkplat = { path = "../../lib/rkplat", features = ["has_smp", "driver_virtio_all", "driver_ns16550", "driver_goldfish_rtc"] }
 rkalloc = { path = "../../lib/rkalloc" }
-rkboot = { path = "../../lib/rkboot", features = ["alloc_buddy", "sched_preem"] }
+rkboot = { path = "../../lib/rkboot", features = ["alloc_buddy", "sched_coop"] }
 rkswrand = { path = "../../lib/rkswrand" }
 rksched = { path = "../../lib/rksched" }
 rklock = { path = "../../lib/rklock" }

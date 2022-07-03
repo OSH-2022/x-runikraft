@@ -196,8 +196,8 @@ pub fn input_tracer(_null: *mut u8) {
             let input_event_wrapped = __INPUT_DEIVCE.as_mut().unwrap().pop_pending_event();
             match input_event_wrapped {
                 Some(input_event) => input_handler(input_event),
-                //None => rksched::this_thread::sleep_for(Duration::from_millis(1))
-                None => { rksched::this_thread::r#yield() }
+                None => rksched::this_thread::sleep_for(Duration::from_millis(50))
+                //None => { rksched::this_thread::r#yield() }
             }
         }
     }
