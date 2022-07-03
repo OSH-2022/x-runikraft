@@ -7,5 +7,5 @@
 
 #[cfg(__runikraft_custom_config)]
 include!{env!("RUNIKRAFT_CONFIG_FILE")}
-#[cfg(not(feature="custom_config"))]
+#[cfg(not(__runikraft_custom_config))]
 include!{"../../default_config.rs"}

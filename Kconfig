@@ -20,7 +20,7 @@ menu "Memory and CPU Configuration"
             int "the maximum size of open files"
             default 1024
 
-        config PIPE_FILES
+        config PIPE_SIZE
             int "the maximum size of pipe files"
             default 4096
 		
@@ -39,7 +39,7 @@ menu "Memory and CPU Configuration"
         int "the main stack size(B)"
         default 65536
     
-    config PAGE_SZIE
+    config PAGE_SIZE
         int "the page size(B)"
         default 4096
 endmenu
