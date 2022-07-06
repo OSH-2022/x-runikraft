@@ -7,15 +7,16 @@
 mod inner {
     use core::arch;
     use core::ptr::addr_of;
+    use core::cell::UnsafeCell;
 
     /// 自旋锁
     pub struct SpinLock {
-        lock: i32,
+        lock: UnsafeCell<i32>,
     }
 
     impl SpinLock {
         pub const fn new() -> SpinLock {
-            SpinLock { lock: 0 }
+            SpinLock { lock: UnsafeCell::new(0) }
         }
         /// 上锁
         pub fn lock(&self) {
@@ -29,7 +30,7 @@ mod inner {
                         amoswap.w.aq t1, t0, ({lock})   #尝试获取锁
                         bnez t1, 2b   #获取失败
                 "#,
-                    lock = in(reg) addr_of!(self.lock),
+                    lock = in(reg) self.lock.get(),
                 );
             }
         }
@@ -46,7 +47,7 @@ mod inner {
                         li {ret}, 1
                     3:  
                 "#,
-                    lock = in(reg) addr_of!(self.lock),
+                    lock = in(reg) self.lock.get(),
                     ret = inout(reg) ret
                 );
             }
@@ -54,8 +55,8 @@ mod inner {
         }
         /// 解锁
         pub fn unlock(&self) {
-            assert!(self.lock != 0);
             unsafe {
+                assert!((*self.lock.get()) != 0);
                 arch::asm!(
                 " amoswap.w.rl zero,zero,({lock})",
                 lock = in(reg) addr_of!(self.lock))
@@ -63,8 +64,10 @@ mod inner {
         }
         /// 已上锁时返回true
         pub fn is_locked(&self) -> bool {
-            unsafe { arch::asm!("fence w,r"); }
-            self.lock != 0
+            unsafe {
+                arch::asm!("fence w,r");
+                (*self.lock.get()) != 0
+            }
         }
     }
 

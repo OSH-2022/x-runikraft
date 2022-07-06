@@ -63,6 +63,7 @@
 
 use rkalloc::{RKalloc, RKallocState, RKallocExt};
 use rkplat::spinlock;
+use core::cell::UnsafeCell;
 use core::cmp::max;
 use core::ptr::null_mut;
 use runikraft::config::rkplat::PAGE_SIZE;
@@ -76,7 +77,7 @@ const MAX_ORDER: usize = 48;
 //页的对齐要求
 const PAGE_ALIGNMENT: usize = PAGE_SIZE;
 
-pub struct RKallocBuddy<'a> {
+struct Data<'a> {
     //空闲区块列表(双向循环链表)，order-MIN_ORDER才是free_list_head的索引
     //【注意】访问free_list_head时，下标通常是[i-MIN_ORDER]
     free_list_head: [*mut Node; MAX_ORDER - MIN_ORDER + 1],
@@ -84,12 +85,17 @@ pub struct RKallocBuddy<'a> {
     root_order: usize,      //根区块的order，等于ceil(log2(total))
     meta_data: Bitset<'a>,
     base: *const u8,        //内存空间的基地址
-    lock: spinlock::SpinLock,
 
     //状态信息
     size_data: usize,    
     size_left: usize,       //剩余可用空间大小
     size_total: usize,      //总可用空间大小
+}
+
+pub struct RKallocBuddy<'a> {
+    lock: spinlock::SpinLock,
+    
+    data: UnsafeCell<Data<'a>>,
 }
 
 /// 大小和Node相同的Bitset, 储存空间的分配情况
@@ -139,7 +145,7 @@ impl Node {
     }
 }
 
-impl RKallocBuddy<'_> {
+impl Data<'_> {
     ///在结点head之后插入结点node
     unsafe fn insert_node(&mut self, order: usize, node: *mut Node) {
         debug_assert!(!node.is_null());
@@ -216,7 +222,7 @@ fn find_n_meta(t: usize) -> usize {
     l
 }
 
-impl RKallocBuddy<'_> {
+impl Data<'_> {
     ///确定一个结点的在meta_data中的索引
     #[inline(always)]
     fn index(&self, addr: *const Node, order: usize) -> usize {
@@ -232,7 +238,7 @@ impl RKallocBuddy<'_> {
     /// - `size`: 内存区域的大小，不必是2^n，但必须是16的倍数
     /// # 安全性
     /// - base..base+size范围的地址不能有其他用途
-    pub unsafe fn new(base: *mut u8, size: usize) -> Self {
+    unsafe fn new(base: *mut u8, size: usize) -> Self {
         debug_assert!(!base.is_null());
         debug_assert!(size % MIN_SIZE == 0);
         debug_assert!(base as usize % PAGE_ALIGNMENT == 0);
@@ -267,7 +273,7 @@ impl RKallocBuddy<'_> {
             }
         }
 
-        RKallocBuddy {
+        Data {
             free_list_head,
             max_order,
             root_order,
@@ -276,7 +282,6 @@ impl RKallocBuddy<'_> {
             size_data: data_size,
             size_left: data_size,
             size_total: size,
-            lock: spinlock::SpinLock::new()
         }
     }
 
@@ -383,6 +388,12 @@ impl RKallocBuddy<'_> {
 
 unsafe impl Sync for RKallocBuddy<'_>{}
 
+impl RKallocBuddy<'_> {
+    pub unsafe fn new(base: *mut u8, size: usize) -> Self {
+        Self { lock: spinlock::SpinLock::new(), data: UnsafeCell::new(Data::new(base,size)) }
+    }
+}
+
 unsafe impl RKalloc for RKallocBuddy<'_> {
     unsafe fn alloc(&self, size: usize, align: usize) -> *mut u8 {
         debug_assert!(align.is_power_of_two());
@@ -390,12 +401,11 @@ unsafe impl RKalloc for RKallocBuddy<'_> {
         //实际上需要分配的内存大小
         let size = min_power2(max(max(size, align), MIN_SIZE));
         //剩余空间不足
-        if self.size_left < size {
+        if (*self.data.get()).size_left < size {
             return null_mut();
         }
         let _lock = self.lock.lock();
-        let mut_self = &mut *(self as *const Self as *mut Self);
-        return mut_self.alloc_mut(size);
+        return (*self.data.get()).alloc_mut(size);
     }
     unsafe fn dealloc(&self, ptr: *mut u8, size: usize, align: usize) {
         if ptr.is_null() { return; }
@@ -403,31 +413,29 @@ unsafe impl RKalloc for RKallocBuddy<'_> {
         // debug_assert!(align <= PAGE_ALIGNMENT);
         let size = min_power2(max(max(size, align), MIN_SIZE));
         let _lock = self.lock.lock();
-        let mut_self = &mut *(self as *const Self as *mut Self);
-        mut_self.dealloc_mut(ptr, size);
+        return (*self.data.get()).dealloc_mut(ptr, size);
     }
 }
 
 unsafe impl RKallocExt for RKallocBuddy<'_> {
     unsafe fn dealloc_ext(&self, ptr: *mut u8) {
         if ptr.is_null() { return; }
-        let size = self.find_size_when_alloc(ptr);
+        let size = (*self.data.get()).find_size_when_alloc(ptr);
         let _lock = self.lock.lock();
-        let mut_self = &mut *(self as *const Self as *mut Self);
-        mut_self.dealloc_mut(ptr, size);
+        (*self.data.get()).dealloc_mut(ptr, size);
     }
 
     unsafe fn realloc_ext(&self, old_ptr: *mut u8, new_size: usize) -> *mut u8 {
         if old_ptr.is_null() { return self.alloc(new_size, 16); }
-        let old_size = self.find_size_when_alloc(old_ptr);
+        let old_size = (*self.data.get()).find_size_when_alloc(old_ptr);
         self.realloc(old_ptr, old_size, new_size, 16)
     }
 }
 
 
 impl RKallocState for RKallocBuddy<'_> {
-    fn total_size(&self) -> usize { self.size_total }
-    fn free_size(&self) -> usize { self.size_left }
+    fn total_size(&self) -> usize { unsafe{(*self.data.get()).size_total} }
+    fn free_size(&self) -> usize { unsafe{(*self.data.get()).size_left} }
 }
 
-mod debug;
+// mod debug;
