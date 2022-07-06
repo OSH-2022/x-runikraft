@@ -111,7 +111,8 @@ impl Default for ThreadAttr {
         Self {
             detached: WAITABLE,
             prio: PRIO_DEFAULT,
-            timeslice: Duration::from_millis(50),
+            //FIXME: 太小的时间片会导致无法启动GPU device
+            timeslice: Duration::from_millis(500),
             deadline: Duration::MAX,
             stack_size: runikraft::config::rksched::STACK_SIZE,
             tls_size: 0,

@@ -119,13 +119,17 @@ struct RustStyleOutput;
 static LOCK: super::spinlock::SpinLock = super::spinlock::SpinLock::new();
 
 pub(crate) fn __print_bios(args: fmt::Arguments) {
+    let flag = super::lcpu::save_irqf();
     let _lock = LOCK.lock();
     RustStyleOutputBIOS.write_fmt(args).unwrap();
+    super::lcpu::restore_irqf(flag);
 }
 
 pub fn __print(args: fmt::Arguments) {
+    let flag = super::lcpu::save_irqf();
     let _lock = LOCK.lock();
     RustStyleOutput.write_fmt(args).unwrap();
+    super::lcpu::restore_irqf(flag);
 }
 
 impl Write for RustStyleOutputBIOS {

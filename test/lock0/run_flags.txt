@@ -1,1 +1,1 @@
--nographic -smp 5
+-nographic -smp 2

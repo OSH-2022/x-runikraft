@@ -31,12 +31,9 @@
 
 #![no_std]
 #![no_main]
-#![allow(unused)]
-#![allow(non_upper_case_globals)]
 extern crate rkboot;
 extern crate alloc;
 
-use rkplat::time::wall_clock;
 use rkgpu::*;
 use rkswrand::fast_random;
 
@@ -44,7 +41,6 @@ use rksched::*;
 use core::time::Duration;
 use core::ptr::null_mut;
 use rklock::*;
-use rktimeconv::TimePoint;
 
 pub mod key;
 pub mod input;
@@ -57,6 +53,7 @@ pub use cursor::*;
 pub use output::*;
 use rkplat::println;
 
+#[allow(non_upper_case_globals)]
 static mutex: Semaphore = Semaphore::new(0);
 
 pub struct Sudoku {
@@ -188,83 +185,68 @@ pub fn if_fit_check(map: &[[usize; 9]; 9], x: usize, y: usize, number: usize, if
  * 返回 true 为有解，返回 false 为无解
  */
 
-static mut timepoint: Duration = Duration::new(0, 0);
-
 pub fn sudoku_solve(map: &mut [[usize; 9]; 9], row: usize, col: usize, depth: usize, is_init: bool) -> (bool, bool) {
-    unsafe {
-        let mut nextrow: usize = 0;
-        let mut nextcol: usize = 0;
-        if is_init {
-            if depth > 81 {
-                //println!("Out of depth!");
-                return (false, true);
-            }
-            let mut number = 0;
-            loop {
-                number += 1;
-                if number >= 10 {
-                    break;
-                }
-                if !(if_fit_check(map, row, col, number, false)) {
-                    continue;
-                }
-                map[row][col] = number;
-                if !(findnext_empty(map, row, &mut nextrow, &mut nextcol)) {
-                    // 没有空位了，数独求解完成
-                    return (true, true);
-                }
-                let result = sudoku_solve(map, nextrow, nextcol, depth + 1, is_init);
-                if !result.0 {
-                    map[row][col] = 0;
-                    continue;
-                } else {
-                    return (true, true);
-                }
-            }
-            (false, true)
-        } else {
-            let mut current_time: Duration = Duration::new(0, 0);
-            if depth == 0 {
-                timepoint = wall_clock();
-            } else {
-                current_time = wall_clock();
-                if current_time.as_secs() > timepoint.as_secs() + 1 {
-                    timepoint = Duration::new(0, 0);
-                    return (false, false);
-                }
-            }
-            if depth > 81 {
-                //println!("Out of depth!");
-                return (false, true);
-            }
-            let mut number = 0;
-            loop {
-                number += 1;
-                if number >= 10 {
-                    break;
-                }
-                if !(if_fit_check(map, row, col, number, false)) {
-                    continue;
-                }
-                map[row][col] = number;
-                if !(findnext_empty(map, row, &mut nextrow, &mut nextcol)) {
-                    // 没有空位了，数独求解完成
-                    return (true, true);
-                }
-                let result = sudoku_solve(map, nextrow, nextcol, depth + 1, is_init);
-
-                if !result.1 {
-                    map[row][col] = 0;
-                    return (false, false);
-                } else if !result.0 {
-                    map[row][col] = 0;
-                    continue;
-                } else {
-                    return (true, true);
-                }
-            }
-            (false, true)
+    let mut nextrow: usize = 0;
+    let mut nextcol: usize = 0;
+    if is_init {
+        if depth > 81 {
+            //println!("Out of depth!");
+            return (false, true);
         }
+        let mut number = 0;
+        loop {
+            number += 1;
+            if number >= 10 {
+                break;
+            }
+            if !(if_fit_check(map, row, col, number, false)) {
+                continue;
+            }
+            map[row][col] = number;
+            if !(findnext_empty(map, row, &mut nextrow, &mut nextcol)) {
+                // 没有空位了，数独求解完成
+                return (true, true);
+            }
+            let result = sudoku_solve(map, nextrow, nextcol, depth + 1, is_init);
+            if !result.0 {
+                map[row][col] = 0;
+                continue;
+            } else {
+                return (true, true);
+            }
+        }
+        (false, true)
+    } else {
+        if depth > 81 {
+            return (false, true);
+        }
+        let mut number = 0;
+        loop {
+            number += 1;
+            if number >= 10 {
+                break;
+            }
+            if !(if_fit_check(map, row, col, number, false)) {
+                continue;
+            }
+            map[row][col] = number;
+            if !(findnext_empty(map, row, &mut nextrow, &mut nextcol)) {
+                // 没有空位了，数独求解完成
+                return (true, true);
+            }
+            let result = sudoku_solve(map, nextrow, nextcol, depth + 1, is_init);
+
+            if !result.1 {
+                map[row][col] = 0;
+                return (false, false);
+            } else if !result.0 {
+                map[row][col] = 0;
+                continue;
+            } else {
+                return (true, true);
+            }
+        }
+        (false, true)
     }
 }
 
@@ -318,15 +300,15 @@ pub fn add_num(map: &mut [[usize; 9]; 9], row: usize, col: usize, num: usize, if
         return false;
     }
     if map[row][col] != 0 {
-        unsafe { mutex.signal(); }
+        mutex.signal();
         return false;
     }
     if num > 9 || num <= 0 {
-        unsafe { mutex.signal(); }
+        mutex.signal();
         return false;
     }
     if ifcheck && !(if_fit_check(map, row, col, num, false)) {
-        unsafe { mutex.signal(); }
+        mutex.signal();
         return false;
     }
 
@@ -405,47 +387,43 @@ pub fn hint(map: &mut [[usize; 9]; 9]) -> bool {
         return false;
     }
 
-    unsafe { show_sudoku_number(nextrow as u8, nextcol as u8, map_allzero[nextrow][nextcol] as u8, TAN); }
+    show_sudoku_number(nextrow as u8, nextcol as u8, map_allzero[nextrow][nextcol] as u8, TAN);
 
     return true;
 }
 
 pub fn error_hinter(_null: *mut u8) {
-    unsafe {
-        loop {
-            mutex.wait();
-            printg("You can't write this number HERE!", 700, 500, RED, 255, 2);
-            rksched::this_thread::sleep_for(Duration::from_secs(1));
-            printg("                                 ", 700, 500, RED, 255, 2);
-        }
+    loop {
+        mutex.wait();
+        printg("You can't write this number HERE!", 700, 500, RED, 255, 2);
+        rksched::this_thread::sleep_for(Duration::from_secs(1));
+        printg("                                 ", 700, 500, RED, 255, 2);
     }
 }
 
 fn init(sudoku: &mut Sudoku) {
-    unsafe {
-        sched::create_thread("", rkalloc::get_default().unwrap(), thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(), input_tracer, null_mut()).unwrap();
+    unsafe {rkgpu::init();}
+    sched::create_thread("", rkalloc::get_default().unwrap(), thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(), input_tracer, null_mut()).unwrap();
 
-        sched::create_thread("", rkalloc::get_default().unwrap(), thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(), error_hinter, null_mut()).unwrap();
+    sched::create_thread("", rkalloc::get_default().unwrap(), thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(), error_hinter, null_mut()).unwrap();
 
-        sched::create_thread("", rkalloc::get_default().unwrap(), thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(), show_time, null_mut()).unwrap();
-        rkgpu::init();
-        printg("Hello, world!\nHello, OSH-2022!\nHello, Runikraft!\n", 700, 10, RED, 255, 4);
-        printg("Use W, A, S, and D to move selecting rectangle.\nUse up, left, down, and right to move cursor.\nUse H for hint, use O for solution.", 0, 700, BLACK, 255, 2);
-        update_cursor(900, 400, true);
-        draw_select(0, 0, RED);
-        draw_sudoku_lattices(PURPLE, BLACK);
-        screen_flush();
-        row_random(&mut sudoku.map, 0);
-        sudoku_solve(&mut sudoku.map, 1, 1, 0, true);
-        hole_dig(&mut sudoku.map, 15, &mut sudoku.tag);
-        sudoku.map_print();
-        println!("Hello sudoku!\n");
-    }
+    sched::create_thread("", rkalloc::get_default().unwrap(), thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(), show_time, null_mut()).unwrap();
+    
+    printg("Hello, world!\nHello, OSH-2022!\nHello, Runikraft!\n", 700, 10, RED, 255, 4);
+    printg("Use W, A, S, and D to move selecting rectangle.\nUse up, left, down, and right to move cursor.\nUse H for hint, use O for solution.", 0, 700, BLACK, 255, 2);
+    update_cursor(900, 400, true);
+    draw_select(0, 0, RED);
+    draw_sudoku_lattices(PURPLE, BLACK);
+    screen_flush();
+    row_random(&mut sudoku.map, 0);
+    sudoku_solve(&mut sudoku.map, 1, 1, 0, true);
+    hole_dig(&mut sudoku.map, 15, &mut sudoku.tag);
+    sudoku.map_print();
+    println!("Hello sudoku!\n");
 }
 
 #[no_mangle]
 fn main() {
-    //println!("sudoku main\n");
     let mut sudoku: Sudoku = sudoku_init_zero();
     init(&mut sudoku);
     unsafe {

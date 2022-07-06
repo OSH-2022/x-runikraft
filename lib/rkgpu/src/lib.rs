@@ -47,8 +47,10 @@ pub static mut FB: &mut [u8] = unsafe { &mut _EMPTY };
 pub static mut FB_CURSOR: &mut [u32] = &mut [0; 1000];
 
 pub unsafe fn init() {
+    let flag = rkplat::lcpu::save_irqf();
     FB = __GPU_DEIVCE.as_mut().unwrap().setup_framebuffer().expect("failed to get FB");
     draw_clear(LIGHT_CYAN);
+    rkplat::lcpu::restore_irqf(flag);
 }
 
 pub fn resolution() -> (u32, u32) {
@@ -56,8 +58,9 @@ pub fn resolution() -> (u32, u32) {
 }
 
 pub fn draw_clear(color: Color) {
+    let flag = rkplat::lcpu::save_irqf();
     unsafe {
-        let (width, height) = __GPU_DEIVCE.as_mut().unwrap().resolution();
+        let (width, height) = resolution();
         for y in 0..height as usize {
             for x in 0..width as usize {
                 let idx = (y * width as usize + x) * 4;
@@ -69,10 +72,13 @@ pub fn draw_clear(color: Color) {
         }
         __GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
     }
+    rkplat::lcpu::restore_irqf(flag);
 }
 
 pub fn screen_flush() {
+    let flag = rkplat::lcpu::save_irqf();
     unsafe {
         __GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
     }
+    rkplat::lcpu::restore_irqf(flag);
 }

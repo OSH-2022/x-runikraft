@@ -30,14 +30,13 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 use core::time::Duration;
-use rkplat::drivers::virtio::__GPU_DEIVCE;
 use rkgpu::*;
 use rkplat::time::wall_clock;
 use rktimeconv::*;
 use crate::{mutex, Sudoku};
 
-pub unsafe fn draw_sudoku_lattices(color0: Color, color1: Color) -> u8 {
-    let (width, height) = __GPU_DEIVCE.as_mut().unwrap().resolution();
+pub fn draw_sudoku_lattices(color0: Color, color1: Color) -> u8 {
+    let (width, height) = super::resolution();
     if width >= 750 && height >= 750 {
         for x in 0..10 {
             if x % 3 == 0 {
@@ -58,7 +57,7 @@ pub unsafe fn draw_sudoku_lattices(color0: Color, color1: Color) -> u8 {
     } else { 0 }
 }
 
-pub unsafe fn show_sudoku_number(pos_x: u8, pos_y: u8, number: u8, color: Color) -> u8 {
+pub fn show_sudoku_number(pos_x: u8, pos_y: u8, number: u8, color: Color) -> u8 {
     if pos_x <= 8 && pos_y <= 8 {
         let start_x: u32 = 75 * pos_x as u32 + 20;
         let start_y: u32 = 75 * pos_y as u32 + 6;
@@ -84,20 +83,18 @@ pub fn show_time(_null: *mut u8) {
 }
 
 pub fn error_hinter(_null: *mut u8) {
-    unsafe {
-        loop {
-            mutex.wait();
-            printg("You can't write this number HERE!", 700, 500, RED, 255, 2);
-            rksched::this_thread::sleep_for(Duration::from_secs(1));
-            printg("                                 ", 700, 500, RED, 255, 2);
-        }
+    loop {
+        mutex.wait();
+        printg("You can't write this number HERE!", 700, 500, RED, 255, 2);
+        rksched::this_thread::sleep_for(Duration::from_secs(1));
+        printg("                                 ", 700, 500, RED, 255, 2);
     }
 }
 
 
 impl Sudoku {
     // 打印当前数独信息
-    pub unsafe fn map_print(&self) {
+    pub fn map_print(&self) {
         for i in 0..9 {
             for j in 0..9 {
                 // show_sudoku_number(pos_x: u8, pos_y: u8, number: u8);

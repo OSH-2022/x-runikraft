@@ -227,10 +227,9 @@ impl RKschedpreem {
                 rkplat::lcpu::disable_irq();
                 let mut flag = rkplat::lcpu::save_irqf();
                 flag |= 1<<rkplat::time::get_irq();
+                rkplat::time::set_timer(rkplat::time::monotonic_clock()+front.as_mut().element.attr.get_timeslice());
                 rkplat::lcpu::restore_irqf(flag);
                 rkplat::lcpu::enable_irq();
-                rkplat::time::set_timer(rkplat::time::monotonic_clock()+front.as_mut().element.attr.get_timeslice());
-                
             }
             if front != current.as_non_null() {
                 unsafe{rksched::thread::thread_switch(current, addr_of_mut!(front.as_mut().element))};

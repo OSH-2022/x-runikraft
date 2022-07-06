@@ -27,10 +27,8 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#![allow(unused)]
-use rkplat::drivers::virtio::__GPU_DEIVCE;
 use crate::*;
-use core::cmp::{min,max};
+use core::cmp::min;
 
 pub enum DIRECTION {
     Horizontal,
@@ -39,7 +37,8 @@ pub enum DIRECTION {
 
 pub fn draw_line(direction: DIRECTION, start_x: u32, start_y: u32, length: u32, color: Color, alpha: u8, line_width: u32) {
     unsafe {
-        let (width, height) = __GPU_DEIVCE.as_mut().unwrap().resolution();
+        let (width, height) = super::resolution();
+        let flag = rkplat::lcpu::save_irqf();
         match direction {
             Horizontal => {
                 for y in 0..min(line_width, height - start_y) {
@@ -64,13 +63,16 @@ pub fn draw_line(direction: DIRECTION, start_x: u32, start_y: u32, length: u32, 
                 }
             }
         }
+        rkplat::lcpu::restore_irqf(flag);
     }
 }
 
 pub fn draw_font(start_x: u32, start_y: u32, color: Color, alpha: u8, ch: char, size: u8) -> u8 {
     unsafe {
-        let (width, height) = __GPU_DEIVCE.as_mut().unwrap().resolution();
+        let (width, height) = super::resolution();
+        
         if start_x + 8 * size as u32 <= width && start_y + 16 * size as u32 <= height {
+            let flag = rkplat::lcpu::save_irqf();
             let pos = DIC[ch as usize];
             for y in start_y..start_y + 16 * size as u32 {
                 for x in start_x..start_x + 8 * size as u32 {
@@ -89,25 +91,23 @@ pub fn draw_font(start_x: u32, start_y: u32, color: Color, alpha: u8, ch: char, 
                     }
                 }
             }
-
+            rkplat::lcpu::restore_irqf(flag);
             0
         } else { 1 }
     }
 }
 
 pub fn printg(ascii_str: &str, start_x: u32, start_y: u32, color: Color, alpha: u8, size: u8) {
-    unsafe {
-        let mut x = start_x;
-        let mut y = start_y;
-        for ascii in ascii_str.chars() {
-            if ascii == '\n' {
-                x = start_x;
-                y += 16 * size as u32;
-            } else {
-                draw_font(x, y, color, alpha, ascii, size);
-                x += 8 * size as u32;
-            }
+    let mut x = start_x;
+    let mut y = start_y;
+    for ascii in ascii_str.chars() {
+        if ascii == '\n' {
+            x = start_x;
+            y += 16 * size as u32;
+        } else {
+            draw_font(x, y, color, alpha, ascii, size);
+            x += 8 * size as u32;
         }
-        __GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
     }
+    super::screen_flush();
 }

@@ -30,15 +30,13 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 use core::cmp::{max, min};
-use rkplat::drivers::virtio::__GPU_DEIVCE;
 use crate::DIRECTION::*;
 use crate::*;
-use rkgpu::*;
 
 
 pub fn update_cursor(start_x: u32, start_y: u32, is_init: bool) {
     unsafe {
-        let (width, height) = __GPU_DEIVCE.as_mut().unwrap().resolution();
+        let (width, height) = rkgpu::resolution();
         if !is_init {
             for i in 1..(FB_CURSOR[0] + 1) as usize {
                 FB[FB_CURSOR[5 * i - 4] as usize + 2] = FB_CURSOR[5 * i - 4 + 1] as u8;
@@ -81,14 +79,14 @@ pub fn update_cursor(start_x: u32, start_y: u32, is_init: bool) {
         FB_CURSOR[0] = (idx_cursor / 5) as u32;
         draw_line(Horizontal, (max(10, start_x) - 10) as u32, (max(1, start_y) - 1) as u32, min(21, start_x + 10), BLACK, 255, 3);
         draw_line(Vertical, (max(1, start_x) - 1) as u32, (max(10, start_y) - 10) as u32, min(21, start_y + 10), BLACK, 255, 3);
-        __GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
+        rkgpu::screen_flush();
     }
 }
 
-pub unsafe fn draw_select(start_x: u32, start_y: u32, color: Color) {
+pub fn draw_select(start_x: u32, start_y: u32, color: Color) {
     draw_line(Horizontal, start_x + 5, start_y + 5, 65, color, 255, 1);
     draw_line(Horizontal, start_x + 5, start_y + 70, 65, color, 255, 1);
     draw_line(Vertical, start_x + 5, start_y + 5, 65, color, 255, 1);
     draw_line(Vertical, start_x + 70, start_y + 5, 65, color, 255, 1);
-    __GPU_DEIVCE.as_mut().unwrap().flush().expect("failed to flush");
+    super::screen_flush();
 }
