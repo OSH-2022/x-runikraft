@@ -33,7 +33,7 @@ use super::uart;
 #[cfg(feature="driver_virtio")]
 use super::virtio;
 use log::{info, warn};
-use rkalloc::{RKalloc,alloc_type};
+use rkalloc::{Alloc,alloc_type};
 use crate::console;
 
 
@@ -160,7 +160,7 @@ impl From<str::Utf8Error> for DeviceTreeError {
 //debug: addi    sp,sp,-720
 //release: addi    sp,sp,-96
 /// Load a device tree from a memory buffer.
-pub fn parse(a: &dyn RKalloc, buffer: &[u8]) -> Result<(), DeviceTreeError> {
+pub fn parse(a: &dyn Alloc, buffer: &[u8]) -> Result<(), DeviceTreeError> {
     //  0  magic_number: u32,
 
     //  4  totalsize: u32,
@@ -217,7 +217,7 @@ static mut SAVE_PROP_SPACE: [usize;size_of::<(&str,&[u8])>()*2] = [0;size_of::<(
 
 //debug: addi    sp,sp,-1152
 //release: addi    sp,sp,-144
-fn load_node(a: &dyn RKalloc, buffer: &[u8], start: usize, off_dt_strings: usize) -> Result<usize, DeviceTreeError> {
+fn load_node(a: &dyn Alloc, buffer: &[u8], start: usize, off_dt_strings: usize) -> Result<usize, DeviceTreeError> {
     // check for DT_BEGIN_NODE
     if buffer.read_be_u32(start)? != OF_DT_BEGIN_NODE {
         return Err(DeviceTreeError::ParseError(start));
@@ -268,7 +268,7 @@ fn load_node(a: &dyn RKalloc, buffer: &[u8], start: usize, off_dt_strings: usize
     Ok(pos)
 }
 
-fn parse_device(#[allow(unused_variables)]a: &dyn RKalloc, #[allow(unused_variables)]name: &str, 
+fn parse_device(#[allow(unused_variables)]a: &dyn Alloc, #[allow(unused_variables)]name: &str, 
     #[allow(unused_variables)]props: &[(&str,&[u8])], #[allow(unused_variables)]props_size: usize) -> Result<(), DeviceTreeError> {
     if let Some(compatible) = prop_str(props, props_size, "compatible") {
         match compatible {

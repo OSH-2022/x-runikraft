@@ -38,8 +38,8 @@ extern crate alloc;
 extern crate rkplat;
 
 use core::ptr::{drop_in_place, null, null_mut};
-use rkalloc::{alloc_type, RKalloc};
-use rksched::{RKsched, RKthreadAttr};
+use rkalloc::{alloc_type, Alloc};
+use rksched::{Sched, ThreadAttr};
 use runikraft::list::Tailq;
 use crate::blkdev_core::{RkBlkdev, RkBlkdevData, RkBlkdevEventHandler, RkBlkdevQueueEventT, RkBlkdevState};
 
@@ -55,7 +55,7 @@ static mut BLKDEV_COUNT: Option<i16> = None;
 //const CONFIG_LIBUKBLKDEV_MAXNBQUEUES: u16 = core::u16::from_str(env!("PATH"));
 const CONFIG_LIBUKBLKDEV_MAXNBQUEUES: u16 = 1;
 
-pub unsafe fn _alloc_data<'a>(a: &'a (dyn RKalloc + 'a), blkdev_id: u16, drv_name: &'a str) -> *mut RkBlkdevData<'a> {
+pub unsafe fn _alloc_data<'a>(a: &'a (dyn Alloc + 'a), blkdev_id: u16, drv_name: &'a str) -> *mut RkBlkdevData<'a> {
     let mut data: *mut RkBlkdevData = alloc_type::<RkBlkdevData>(a, RkBlkdevData {
         id: blkdev_id,
         state: RkBlkdevState::RkBlkdevUnconfigured,
@@ -89,7 +89,7 @@ pub fn _create_event_handler(callback: RkBlkdevQueueEventT, cookie: *mut u8, eve
 }
 
 #[cfg(feature = "dispatcherthreads")]
-pub fn _create_event_handler(callback: RkBlkdevQueueEventT, cookie: *mut u8, dev: *const RkBlkdev, queue_id: u16, s: *mut RKsched, event_handler: &mut RkBlkdevEventHandler) -> isize {
+pub fn _create_event_handler(callback: RkBlkdevQueueEventT, cookie: *mut u8, dev: *const RkBlkdev, queue_id: u16, s: *mut Sched, event_handler: &mut RkBlkdevEventHandler) -> isize {
     event_handler.callback = callback;
     event_handler.cookie = cookie;
     //如果我们没有回调，我们就不需要线程

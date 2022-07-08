@@ -30,7 +30,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 use core::time::Duration;
-use rkgpu::*;
+use rkgpudev::*;
 use rkplat::time::wall_clock;
 use rktimeconv::*;
 use crate::{mutex, Sudoku};

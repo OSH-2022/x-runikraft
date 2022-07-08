@@ -89,7 +89,7 @@ const MAX_ALIGN_GUARANTEE: usize = 8*MAX_ALIGN_SIZE;
 
 use core::{mem::size_of, sync::atomic::{AtomicUsize, AtomicPtr}};
 
-use rkalloc::{RKalloc, RKallocState, RKallocExt};
+use rkalloc::{Alloc, AllocState, AllocExt};
 
 type Encoded = usize;
 //用read_tls获取
@@ -510,7 +510,7 @@ pub struct RKallocMi {
     size_total: usize,      //总可用空间大小
 }
 
-unsafe impl RKalloc for RKallocMi {
+unsafe impl Alloc for RKallocMi {
     unsafe fn alloc(&self, size: usize, align: usize) -> *mut u8 {
         todo!()
     }

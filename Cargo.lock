@@ -113,7 +113,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rkgpu"
+name = "rkgpudev"
 version = "0.1.0"
 dependencies = [
  "rkplat",
@@ -224,7 +224,7 @@ version = "0.1.0"
 dependencies = [
  "rkalloc",
  "rkboot",
- "rkgpu",
+ "rkgpudev",
  "rklock",
  "rkplat",
  "rksched",

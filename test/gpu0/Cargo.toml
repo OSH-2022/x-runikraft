@@ -9,6 +9,6 @@ edition = "2021"
 [dependencies]
 rkboot = { path = "../../lib/rkboot", features = ["alloc_buddy", "sched_coop"] }
 rkplat = { path = "../../lib/rkplat", features = ["driver_ns16550", "driver_virtio_all"] }
-rkgpu = { path = "../../lib/rkgpu" }
+rkgpudev = { path = "../../lib/rkgpudev" }
 rkalloc = { path = "../../lib/rkalloc" }
 rksched = { path = "../../lib/rksched" }

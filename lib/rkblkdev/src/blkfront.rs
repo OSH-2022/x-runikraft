@@ -30,7 +30,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-use rkalloc::RKalloc;
+use rkalloc::Alloc;
 use crate::RkBlkdev;
 
 /**
@@ -48,7 +48,7 @@ pub struct RkBlkdevQueue {
     /* Event channel for the front ring. */
     //TODO evtchn_port_t evtchn;
     /* Allocator for this queue. */
-    a: dyn RKalloc,
+    a: dyn Alloc,
     /* The libukblkdev queue identifier */
     queue_id: u16,
     /* The flag to interrupt on the queue */
@@ -67,7 +67,7 @@ pub struct RkBlkdevQueue {
     /* Event channel for the front ring. */
     //TODO evtchn_port_t evtchn;
     /* Allocator for this queue. */
-    a: *const dyn RKalloc,
+    a: *const dyn Alloc,
     /* The libukblkdev queue identifier */
     queue_id: u16,
     /* The flag to interrupt on the queue */

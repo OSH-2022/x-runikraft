@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// rkgpu/color.rs
+// rkgpudev/color.rs
 
 // Authors:  郭耸霄 <logname@mail.ustc.edu.cn>
 

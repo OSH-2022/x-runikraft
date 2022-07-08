@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// rkgpu/output.rs
+// rkgpudev/output.rs
 
 // Authors:  郭耸霄 <logname@mail.ustc.edu.cn>
 
@@ -73,7 +73,7 @@ pub fn draw_font(start_x: u32, start_y: u32, color: Color, alpha: u8, ch: char, 
         
         if start_x + 8 * size as u32 <= width && start_y + 16 * size as u32 <= height {
             let flag = rkplat::lcpu::save_irqf();
-            let pos = DIC[ch as usize];
+            let pos = FONT[ch as usize];
             for y in start_y..start_y + 16 * size as u32 {
                 for x in start_x..start_x + 8 * size as u32 {
                     let idx = ((y * width + x) * 4) as usize;

@@ -1,10 +1,10 @@
-// test rkgpu
+// test rkgpudev
 
 #![no_std]
 #![no_main]
 extern crate rkboot;
 
-use rkgpu::*;
+use rkgpudev::*;
 use rkplat::drivers::virtio::__GPU_DEIVCE;
 use core::time::Duration;
 // use core::slice;

@@ -7,7 +7,7 @@
 use super::*;
 use core::fmt;
 
-impl fmt::Debug for RKallocBuddy<'_> {
+impl fmt::Debug for AllocBuddy<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "free_list_head:\n")?;
         for i in 4..=self.root_order {

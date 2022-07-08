@@ -63,10 +63,10 @@ extern crate alloc;
 use crate::wait::WaitQ;
 
 use super::{sched,wait};
-use sched::RKsched;
+use sched::Sched;
 use runikraft::compat_list::{TailqNode, StailqNode};
 use runikraft::errno::Errno;
-use rkalloc::RKalloc;
+use rkalloc::Alloc;
 use core::ptr::{null_mut,addr_of_mut,NonNull};
 use core::time::Duration;
 use core::sync::atomic::{AtomicU32,Ordering};
@@ -286,12 +286,12 @@ pub struct ThreadData {
     pub waiting_threads: wait::WaitQ,
     /// self所在的等待队列
     pub waiting_for: Option<NonNull<wait::WaitQ>>,
-    pub sched: *mut dyn RKsched,
+    pub sched: *mut dyn Sched,
     entry: unsafe fn(*mut u8)->!,
     arg: *mut u8,
     // prv: *mut u8,
     // ref_cnt: AtomicI32,
-    pub alloc: *const dyn RKalloc,
+    pub alloc: *const dyn Alloc,
     pub attr: ThreadAttr,
     pub profile: ThreadProfile,
     pub limit: ThreadLimit,
@@ -300,7 +300,7 @@ pub struct ThreadData {
 
 impl ThreadData {
     #[inline(always)]
-    fn sched_ref(&self) -> &'static mut dyn RKsched {
+    fn sched_ref(&self) -> &'static mut dyn Sched {
         unsafe {&mut *self.sched}
     }
 }
@@ -312,7 +312,7 @@ impl ThreadData {
 
     ///线程初始化
     pub unsafe fn init(&mut self,
-            allocator: &'static dyn RKalloc,
+            allocator: &'static dyn Alloc,
             name:  &str, stack: *mut u8, tls: *mut u8,
             attr: ThreadAttr, limit: ThreadLimit,
             function: unsafe fn(*mut u8)->!, arg: *mut u8) -> Result<(),Errno>{

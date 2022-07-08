@@ -31,7 +31,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 use core::sync::atomic;
-use rkalloc::{dealloc_type, RKalloc, RKallocExt};
+use rkalloc::{dealloc_type, Aalloc, AallocExt};
 use crate::blkdev_core::{RkBlkdev, RkBlkdevEventHandler, RkBlkdevState};
 use crate::{_alloc_data, BLKDEV_COUNT, CONFIG_LIBUKBLKDEV_MAXNBQUEUES, ptriseer, RK_BLKDEV_LIST, RkBlkdevData};
 use crate::blkdev_core::RkBlkdevState::{RkBlkdevConfigured, RkBlkdevUnconfigured};
@@ -58,7 +58,7 @@ use crate::blkreq::RkBlkreqFinished;
 ///
 /// - （-ENOMEM）：私有分配
 /// - （正值）：成功时的块设备的身份
-pub fn rk_blkdev_drv_register(mut dev: RkBlkdev, a: &dyn RKalloc, drv_name: &str) -> i16 {
+pub fn rk_blkdev_drv_register(mut dev: RkBlkdev, a: &dyn Alloc, drv_name: &str) -> i16 {
 
     //数据必须被取消分配
     assert!(ptriseer(dev._data as i64));

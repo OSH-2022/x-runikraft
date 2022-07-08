@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// rkgpu/lib.rs
+// rkgpudev/lib.rs
 
 // Authors:  郭耸霄 <logname@mail.ustc.edu.cn>
 
@@ -42,7 +42,7 @@ use rkplat::drivers::virtio::__GPU_DEIVCE;
 use crate::DIRECTION::{Horizontal, Vertical};
 
 static mut _EMPTY: [u8; 0] = [0; 0];
-static DIC: [u128; 127] = include!("dic.txt");
+static FONT: [u128; 127] = include!("font.txt");
 pub static mut FB: &mut [u8] = unsafe { &mut _EMPTY };
 pub static mut FB_CURSOR: &mut [u32] = &mut [0; 1000];
 

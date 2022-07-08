@@ -119,10 +119,13 @@ unsafe trait AsBuf: Sized {
 
 
 #[cfg(feature = "driver_virtio_gpu")]
+#[doc(hidden)]
 pub static mut __GPU_DEIVCE: Option<&'static mut VirtIOGpu> = None;
 
 #[cfg(feature = "driver_virtio_input")]
+#[doc(hidden)]
 pub static mut __INPUT_DEIVCE: Option<&'static mut VirtIOInput> = None;
 
 #[cfg(feature = "driver_virtio_entropy")]
+#[doc(hidden)]
 pub static mut __ENTROPY_DEIVCE: Option<&'static mut VirtIOEntropy> = None;

@@ -30,7 +30,7 @@ pub struct WaitQ {
 
 unsafe impl Sync for WaitQ{}
 
-// fn remove_first(q: &mut Stailq<ThreadRef>, alloc: &'static dyn RKalloc) -> Option<ThreadRef>{
+// fn remove_first(q: &mut Stailq<ThreadRef>, alloc: &'static dyn Alloc) -> Option<ThreadRef>{
 //     // let _lock = self.mutex.lock();
 //     q.pop_front().map(|node| {
 //         unsafe {

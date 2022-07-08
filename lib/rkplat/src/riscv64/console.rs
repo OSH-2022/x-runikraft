@@ -125,6 +125,7 @@ pub(crate) fn __print_bios(args: fmt::Arguments) {
     super::lcpu::restore_irqf(flag);
 }
 
+#[doc(hidden)]
 pub fn __print(args: fmt::Arguments) {
     let flag = super::lcpu::save_irqf();
     let _lock = LOCK.lock();

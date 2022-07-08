@@ -5,7 +5,7 @@
 
 use core::ptr::NonNull;
 
-use rkalloc::RKalloc;
+use rkalloc::Alloc;
 use rkalloc::alloc_type;
 use runikraft::compat_list::{Slist,SlistNode};
 use crate::bootstrap;
@@ -15,7 +15,7 @@ use super::lcpu;
 use super::reg::RegGenInt;
 
 
-static mut ALLOCATOR: Option<&dyn RKalloc> = None;
+static mut ALLOCATOR: Option<&dyn Alloc> = None;
 /// 中断响应函数，返回false将中断转交给下一个函数处理，返回true表示中断处理完毕
 pub type IRQHandlerFunc = fn(*mut u8)->bool;
 
@@ -27,7 +27,7 @@ struct IRQHandler {
 /// 直接[None;64]会报 E0277
 static mut IRQ_HANDLERS:[Option<Slist<IRQHandler>>;MAX_IRQ] = include!("64None.txt");
 
-fn allocator() -> &'static dyn RKalloc {
+fn allocator() -> &'static dyn Alloc {
     unsafe {
         ALLOCATOR.unwrap()
     }
@@ -40,11 +40,11 @@ fn allocator() -> &'static dyn RKalloc {
 /// # 安全性
 /// 
 /// 必须保证分配器`a`在系统关机前仍有效，`a`可以拥有静态生命周期，也可以位于boot stack上
-pub unsafe fn init(a: &dyn RKalloc) -> Result<(), i32> {
+pub unsafe fn init(a: &dyn Alloc) -> Result<(), i32> {
     assert!(ALLOCATOR.is_none());
     union Helper<'a> {
-        reference: &'a dyn RKalloc,
-        pointer: *const dyn RKalloc,
+        reference: &'a dyn Alloc,
+        pointer: *const dyn Alloc,
     }
     ALLOCATOR = Some(Helper{pointer: Helper{reference: a}.pointer}.reference);
     for i in &mut IRQ_HANDLERS{

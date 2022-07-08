@@ -56,7 +56,7 @@ pub struct Ring<'a,T> {
     br_cons_tail: AtomicU32,
     //br_cons_size: u32,
     br_cons_mask: u32,
-    a: &'a dyn RKalloc,
+    a: &'a dyn Alloc,
     br_ring: &'a mut [Option<T>],
 }
 
@@ -67,7 +67,7 @@ impl<'a,T> Ring<'a,T> {
     /// `count`: 容量
     /// `alloc`: 分配器
 
-    pub fn new(count: usize, a: &'a dyn RKalloc) -> Option<Ring<'a,T>> {
+    pub fn new(count: usize, a: &'a dyn Alloc) -> Option<Ring<'a,T>> {
         assert!(count.is_power_of_two());
         let br_ring_data = unsafe{a.alloc_zeroed(count*size_of::<T>(),64) as *mut Option<T>};
         if br_ring_data.is_null() {

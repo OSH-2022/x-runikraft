@@ -46,13 +46,13 @@ pub struct Mbox<'a, T> {
     writesem: Semaphore,
     writepos: AtomicUsize,
     msgs: UnsafeCell<&'a mut [Option<T>]>,
-    alloc: &'a dyn RKalloc,
+    alloc: &'a dyn Alloc,
 }
 
 unsafe impl<T> Sync for Mbox<'_, T> {}
 
 impl<'a, T> Mbox<'a, T> {
-    pub fn new(size: usize, a: &'a dyn RKalloc) -> Option<Self> {
+    pub fn new(size: usize, a: &'a dyn Alloc) -> Option<Self> {
         let msgs_data = unsafe { a.alloc_zeroed((size + 1) * size_of::<T>(), align_of::<T>()) as *mut Option<T> };
         if msgs_data.is_null() {
             return None;

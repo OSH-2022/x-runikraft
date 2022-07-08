@@ -10,7 +10,7 @@ authors = [
 
 [dependencies]
 
-rkgpu = { path = "../../lib/rkgpu" }
+rkgpudev = { path = "../../lib/rkgpudev" }
 rkplat = { path = "../../lib/rkplat", features = ["has_smp", "driver_virtio_all", "driver_ns16550", "driver_goldfish_rtc"] }
 rkalloc = { path = "../../lib/rkalloc" }
 rkboot = { path = "../../lib/rkboot", features = ["alloc_buddy", "sched_preem"] }

@@ -45,10 +45,10 @@
 //! - 顺序（order）为`k`的结点在这个bitset的索引范围是`[2^(n-k)-1:2^(n-k+1)-2]`；
 //! - 顺序为`k`的结点共有2^(n-k)个，每个的大小为2^k
 //! - 整个bitset的大小为2^(n+1)/16/8=2^(n-6) bytes
-//! - bitset[i] = 0 表示结点i：
+//! - `bitset[i]` = 0 表示结点i：
 //!     - i 没有被分配
 //!     - i 的父结点已经被分配
-//! - bitset[i] = 1 表示结点i：
+//! - `bitset[i]` = 1 表示结点i：
 //!     - i 被分配
 //!     - i 被二分成了两个子结点
 //! 初始时，元数据的所有位都是0，如果一块内存i被分配，则i的孩子一定全是0，i和i的祖先一定全是1。
@@ -61,7 +61,7 @@
 // TODO: 更好的realloc实现
 #![no_std]
 
-use rkalloc::{RKalloc, RKallocState, RKallocExt};
+use rkalloc::{Alloc, AllocState, AllocExt};
 use rkplat::spinlock;
 use core::cell::UnsafeCell;
 use core::cmp::max;
@@ -92,7 +92,7 @@ struct Data<'a> {
     size_total: usize,      //总可用空间大小
 }
 
-pub struct RKallocBuddy<'a> {
+pub struct AllocBuddy<'a> {
     lock: spinlock::SpinLock,
     
     data: UnsafeCell<Data<'a>>,
@@ -386,15 +386,15 @@ impl Data<'_> {
     }
 }
 
-unsafe impl Sync for RKallocBuddy<'_>{}
+unsafe impl Sync for AllocBuddy<'_>{}
 
-impl RKallocBuddy<'_> {
+impl AllocBuddy<'_> {
     pub unsafe fn new(base: *mut u8, size: usize) -> Self {
         Self { lock: spinlock::SpinLock::new(), data: UnsafeCell::new(Data::new(base,size)) }
     }
 }
 
-unsafe impl RKalloc for RKallocBuddy<'_> {
+unsafe impl Alloc for AllocBuddy<'_> {
     unsafe fn alloc(&self, size: usize, align: usize) -> *mut u8 {
         debug_assert!(align.is_power_of_two());
         debug_assert!(align <= PAGE_ALIGNMENT);
@@ -417,7 +417,7 @@ unsafe impl RKalloc for RKallocBuddy<'_> {
     }
 }
 
-unsafe impl RKallocExt for RKallocBuddy<'_> {
+unsafe impl AllocExt for AllocBuddy<'_> {
     unsafe fn dealloc_ext(&self, ptr: *mut u8) {
         if ptr.is_null() { return; }
         let size = (*self.data.get()).find_size_when_alloc(ptr);
@@ -433,7 +433,7 @@ unsafe impl RKallocExt for RKallocBuddy<'_> {
 }
 
 
-impl RKallocState for RKallocBuddy<'_> {
+impl AllocState for AllocBuddy<'_> {
     fn total_size(&self) -> usize { unsafe{(*self.data.get()).size_total} }
     fn free_size(&self) -> usize { unsafe{(*self.data.get()).size_left} }
 }

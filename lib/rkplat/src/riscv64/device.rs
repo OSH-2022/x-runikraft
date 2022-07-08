@@ -3,7 +3,7 @@
 // Authors: 张子辰 <zichen350@gmail.com>
 // Copyright (C) 2022 吴骏东, 张子辰, 蓝俊玮, 郭耸霄 and 陈建绿.
 
-use rkalloc::RKalloc;
+use rkalloc::Alloc;
 use crate::drivers::device_tree;
 
 pub(crate) static mut DEVICE_PTR: &'static [u8] = &[];
@@ -14,7 +14,7 @@ pub(crate) static mut DEVICE_PTR: &'static [u8] = &[];
 /// # 安全性
 /// 
 /// `__runikraft_entry_point` 必须初始化DEVICE_PTR，使它指向合法的内存区域
-pub unsafe fn init(a: &dyn RKalloc) -> Result<(), i32> { 
+pub unsafe fn init(a: &dyn Alloc) -> Result<(), i32> { 
     if let Err(error) = device_tree::parse(a,DEVICE_PTR){
         panic!("Fail to load device tree. {:?}",&error);
     }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// rkgpu/cursor.rs
+// rkgpudev/cursor.rs
 
 // Authors:  郭耸霄 <logname@mail.ustc.edu.cn>
 // Authors:  蓝俊玮 <ljw13@mail.ustc.edu.cn>
@@ -36,7 +36,7 @@ use crate::*;
 
 pub fn update_cursor(start_x: u32, start_y: u32, is_init: bool) {
     unsafe {
-        let (width, height) = rkgpu::resolution();
+        let (width, height) = rkgpudev::resolution();
         if !is_init {
             for i in 1..(FB_CURSOR[0] + 1) as usize {
                 FB[FB_CURSOR[5 * i - 4] as usize + 2] = FB_CURSOR[5 * i - 4 + 1] as u8;
@@ -79,7 +79,7 @@ pub fn update_cursor(start_x: u32, start_y: u32, is_init: bool) {
         FB_CURSOR[0] = (idx_cursor / 5) as u32;
         draw_line(Horizontal, (max(10, start_x) - 10) as u32, (max(1, start_y) - 1) as u32, min(21, start_x + 10), BLACK, 255, 3);
         draw_line(Vertical, (max(1, start_x) - 1) as u32, (max(10, start_y) - 10) as u32, min(21, start_y + 10), BLACK, 255, 3);
-        rkgpu::screen_flush();
+        rkgpudev::screen_flush();
     }
 }
 

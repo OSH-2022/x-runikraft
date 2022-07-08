@@ -34,7 +34,7 @@
 #![allow(non_upper_case_globals)]
 
 pub use key::*;
-use rkgpu::*;
+use rkgpudev::*;
 use rkplat::drivers::virtio::{__GPU_DEIVCE, __INPUT_DEIVCE, InputEvent};
 use crate::*;
 

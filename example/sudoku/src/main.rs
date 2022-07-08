@@ -34,7 +34,7 @@
 extern crate rkboot;
 extern crate alloc;
 
-use rkgpu::*;
+use rkgpudev::*;
 use rkswrand::fast_random;
 
 use rksched::*;
@@ -402,7 +402,7 @@ pub fn error_hinter(_null: *mut u8) {
 }
 
 fn init(sudoku: &mut Sudoku) {
-    unsafe {rkgpu::init();}
+    unsafe {rkgpudev::init();}
     sched::create_thread("", rkalloc::get_default().unwrap(), thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(), input_tracer, null_mut()).unwrap();
 
     sched::create_thread("", rkalloc::get_default().unwrap(), thread::ThreadAttr::default(), rksched::thread::ThreadLimit::default(), error_hinter, null_mut()).unwrap();
