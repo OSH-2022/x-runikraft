@@ -38,19 +38,19 @@ TEX := latexmk
 TEX_FLAGS := -xelatex -silent -latexoption=-interaction=nonstopmode
 
 .PHONY: all
-all: research-report.pdf feasibility-report.pdf
+all: research-report.pdf feasibility-report.pdf final-report.pdf
 
 ../runikraft-report.cls: $(REPORT_ROOT_DIR)/runikraft-report.cls
 	cp $(REPORT_ROOT_DIR)/runikraft-report.cls ../runikraft-report.cls
 
 research-report.pdf: $(REPORT_ROOT_DIR)/2_research/research-report.tex ../runikraft-report.cls
-	env TEXINPUTS=$(REPORT_ROOT_DIR)/2_research:$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(REPORT_ROOT_DIR)/2_research/research-report.tex
+	env TEXINPUTS=$(REPORT_ROOT_DIR):$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(REPORT_ROOT_DIR)/2_research/research-report.tex
 
 feasibility-report.bib: $(REPORT_ROOT_DIR)/3_feasibility/feasibility-report.bib
 	cp $(REPORT_ROOT_DIR)/3_feasibility/feasibility-report.bib feasibility-report.bib
 
 feasibility-report.pdf: $(REPORT_ROOT_DIR)/3_feasibility/feasibility-report.tex feasibility-report.bib ../runikraft-report.cls
-	env TEXINPUTS=$(REPORT_ROOT_DIR)/3_feasibility:$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(REPORT_ROOT_DIR)/3_feasibility/feasibility-report.tex
+	env TEXINPUTS=$(REPORT_ROOT_DIR):$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(REPORT_ROOT_DIR)/3_feasibility/feasibility-report.tex
 
 final-report.pdf: $(REPORT_ROOT_DIR)/5_final/final-report.tex ../runikraft-report.cls
-	env TEXINPUTS=$(REPORT_ROOT_DIR)/5_final:$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(REPORT_ROOT_DIR)/5_final/final-report.tex
+	env TEXINPUTS=$(REPORT_ROOT_DIR):$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(REPORT_ROOT_DIR)/5_final/final-report.tex

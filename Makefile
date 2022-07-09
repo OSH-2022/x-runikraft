@@ -59,7 +59,7 @@ export KCONFIG_DIR	:= $(SCRIPTS_DIR)/kconfig
 all: example
 
 .PHONY: everything
-everything: all report
+everything: report build_test all doc
 
 .PHONY: report
 report: $(MAKE_ROOT_DIR)/report/makefile
@@ -122,6 +122,10 @@ $(CONFIG_DIR)/handle_config: $(SUPPORT_DIR)/handle_config.cpp
 	@mkdir -p $(CONFIG_DIR)
 	@g++ $(SUPPORT_DIR)/handle_config.cpp -o $(CONFIG_DIR)/handle_config
 
+.PHONY: doc
+doc:
+	cargo doc
+
 .PHONY: clean
 clean:
 	$(MAKE) -f $(SCRIPTS_DIR)/build.Makefile $@
@@ -131,7 +135,14 @@ clean:
 
 .PHONY: help
 help:
-	@echo "Configuration options:"
-	@echo "menuconfig        - demos the menuconfig functionality"
-	@echo "		    configuration options will be written in $(CONFIG_DIR)/config.rs"
-	@echo "clean             - cleans all output files"
+	@echo 'Makefile targets:'
+	@echo 'menuconfig        - demos the menuconfig functionality'
+	@echo '        configuration options will be written in $(CONFIG_DIR)/config.rs'
+	@echo 'example           - builds the example (a sudoku game)'
+	@echo 'run               - runs the example'
+	@echo 'test              - builds and then runs tests'
+	@echo 'build_test        - builds tests without running them'
+	@echo 'report            - builds project reports'
+	@echo 'doc               - builds API documentation'
+	@echo 'everything        - equals to `make example build_test report doc`'
+	@echo 'clean             - cleans all output files'

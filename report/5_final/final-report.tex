@@ -20,7 +20,7 @@
   pdftitle={2022春 操作系统原理与设计(H) x-runikraft小组 结题报告},
   pdfauthor={吴骏东; 张子辰; 蓝俊玮; 郭耸霄; 陈建绿}
 }
-%\renewcommand{\today}{2022年7月9日}
+\renewcommand{\today}{2022年7月9日}
 
 \begin{document}
 \title{\bfseries Runikraft小组\quad 结题报告\thanks{作者按Unicode码位排序，按贡献度排序是张子辰、郭耸霄、陈建绿、吴骏东、蓝俊玮。}}
@@ -200,11 +200,11 @@ ClickOS 实现了广泛的中间盒，包括防火墙、运营商级 NAT 和
 
 \begin{figure}[!hbt]
 \begin{minipage}{0.49\linewidth}
-\includegraphics[width=\linewidth]{../assets/clickOS_arch.jpg}
+\includegraphics[width=\linewidth]{assets/clickOS_arch.jpg}
 \caption{ClickOS 的架构\cite{bib:13-clickos2}}
 \end{minipage}
 \begin{minipage}{0.49\linewidth}
-\includegraphics[width=\linewidth]{../assets/ClickOS_networking.png}
+\includegraphics[width=\linewidth]{assets/ClickOS_networking.png}
 \caption{Basic ClickOS networking in Xen\cite{bib:12-clickos}}
 \end{minipage}
 \end{figure}
@@ -222,12 +222,12 @@ MirageOS 是一个用 OCaml 语言编写的，
 没必要为支持传统操作系统里面的成千上万个设备驱动程序而操心。\cite{bib:11-unikerel2}
 
 \begin{figure}[!hbt]
-\includegraphics[width=\linewidth]{../assets/figure1.png}
+\includegraphics[width=\linewidth]{assets/figure1.png}
 \caption{MirageOS 的架构}\label{fig:mirage-fig1}
 \end{figure}
 
 \begin{figure}[!hbt]
-\includegraphics[width=\linewidth]{../assets/figure2.png}
+\includegraphics[width=\linewidth]{assets/figure2.png}
 \caption{MirageOS的逻辑工作流}\label{fig:mirage-fig2}
 \end{figure}
 
@@ -324,7 +324,7 @@ Rump Kernel 项目以一种可用于构建轻量级、特殊用途虚拟机的�
 模块化驱动程序。因为开发者没有做会将错误引入到应用程序运行时(application runtime)、
 libc 或驱动程序中的移植工作，所以程序可以很稳定地工作。\cite{bib:21-rump-kernel}
 \begin{figure}[!hbt]
-\includegraphics[width=\linewidth]{../assets/rumprun-1.png}
+\includegraphics[width=\linewidth]{assets/rumprun-1.png}
 \caption{Anykernel、
 Rump kernel 和 Rumprun Unikernel 的关系}
 \end{figure}
@@ -343,11 +343,11 @@ Unikernel。使用 Rumprun，理论上可以将 Linux 或者 类Unix系统上的
 
 \begin{figure}[!hbt]
 \begin{minipage}{0.49\linewidth}
-\includegraphics[width=\linewidth]{../assets/rumprun-2-cut.png}
+\includegraphics[width=\linewidth]{assets/rumprun-2-cut.png}
 \caption{Rumprun 的架构}
 \end{minipage}
 \begin{minipage}{0.49\linewidth}
-\includegraphics[width=\linewidth]{../assets/rumprun-3-cut.png}
+\includegraphics[width=\linewidth]{assets/rumprun-3-cut.png}
 \caption{Rumprun 的工作流程示例}
 \end{minipage}
 \end{figure}
@@ -428,7 +428,7 @@ Unikraft的作者有意将它们分割到了不同的库中，并尽可能降低
 用户可用它选择要用哪些微型库，要为哪个平台和哪个CPU架构构建。
 \end{description}
 \begin{figure}[!hbt]
-\includegraphics[width=\linewidth]{../assets/Unikraft-architecture.png}
+\includegraphics[width=\linewidth]{assets/Unikraft-architecture.png}
 \caption{Unikraft的架构（黑色框内的是APIs）允许用户程序接入不同层次的APIs，也
 允许用户选择不同的API实现。}\label{fig:unikraft-arch}
 \end{figure}
@@ -456,16 +456,16 @@ Unikraft的作者有意将它们分割到了不同的库中，并尽可能降低
 \begin{figure}[H]
 \centering
 \begin{minipage}{0.32\linewidth}
-\includegraphics[width=1\linewidth]{../assets/Unikraft-image-size.png}
+\includegraphics[width=1\linewidth]{assets/Unikraft-image-size.png}
 \caption{}
 \label{fig:unikraft-image-size}
 \end{minipage}
 \begin{minipage}{0.32\linewidth}
-\includegraphics[width=1\linewidth]{../assets/Unikraft-memory.png}
+\includegraphics[width=1\linewidth]{assets/Unikraft-memory.png}
 \caption{}
 \end{minipage}
 \begin{minipage}{0.32\linewidth}
-\includegraphics[width=1\linewidth]{../assets/Unikraft-throughput.png}
+\includegraphics[width=1\linewidth]{assets/Unikraft-throughput.png}
 \caption{}
 \end{minipage}
 \end{figure}
@@ -1125,7 +1125,7 @@ RISC-V引入了监管者二进制接口（\textbf{S}upervisor \textbf{B}inary \t
 
 \begin{figure}[tbh!]
 \centering
-\includegraphics[width=0.7\linewidth]{../assets/riscv-sbi-intro1.png}
+\includegraphics[width=0.7\linewidth]{assets/riscv-sbi-intro1.png}
 \caption{不含H拓展的RISC-V系统}
 \label{fig:riscv-sbi}
 \end{figure}
@@ -1179,7 +1179,7 @@ KVM (Kernel-based Virtual Machine，基于内核的虚拟机)  ，是一种内�
 多个隔离的虚拟环境，即虚拟客户机或虚拟机（VM）。
 \begin{figure}[!hbt]
 	\centering
-	\includegraphics[width=0.9\linewidth]{../assets/riscv-sbi-intro2.png}
+	\includegraphics[width=0.9\linewidth]{assets/riscv-sbi-intro2.png}
 	\caption{虚拟化下的特权等级}
 	\label{fig:w4}
 \end{figure}
@@ -1273,7 +1273,7 @@ Unikraft使用面向对象设计，每个micro-library中通常有与库同名�
 \begin{figure}[!hbt]
 \centering
 \vspace*{-3ex}
-\includegraphics[width=0.9\linewidth]{../assets/unikraft-menuconfig}
+\includegraphics[width=0.9\linewidth]{assets/unikraft-menuconfig}
 \vspace*{-3ex}
 \caption{配置Unikraft}
 \label{fig:unikraft-menuconfig}
@@ -1292,7 +1292,7 @@ Hello world程序与Unikraft的各个被使用的micro-libraries先被分别编�
 \begin{figure}[tbh!]
 \centering
 \vspace*{-3ex}
-\includegraphics[width=0.9\linewidth]{../assets/unikraft-run}
+\includegraphics[width=0.9\linewidth]{assets/unikraft-run}
 \vspace*{-3ex}
 \caption{运行hello world}
 \label{fig:unikraft-run}
@@ -1595,7 +1595,7 @@ riscv64-unknown-elf-gdb -ex 'file build/riscv64gc-unknown-none-elf/release/dev-t
 \begin{figure}[tbh!]
 \centering
 \vspace*{-3ex}
-\includegraphics[width=0.9\linewidth]{../assets/debug.png}
+\includegraphics[width=0.9\linewidth]{assets/debug.png}
 \vspace*{-3ex}
 \caption{调试}
 \label{fig:debug}
@@ -1604,7 +1604,7 @@ riscv64-unknown-elf-gdb -ex 'file build/riscv64gc-unknown-none-elf/release/dev-t
 \begin{figure}[tbh!]
 \centering
 \vspace*{-3ex}
-\includegraphics[width=0.9\linewidth]{../assets/run.png}
+\includegraphics[width=0.9\linewidth]{assets/run.png}
 \vspace*{-3ex}
 \caption{运行结果}
 \label{fig:run}
@@ -1684,7 +1684,7 @@ RISC-V是于2010年诞生自加州大学伯克利分校的精简指令集架构�
 \section{概要设计}\sectionauthor{张子辰}
 \begin{figure}[!hbt]
 \centering
-\includegraphics[width=\linewidth]{../assets/Runikraft-architecture-impl.pdf}
+\includegraphics[width=\linewidth]{assets/Runikraft-architecture-impl.pdf}
 \caption{Runikraft的架构}\label{fig:runikraft-arch-impl}
 \end{figure}
 平台层将不同的平台封装成通用的\texttt{rkplat} API，它提供与平台/架构密切相关的功能，
@@ -1745,7 +1745,7 @@ Unikraft&Runikraft&功能\\\hline
 
 \begin{figure}[!htb]
 \centering
-\includegraphics[width=\linewidth]{../assets/crates-dependency.pdf}
+\includegraphics[width=\linewidth]{assets/crates-dependency.pdf}
 \caption{Runikraft的crates的依赖关系}
 \end{figure}
 
@@ -2033,7 +2033,7 @@ sched\_preem0、slist0、stailq0、tailq0、timeconv0共17个模块的测试。
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\linewidth]{../assets/runikraft-menuconfig-1.png}
+\includegraphics[width=0.8\linewidth]{assets/runikraft-menuconfig-1.png}
 \caption{}
 \label{fig:runikraft-menuconfig-1}
 \end{figure}
@@ -2077,7 +2077,7 @@ endmenu
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.7\linewidth]{../assets/runikraft-menuconfig-2.png}
+\includegraphics[width=0.7\linewidth]{assets/runikraft-menuconfig-2.png}
 \caption{}
 \label{fig:runikraft-menuconfig-2}
 \end{figure}
@@ -2142,7 +2142,7 @@ virtio-rng、virtio-gpu、virtio-input、virtio-net。
 
 \begin{figure}[tbh!]
 \centering
-\includegraphics[width=0.6\linewidth]{../assets/sudoku}
+\includegraphics[width=0.6\linewidth]{assets/sudoku}
 \caption{数独程序}
 \label{fig:sudoku}
 \end{figure}
