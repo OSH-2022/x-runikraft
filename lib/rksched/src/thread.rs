@@ -265,11 +265,11 @@ pub type Thread = TailqNode<ThreadData>;
 /// 
 /// 线程的生命周期：
 /// 1. 分配线程栈空间（stack）和线程本地存储空间（tls）。
-///    栈空间必须满足对齐要求STACK_SIZE (默认是65536)。
-/// 2. 在栈的低地址调用`init`（`unsafe{*(stack as *mut Thread).init(...)}`，初始化控制块。
+/// 2. 在tls的低地址调用`init`（`unsafe{*(tls as *mut Thread).init(...)}`，初始化控制块。
+///    `init`的tls参数应等于tls+size_of::<Thread>。
 /// 3. 用`add_thread`把线程加入调度器。
 /// 4. （调度器执行线程）
-/// 5. 当线程执行完毕或被kill时，调用`exit`。
+/// 5. 当线程执行完毕或被killed时，调用`exit`。
 /// 6. 切换到其他线程
 /// 7. 调度器调用`finish`。
 /// 8. 释放线程栈空间（stack）和线程本地存储空间（tls）。

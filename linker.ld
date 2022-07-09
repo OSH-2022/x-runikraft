@@ -5,9 +5,9 @@ BASE_ADDRESS = 0x80200000;
 SECTIONS
 {
     . = BASE_ADDRESS;
-    skernel = .;
+    __rkplat_boot_skernel = .;
 
-    stext = .;
+    __rkplat_boot_stext = .;
     .text : {
         *(.text.entry) ;
         _rk_thread_inittab_start = . ;
@@ -26,33 +26,33 @@ SECTIONS
     }
 
     . = ALIGN(4K);
-    etext = .;
-    srodata = .;
+    __rkplat_boot_etext = .;
+    __rkplat_boot_srodata = .;
     .rodata : {
         *(.rodata .rodata.*)
         *(.srodata .srodata.*)
     }
 
     . = ALIGN(4K);
-    erodata = .;
-    sdata = .;
+    __rkplat_boot_erodata = .;
+    __rkplat_boot_sdata = .;
     .data : {
         *(.data .data.*)
         *(.sdata .sdata.*)
     }
 
     . = ALIGN(4K);
-    edata = .;
+    __rkplat_boot_edata = .;
     .bss : {
         *(.bss.stack)
-        sbss = .;
+        __rkplat_boot_sbss = .;
         *(.bss .bss.*)
         *(.sbss .sbss.*)
     }
 
     . = ALIGN(4K);
-    ebss = .;
-    ekernel = .;
+    __rkplat_boot_ebss = .;
+    __rkplat_boot_ekernel = .;
 
     /DISCARD/ : {
         *(.eh_frame)
