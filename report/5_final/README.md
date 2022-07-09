@@ -1,3 +1,5 @@
+***本文件仅供参考，最终报告是`final-report.tex`，[Release](https://github.com/OSH-2022/x-runikraft/releases/tag/v0.1.0.0-alpha)中有相应的PDF文件。***
+
 # 结题报告
 
 ## 工作摘要
