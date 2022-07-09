@@ -1,20 +1,16 @@
 添加测试程序的步骤：
     1. 创建目录 <test name>.
     2. 在该目录下创建 Cargo.toml:
-        - package.name = test-<test name>;
-        - 目前，dependencies 必须包含
-          “rkalloc = {path = "../../lib/rkalloc"}”.
+        - package.name = test-<test name>.
     3. 在<test name>/src/main.rs中写测试代码.
-    4. 如果你的程序需要特殊的 qemu 命令行参数才能运行，如GPU测试程序需要
-       virtio-gpu 设备，创建<test name>/run_flags.txt并把特殊的命令行参数
+    4. 如果你的程序需要特殊的 qemu 命令行参数才能运行, 如GPU测试程序需要
+       virtio-gpu 设备, 创建<test name>/run_flags.txt并把特殊的命令行参数
        写在此处。
 
 Steps to add a test program:
     1. Create directory <test name>.
     2. Create Cargo.toml under this directory:
-        - package.name = test-<test name>;
-        - currently, dependencies must contain 
-          ‘rkalloc = {path = "../../lib/rkalloc"}’.
+        - package.name = test-<test name>.
     3. Write your test code in <test name>/src/main.rs .
     4. If your test program needs special qemu command line options to 
        run, i.e. GPU testing code requires a virtio-gpu device, create

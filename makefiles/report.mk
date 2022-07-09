@@ -51,3 +51,6 @@ feasibility-report.bib: $(REPORT_ROOT_DIR)/3_feasibility/feasibility-report.bib
 
 feasibility-report.pdf: $(REPORT_ROOT_DIR)/3_feasibility/feasibility-report.tex feasibility-report.bib ../runikraft-report.cls
 	env TEXINPUTS=$(REPORT_ROOT_DIR)/3_feasibility:$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(REPORT_ROOT_DIR)/3_feasibility/feasibility-report.tex
+
+final-report.pdf: $(REPORT_ROOT_DIR)/5_final/final-report.tex ../runikraft-report.cls
+	env TEXINPUTS=$(REPORT_ROOT_DIR)/5_final:$$TEXINPUTS $(TEX) $(TEX_FLAGS) $(REPORT_ROOT_DIR)/5_final/final-report.tex

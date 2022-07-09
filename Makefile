@@ -56,7 +56,7 @@ SCRIPTS_DIR			:= $(SUPPORT_DIR)/scripts
 export KCONFIG_DIR	:= $(SCRIPTS_DIR)/kconfig
 
 .PHONY: all
-all: test
+all: example
 
 .PHONY: everything
 everything: all report

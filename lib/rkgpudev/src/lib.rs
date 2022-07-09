@@ -41,9 +41,8 @@ pub use output::*;
 use rkplat::drivers::virtio::__GPU_DEIVCE;
 use crate::DIRECTION::{Horizontal, Vertical};
 
-static mut _EMPTY: [u8; 0] = [0; 0];
 static FONT: [u128; 127] = include!("font.txt");
-pub static mut FB: &mut [u8] = unsafe { &mut _EMPTY };
+pub static mut FB: &mut [u8] = &mut [];
 pub static mut FB_CURSOR: &mut [u32] = &mut [0; 1000];
 
 pub unsafe fn init() {
