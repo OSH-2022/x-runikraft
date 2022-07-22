@@ -8,3 +8,4 @@
 *.run.xml
 *.toc
 !/assets/*
+!4_midterm/midterm.pdf
