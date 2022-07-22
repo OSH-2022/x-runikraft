@@ -2,6 +2,8 @@
 
 USTC 011705 (OSH) Course Project of Runikraft Group
 
+**Attention**: This repository is achieved because the course has ended.
+
 ## Group Members
 
 (Unicode codepoint order)
@@ -28,7 +30,7 @@ Runikraft is a unikernel written in Rust language that runs on RISC-V architectu
 
 For Ubuntu 22.04 users, the following command will download, build and test Ruikraft:
 
-```
+```shell
 sudo apt install git curl crossbuild-essential-riscv64 qemu-system-misc qemu-system-gui libncurses-dev bison flex socat
 curl https://sh.rustup.rs | sh
 source ~/.cargo/env
@@ -43,7 +45,7 @@ make  # -j is not neccessary since make is just a wrapper to cargo
 
 As different parts of this project were written in different languages, we use `make` as a universal building system. However, you may manually build each part separately without `make`. 
 
-To build everything without reports and documentations, install all the dependencies:
+To build everything without reports, install all the dependencies:
 
 - Rust compiler (`rustc >= 1.59`+`cargo`): you must install it via `rustup`, since rustc in distribution's software source usually does not support riscv64 target.
 - C compiler and binutils: any version of riscv64 cross-compile GCC should works.
@@ -51,20 +53,19 @@ To build everything without reports and documentations, install all the dependen
 
 Then run:
 
-```
+```shell
 make
 ```
 
-Building the reports and documentations requires XeLaTeX (recommend TeX Live 2021+) and some CJK fonts:
+Building the reports requires XeLaTeX (recommend TeX Live 2021+) and some CJK fonts:
 
 - Noto Serif CJK SC Regular+Bold, Noto Sans CJK SC DemiLight+Bold: `apt install fonts-noto-cjk fonts-noto-cjk-extra`, or download from [here](https://mirrors.ustc.edu.cn/ubuntu/pool/main/f/fonts-noto-cjk/fonts-noto-cjk-extra_20220127%2Brepack1-1_all.deb) and [here](https://mirrors.ustc.edu.cn/ubuntu/pool/main/f/fonts-noto-cjk/fonts-noto-cjk_20220127%2Brepack1-1_all.deb).
 - SimFang, SimKai: they are available in [this repository](https://github.com/Halfish/lstm-ctc-ocr/tree/master/fonts). (sorry for using non-free fonts, for we haven't found free alternatives yet)
 
 Then run:
 
-```
+```shell
 make report
-make doc
 ```
 
 ## Contributing to Runikraft
