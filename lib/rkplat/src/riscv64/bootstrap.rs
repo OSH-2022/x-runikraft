@@ -30,7 +30,7 @@ extern "C" {
     /// 
     /// 在没有已分析的参数的平台，平台层将调用
     /// `rkplat_entry_argp`，由它分析参数，然后调用`rkplat_entry`
-    /// - `arg0`: NTBS，参数0，即镜像的名称；可能为空，这时分析后的参数的argv[0]也需要留空
+    /// - `arg0`: NTBS，参数0，即镜像的名称；可能为空，这时分析后的参数的`argv[0]`也需要留空
     /// - `argb`: 剩余的参数
     /// - `argb_len`: 剩余的参数的长度，`argb_len=0`表示`argb`是空终止的
     pub fn rkplat_entry_argp(arg0: *mut u8, argb: *mut u8, argb_len: usize) -> !;

@@ -1,13 +1,13 @@
-// test rkalloc_buddy::RKalloc
+// test rkallocbuddy::Alloc
 
 #![no_std]
 #![no_main]
 extern crate rkalloc;
-extern crate rkalloc_buddy;
+extern crate rkallocbuddy;
 extern crate runikraft;
 
-use rkalloc::RKalloc;
-use rkalloc_buddy::RKallocBuddy;
+use rkalloc::Alloc;
+use rkallocbuddy::AllocBuddy;
 use runikraft::align_as;
 use core::mem::{size_of, align_of};
 use core::slice;
@@ -20,8 +20,8 @@ static mut HEAP:align_as::A4096<[u8;HEAP_SIZE]> = align_as::A4096::new([0;HEAP_S
 extern "C" fn rkplat_entry(_: i32, _: *mut *mut u8) -> ! {
     let arr_len = 10;
     unsafe {
-        // test `RKallocBuddy::new()` and `RKallocBuddy::alloc()`
-        let a = RKallocBuddy::new(HEAP.data.as_mut_ptr(), HEAP.data.len());
+        // test `AllocBuddy::new()` and `AllocBuddy::alloc()`
+        let a = AllocBuddy::new(HEAP.data.as_mut_ptr(), HEAP.data.len());
         let arr_heap = a.alloc(arr_len*size_of::<usize>(), align_of::<usize>());
         assert!(!arr_heap.is_null());
         let mut counter: usize = 0;
@@ -36,7 +36,7 @@ extern "C" fn rkplat_entry(_: i32, _: *mut *mut u8) -> ! {
             counter += 1;
         }
         
-        // test `RKallocBuddy::realloc()`
+        // test `AllocBuddy::realloc()`
         let new_arr_len = 20;
         let new_arr_heap = a.realloc(arr_heap, arr_len*size_of::<usize>(), new_arr_len*size_of::<usize>(), align_of::<usize>());
         assert!(!new_arr_heap.is_null());
@@ -61,10 +61,10 @@ extern "C" fn rkplat_entry(_: i32, _: *mut *mut u8) -> ! {
             counter += 1;
         }
 
-        // test `RKallocBuddy::dealloc()`
+        // test `AllocBuddy::dealloc()`
         a.dealloc(new_arr_heap, new_arr_len*size_of::<u8>(), align_of::<u8>());
 
-        // test 'RKallocBuddy::alloc_zeroed()`
+        // test 'AllocBuddy::alloc_zeroed()`
         let arr_len = 15;
         let arr_heap = a.alloc_zeroed(arr_len*size_of::<i8>(), align_of::<i8>());
         let arr = slice::from_raw_parts_mut(arr_heap as *mut i8, arr_len as usize);

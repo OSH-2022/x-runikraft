@@ -5,12 +5,12 @@
 [package]
 name = "rkschedpreem"
 version = "0.1.0"
-authors = [ "陈建绿 <2512674094@qq.com>" ]
+authors = [ "张子辰 <zichen350@gmail.com>" ]
 license = "BSD-3-Clause"
 edition = "2021"
 
 [dependencies]
-    runikraft = {path = "../../core", default-features = false}
-    rkalloc = {path = "../rkalloc", default-features = false}
-    rksched = {path = "../rksched", default-features = false}
-    rkplat = {path = "../rkplat", default-features = false}
+    runikraft = {path = "../../core"}
+    rkalloc = {path = "../rkalloc"}
+    rksched = {path = "../rksched"}
+    rkplat = {path = "../rkplat"}

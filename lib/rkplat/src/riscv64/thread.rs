@@ -53,7 +53,6 @@ pub unsafe fn init(ctx: *mut Context, sp: usize, tp: usize, entry: unsafe fn(*mu
 }
 
 /// 启动新线程
-/// 为了实现
 pub unsafe fn start(ctx: *mut Context) -> ! {
     set_tp((*ctx).tp);
     __thread_context_start((*ctx).sp,(*ctx).pc);
@@ -66,9 +65,9 @@ pub unsafe fn start(ctx: *mut Context) -> ! {
 /// 2. 从未执行过，这时，将执行`__thread_starter`
 pub unsafe fn switch(prevctx: *mut Context, nextctx: *mut Context) {
     #[cfg(feature="save_fp")]
-    __thread_save_sp((*prevctx).fregs);
+    __thread_save_fp((*prevctx).fregs);
     #[cfg(feature="save_fp")]
-    __thread_restore_sp((*nextctx).fregs);
+    __thread_restore_fp((*nextctx).fregs);
     __thread_context_switch(prevctx,nextctx);
 }
 

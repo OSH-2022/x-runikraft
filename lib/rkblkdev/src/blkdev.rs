@@ -240,7 +240,6 @@ fn rk_blkdev_queue_get_info(dev: &RkBlkdev, queue_id: u16, q_info: *mut RkBlkdev
 ///
 
 fn rk_blkdev_queue_configure(dev: &RkBlkdev, queue_id: u16, nb_desc: u16, queue_conf: *mut RkBlkdevQueueConf) -> isize {
-
     assert!(!dev._data.is_null());
 
     unsafe {
@@ -249,23 +248,23 @@ fn rk_blkdev_queue_configure(dev: &RkBlkdev, queue_id: u16, nb_desc: u16, queue_
         }
     }
     //确保我们没有第二次对这个队列进行初始化
-    if !ptriseer(dev._queue[queue_id as usize].unwrap() as i64){
+    if !ptriseer(dev._queue[queue_id as usize].unwrap() as i64) {
         return -12;
     }
     #[cfg(not(feature = "dispatcherthreads"))]
-        let err = _create_event_handler(queue_conf.callback,queue_conf.callback_cookie,dev._data.queue_handler[queue_id]);
+        let err = _create_event_handler(queue_conf.callback, queue_conf.callback_cookie, dev._data.queue_handler[queue_id]);
     #[cfg(feature = "dispatcherthreads")]
-        let err = _create_event_handler(queue_conf.callback,queue_conf.callback_cookie,dev,queue_id,queue_conf.s,dev._data.queue_handler[queue_id]);
-    if err==0{
+        let err = _create_event_handler(queue_conf.callback, queue_conf.callback_cookie, dev, queue_id, queue_conf.s, dev._data.queue_handler[queue_id]);
+    if err == 0 {
         return err;
     }
-    dev._queue[queue_id]=dev.dev_ops.queue_configure(queue_id,nb_desc,queue_conf);
-    if ptriseer(dev._queue[queue_id]as i64){
-        println!("blkdev{}-q{}: Failed to configure:{}\n",dev._data.id,queue_id,err);
+    dev._queue[queue_id] = dev.dev_ops.queue_configure(queue_id, nb_desc, queue_conf);
+    if ptriseer(dev._queue[queue_id] as i64) {
+        println!("blkdev{}-q{}: Failed to configure:{}\n", dev._data.id, queue_id, err);
         _destory_event_handler((dev._data.queue_handler[queue_id]));
         return err;
     }
-    println!("blkdev{}: Configured queue {}\n",dev._data.id,queue_id);
+    println!("blkdev{}: Configured queue {}\n", dev._data.id, queue_id);
     0
 }
 
@@ -490,7 +489,7 @@ fn rk_blkdev_queue_finish_reqs(dev: &RkBlkdev, queue_id: u16) -> isize {
     assert!(!dev._data.is_null());
     assert!(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
     assert!(dev._data.state == RkBlkdevRunning);
-    assert!(!ptriseer(dev._queue[queue_id]as i64));
+    assert!(!ptriseer(dev._queue[queue_id] as i64));
     dev.finish_reqs(dev, dev._queue[queue_id])
 }
 
@@ -507,7 +506,7 @@ pub struct RkBlkdevSyncIORequest {
 
 #[cfg(feature = "sync_io_blocked_waiting")]
 pub fn __sync_io_callback(req: &RkBlkreq, cookie_callback: *mut u8) {
-   let sync_io_req:*const RkBlkdevSyncIORequest=cookie_callback as *const RkBlkdevSyncIORequest;
+    let sync_io_req: *const RkBlkdevSyncIORequest = cookie_callback as *const RkBlkdevSyncIORequest;
     //TODO uk_semaphore_up(&sync_io_req->s);
 }
 
@@ -533,18 +532,18 @@ pub fn __sync_io_callback(req: &RkBlkreq, cookie_callback: *mut u8) {
  *    - (<0): on error returned by driver
  */
 #[cfg(feature = "sync_io_blocked_waiting")]
-pub fn rk_blkdev_sync_io(dev: &RkBlkdev, queue_id: u16, operation: RkBlkreqOp, start_sector: Sector, nb_sectors: Sector, buf: *mut u8)->isize {
-    let mut rc =0;
-    assert!(queue_id<CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
+pub fn rk_blkdev_sync_io(dev: &RkBlkdev, queue_id: u16, operation: RkBlkreqOp, start_sector: Sector, nb_sectors: Sector, buf: *mut u8) -> isize {
+    let mut rc = 0;
+    assert!(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
     assert!(!dev._data.is_null());
-    assert!(dev._data.state==RkBlkdevRunning);
-    assert!(!ptriseer(dev._queue[queue_id]as i64));
-    let sync_io_req:RkBlkdevSyncIORequest=RkBlkdevSyncIORequest;
-    let mut req: &RkBlkreq =&sync_io_req.req;
-    rk_blkreq_init(&mut req,operation,start_sector,nb_sectors,buf,__sync_io_callback,*sync_io_req);
-    req= &sync_io_req.req;
+    assert!(dev._data.state == RkBlkdevRunning);
+    assert!(!ptriseer(dev._queue[queue_id] as i64));
+    let sync_io_req: RkBlkdevSyncIORequest = RkBlkdevSyncIORequest;
+    let mut req: &RkBlkreq = &sync_io_req.req;
+    rk_blkreq_init(&mut req, operation, start_sector, nb_sectors, buf, __sync_io_callback, *sync_io_req);
+    req = &sync_io_req.req;
     //TODO uk_semaphore_init(&sync_io_req.s, 0);
-    rc=rk_blkdev_queue_submit_one(dev,queue_id,&mut req);
+    rc = rk_blkdev_queue_submit_one(dev, queue_id, &mut req);
     //TODO uk_semaphore_down(&sync_io_req.s);
     req.result
 }
@@ -552,15 +551,15 @@ pub fn rk_blkdev_sync_io(dev: &RkBlkdev, queue_id: u16, operation: RkBlkreqOp, s
  * Wrappers for uk_blkdev_sync_io
  */
 #[cfg(feature = "sync_io_blocked_waiting")]
-pub fn rk_blkdev_sync_write(dev: &RkBlkdev, queue_id: u16, op: RkBlkreqOp, sector: Sector, nb_sectors: Sector, buf: *mut u8) ->isize{
-    rk_blkdev_sync_io(dev, queue_id,RkBlkreqWrite, sector, nb_sectors, buf)
+pub fn rk_blkdev_sync_write(dev: &RkBlkdev, queue_id: u16, op: RkBlkreqOp, sector: Sector, nb_sectors: Sector, buf: *mut u8) -> isize {
+    rk_blkdev_sync_io(dev, queue_id, RkBlkreqWrite, sector, nb_sectors, buf)
 }
 /*
  * Wrappers for uk_blkdev_sync_io
  */
 #[cfg(feature = "sync_io_blocked_waiting")]
-pub fn rk_blkdev_sync_read(dev: &RkBlkdev, queue_id: u16, op: RkBlkreqOp, sector: Sector, nb_sectors: Sector, buf: *mut u8) ->isize{
-    rk_blkdev_sync_io(dev, queue_id,RkBlkreqRead, sector, nb_sectors, buf)
+pub fn rk_blkdev_sync_read(dev: &RkBlkdev, queue_id: u16, op: RkBlkreqOp, sector: Sector, nb_sectors: Sector, buf: *mut u8) -> isize {
+    rk_blkdev_sync_io(dev, queue_id, RkBlkreqRead, sector, nb_sectors, buf)
 }
 
 ///停止一个Runikraft块设备，并且把他的状态设定为RK_BLKDEV_CONFIGED状态
@@ -615,7 +614,7 @@ fn rk_blkdev_queue_unconfigure(dev: &RkBlkdev, queue_id: u16) -> isize {
     assert!(!dev._data.is_null());
     assert!(queue_id < CONFIG_LIBUKBLKDEV_MAXNBQUEUES);
     assert!(dev._data.state == RkBlkdevConfigured);
-    assert!(!ptriseer(dev._queue[queue_id]as i64));
+    assert!(!ptriseer(dev._queue[queue_id] as i64));
     rc = dev.dev_ops.queue_unconfigure(dev._queue[queue_id]);
     if rc != 0 {
         println!("Failed to unconfigure blkdev{}-q{}: {}\n", dev._data.id, queue_id, rc);
@@ -648,8 +647,8 @@ fn rk_blkdev_unconfigure(dev: &RkBlkdev) -> isize {
     let rc: isize;
     assert!(!dev._data.is_null());
     assert!(dev._data.state == RkBlkdevConfigured);
-    for x in [0,CONFIG_LIBUKBLKDEV_MAXNBQUEUES]{
-        assert!(ptriseer(dev._queue[x]as i64));
+    for x in [0, CONFIG_LIBUKBLKDEV_MAXNBQUEUES] {
+        assert!(ptriseer(dev._queue[x] as i64));
     }
     rc = dev.dev_ops.dev_unconfigure();
     if rc != 0 {
@@ -660,7 +659,3 @@ fn rk_blkdev_unconfigure(dev: &RkBlkdev) -> isize {
     }
     rc
 }
-
-
-
-

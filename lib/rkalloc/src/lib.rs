@@ -35,14 +35,14 @@ extern crate alloc;
 use alloc::alloc::GlobalAlloc;
 
 /// Runikraft的内存分配器API
-/// `RKalloc`没有模仿`uk_alloc`，而是模仿了`alloc::alloc::GlobalAlloc`，
+/// `Alloc`没有模仿`uk_alloc`，而是模仿了`alloc::alloc::GlobalAlloc`，
 /// 因为`GlobalAlloc`要求实现的函数更少，而且`dealloc`函数要求提供分配时
 /// 的`size`和`align`，实现起来更容易
 ///
 /// # 安全性
 ///
 /// `self`具有内部可变性，实现应该用自旋锁保证线程安全
-pub unsafe trait RKalloc: Sync {
+pub unsafe trait Alloc: Sync {
     /// 分配大小为`size`，对齐要求为`align`(必须是2^n)的连续内存空间
     ///
     /// 成功时返回非空指针，失败时返回空指针
@@ -91,7 +91,7 @@ pub unsafe trait RKalloc: Sync {
 }
 
 /// 为C接口拓展的内存分配器，相比Rkalloc，它支持运行时不提供size、alloc
-pub unsafe trait RKallocExt: RKalloc {
+pub unsafe trait AllocExt: Alloc {
     /// 解分配内存
     ///
     /// # 安全性
@@ -111,24 +111,24 @@ pub unsafe trait RKallocExt: RKalloc {
 
 /// 为了方便使用，需要分配器的结构体应该保存静态的分配器引用，然而构造的分配器不一定拥有
 /// 静态生命周期，所以定义了这个强制构造静态生命周期的分配器的函数
-pub unsafe fn make_static<'a>(a: &'a dyn RKalloc)->&'static dyn RKalloc {
+pub unsafe fn make_static<'a>(a: &'a dyn Alloc)->&'static dyn Alloc {
     union Helper<'a> {
-        ptr: *const dyn RKalloc,
-        ref_: &'a dyn RKalloc,
+        ptr: *const dyn Alloc,
+        ref_: &'a dyn Alloc,
     }
     Helper{ptr: Helper{ref_: a}.ptr}.ref_
 }
 
-pub unsafe fn make_static_ext<'a>(a: &'a dyn RKallocExt)->&'static dyn RKallocExt {
+pub unsafe fn make_static_ext<'a>(a: &'a dyn AllocExt)->&'static dyn AllocExt {
     union Helper<'a> {
-        ptr: *const dyn RKallocExt,
-        ref_: &'a dyn RKallocExt,
+        ptr: *const dyn AllocExt,
+        ref_: &'a dyn AllocExt,
     }
     Helper{ptr: Helper{ref_: a}.ptr}.ref_
 }
 
 /// 分配器的状态信息
-pub trait RKallocState {
+pub trait AllocState {
     /// 总空间
     fn total_size(&self) -> usize;
     /// 可用空间
@@ -142,23 +142,23 @@ pub trait RKallocState {
 }
 
 /// 分配一段空间，并把T保存在此处
-pub unsafe fn alloc_type<T> (alloc: &dyn RKalloc, elem: T) -> *mut T{
+pub unsafe fn alloc_type<T> (alloc: &dyn Alloc, elem: T) -> *mut T{
     let p = alloc.alloc(size_of::<T>(), align_of::<T>()) as *mut T;
     p.write(elem);
     p
 }
 
 /// 释放*T的空间，并调用drop
-pub unsafe fn dealloc_type<T> (alloc: &dyn RKalloc, ptr: *mut T) {
+pub unsafe fn dealloc_type<T> (alloc: &dyn Alloc, ptr: *mut T) {
     ptr.drop_in_place();
     alloc.dealloc(ptr as *mut u8, size_of::<T>(), align_of::<T>());
 }
 
 // FIXME: Unikraft允许注册多个全局分配器，但Runikraft暂时只支持一个
 struct RustStyleAlloc {
-    a: Option<NonNull<dyn RKalloc>>,
-    e: Option<NonNull<dyn RKallocExt>>,
-    s: Option<NonNull<dyn RKallocState>>,
+    a: Option<NonNull<dyn Alloc>>,
+    e: Option<NonNull<dyn AllocExt>>,
+    s: Option<NonNull<dyn AllocState>>,
 }
 
 unsafe impl GlobalAlloc for RustStyleAlloc {
@@ -180,41 +180,41 @@ unsafe impl GlobalAlloc for RustStyleAlloc {
 static mut ALLOCATOR: RustStyleAlloc = RustStyleAlloc{a:None,e:None,s:None};
 
 /// 获取全局默认分配器
-pub fn get_default() -> Option<&'static dyn RKalloc> {
+pub fn get_default() -> Option<&'static dyn Alloc> {
     unsafe{
         ALLOCATOR.a.map(|x| x.as_ref())
     }
 }
 
 /// 获取全局默认拓展分配器
-pub fn get_default_ext() -> Option<&'static dyn RKallocExt> {
+pub fn get_default_ext() -> Option<&'static dyn AllocExt> {
     unsafe{
         ALLOCATOR.e.map(|x| x.as_ref())
     }
 }
 
 /// 获取全局默认分配器的状态信息
-pub fn get_default_state() -> Option<&'static dyn RKallocState> {
+pub fn get_default_state() -> Option<&'static dyn AllocState> {
     unsafe{
         ALLOCATOR.s.map(|x| x.as_ref())
     }
 }
 
 /// 注册全局默认分配器
-pub unsafe fn register(a: *const dyn RKalloc) {
+pub unsafe fn register(a: *const dyn Alloc) {
     ALLOCATOR.a = NonNull::new(a as *mut _);
 }
 
 /// 注册全局默认拓展分配器
-pub unsafe fn register_ext(e: *const dyn RKallocExt) {
+pub unsafe fn register_ext(e: *const dyn AllocExt) {
     ALLOCATOR.e = NonNull::new(e as *mut _);
 }
 
 /// 注册全局默认分配器的状态信息
-pub unsafe fn register_state(s: *const dyn RKallocState) {
+pub unsafe fn register_state(s: *const dyn AllocState) {
     ALLOCATOR.s = NonNull::new(s as *mut _);
 }
 
 //使用feature使它默认不被编译，这样rust-analyzer就不会因为找不到crate __alloc_error_handler报错
-#[cfg(feature="__alloc_error_handler")]
+#[cfg(__alloc_error_handler)]
 extern crate __alloc_error_handler;

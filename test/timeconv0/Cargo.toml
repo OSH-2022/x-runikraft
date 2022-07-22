@@ -1,0 +1,11 @@
+[package]
+    name = "test-timeconv0"
+    version = "0.1.0"
+    edition = "2021"
+
+[workspace]
+
+[dependencies]
+    rkplat = {path = "../../lib/rkplat", features=["driver_ns16550"]}
+    rkboot = {path = "../../lib/rkboot", features=["alloc_buddy"]}
+    rktimeconv = {path = "../../lib/rktimeconv"}

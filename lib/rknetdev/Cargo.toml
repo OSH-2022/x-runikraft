@@ -10,10 +10,9 @@
     edition = "2021"
 
 [features]
-    default = []
     dispatcherthreads = ["rksched"]
 
 [dependencies]
-    runikraft = {path = "../../core", default-features = false}
-    rkalloc = {path = "../rkalloc", default-features = false}
-    rksched = {path = "../rksched", default-features = false, optional=true}
+    runikraft = {path = "../../core"}
+    rkalloc = {path = "../rkalloc"}
+    rksched = {path = "../rksched", optional=true}

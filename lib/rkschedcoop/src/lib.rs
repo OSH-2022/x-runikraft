@@ -30,7 +30,7 @@
 
 #![no_std]
 
-use rksched::RKsched;
+use rksched::Sched;
 use rksched::thread::{Prio,Thread,ThreadData};
 use rksched::this_thread;
 use runikraft::compat_list::Tailq;
@@ -51,7 +51,7 @@ type ThreadList = Tailq<ThreadData>;
 ///     - 等待到达某个时刻：位于waiting_thread
 ///     - 等待某个事件发生：位于该事件的等待队列
 /// - 运行：不位于任何队列
-pub struct RKschedcoop {
+pub struct Schedcoop {
     threads_started: bool,
     nothing_to_do: AtomicBool,
     ///就绪的线程
@@ -64,12 +64,12 @@ pub struct RKschedcoop {
     waiting_thread: ThreadList,
     ///已退出的线程
     exit_thread: ThreadList,
-    next: Option<&'static mut dyn RKsched>,
+    next: Option<&'static mut dyn Sched>,
     lock: SpinLock,
     lcpuid: rkplat::lcpu::ID,
 }
 
-impl RKschedcoop {
+impl Schedcoop {
     pub fn new(lcpuid: rkplat::lcpu::ID) -> Self {
         Self { threads_started: false, next: None, 
             nothing_to_do: AtomicBool::new(false), lcpuid,
@@ -112,7 +112,7 @@ impl RKschedcoop {
             while !self.ready_thread_toadd.is_empty() {
                 let node = self.ready_thread_toadd.pop_front().unwrap();
                 unsafe {
-                    debug_assert_eq!(node.as_ref().element.sched,core::ptr::addr_of!(*self) as *const dyn RKsched as *mut dyn RKsched);
+                    debug_assert_eq!(node.as_ref().element.sched,core::ptr::addr_of!(*self) as *const dyn Sched as *mut dyn Sched);
                     debug_assert!(node.as_ref().element.is_runnable());
                 }
                 self.ready_thread.push_back(node);
@@ -187,7 +187,7 @@ impl RKschedcoop {
             //简陋的负载均衡
             //如果有多个调度器而且self的负载大于next的1.5倍，则将ready_thread的线程加入下一个hart的调度器
             //下面的实现会引起饥饿
-            // if *self.next.as_mut().unwrap() as *mut dyn RKsched != self {
+            // if *self.next.as_mut().unwrap() as *mut dyn Sched != self {
             //     //不可被移动的线程的数量，引入这个变量可以避免死循环
             //     let mut unmovable_cnt = 0;
             //     while self.ready_thread_size>unmovable_cnt+1 && self.ready_thread_size*2 > self.next.as_mut().unwrap().__workload()*3 {
@@ -280,7 +280,7 @@ impl RKschedcoop {
     }
 }
 
-impl RKsched for RKschedcoop {
+impl Sched for Schedcoop {
     fn start(&mut self)->! {
         debug_assert_eq!(self.lcpuid,rkplat::lcpu::id());
         self.threads_started = true;
@@ -404,9 +404,9 @@ impl RKsched for RKschedcoop {
         Err(Errno::NotSup)//本调度器不支持线程时间片
     }
 
-    unsafe fn __set_next_sheduler(&mut self, sched: *const dyn RKsched) {
+    unsafe fn __set_next_sheduler(&mut self, sched: *const dyn Sched) {
         debug_assert!(self.next.is_none());
-        self.next = Some(&mut *(sched as *mut dyn RKsched));
+        self.next = Some(&mut *(sched as *mut dyn Sched));
     }
 
     fn __workload(&self) -> usize {

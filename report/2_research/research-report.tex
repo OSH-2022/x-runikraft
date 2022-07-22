@@ -183,11 +183,11 @@ ClickOS 实现了广泛的中间盒，包括防火墙、运营商级 NAT 和
 
 \begin{figure}[!hbt]
 \begin{minipage}{0.49\linewidth}
-\includegraphics[width=\linewidth]{pictures/clickOS_arch.jpg}
+\includegraphics[width=\linewidth]{assets/clickOS_arch.jpg}
 \caption{ClickOS 的架构\cite{bib:13-clickos2}}
 \end{minipage}
 \begin{minipage}{0.49\linewidth}
-\includegraphics[width=\linewidth]{pictures/ClickOS_networking.png}
+\includegraphics[width=\linewidth]{assets/ClickOS_networking.png}
 \caption{Basic ClickOS networking in Xen\cite{bib:12-clickos}}
 \end{minipage}
 \end{figure}
@@ -205,12 +205,12 @@ MirageOS 是一个用 OCaml 语言编写的，
 没必要为支持传统操作系统里面的成千上万个设备驱动程序而操心。\cite{bib:11-unikerel2}
 
 \begin{figure}[!hbt]
-\includegraphics[width=\linewidth]{pictures/figure1.png}
+\includegraphics[width=\linewidth]{assets/figure1.png}
 \caption{MirageOS 的架构}\label{fig:mirage-fig1}
 \end{figure}
 
 \begin{figure}[!hbt]
-\includegraphics[width=\linewidth]{pictures/figure2.png}
+\includegraphics[width=\linewidth]{assets/figure2.png}
 \caption{MirageOS的逻辑工作流}\label{fig:mirage-fig2}
 \end{figure}
 
@@ -280,7 +280,7 @@ RustyHermit 中优化实现了网络栈。它使用 \href{https://github.com/smo
 %将RustyHermit 和 Linux 分别作为客户端运行在基于 Linux 的主机系统上的虚拟机中，以信息的比特数作为自变量，吞吐量/Mbps作为因变量，
 %进行测试并绘图，结果如下：\cite{bib:20-linux-kernel}
 %\begin{figure}[H]
-%\includegraphics[width=\linewidth]{pictures/RustyHermit-1.png}
+%\includegraphics[width=\linewidth]{assets/RustyHermit-1.png}
 %\caption{}
 %\end{figure}
 %
@@ -317,7 +317,7 @@ Rump Kernel 项目以一种可用于构建轻量级、特殊用途虚拟机的�
 模块化驱动程序。因为开发者没有做会将错误引入到应用程序运行时(application runtime)、
 libc 或驱动程序中的移植工作，所以程序可以很稳定地工作。\cite{bib:21-rump-kernel}
 \begin{figure}[!hbt]
-\includegraphics[width=\linewidth]{pictures/rumprun-1.png}
+\includegraphics[width=\linewidth]{assets/rumprun-1.png}
 \caption{Anykernel、
 Rump kernel 和 Rumprun Unikernel 的关系}
 \end{figure}
@@ -336,11 +336,11 @@ Unikernel。使用 Rumprun，理论上可以将 Linux 或者 类Unix系统上的
 
 \begin{figure}[!hbt]
 \begin{minipage}{0.49\linewidth}
-\includegraphics[width=\linewidth]{pictures/rumprun-2-cut.png}
+\includegraphics[width=\linewidth]{assets/rumprun-2-cut.png}
 \caption{Rumprun 的架构}
 \end{minipage}
 \begin{minipage}{0.49\linewidth}
-\includegraphics[width=\linewidth]{pictures/rumprun-3-cut.png}
+\includegraphics[width=\linewidth]{assets/rumprun-3-cut.png}
 \caption{Rumprun 的工作流程示例}
 \end{minipage}
 \end{figure}
@@ -423,7 +423,7 @@ Unikraft的作者有意将它们分割到了不同的库中，并尽可能降低
 用户可用它选择要用哪些微型库，要为哪个平台和哪个CPU架构构建。
 \end{description}
 \begin{figure}[!hbt]
-\includegraphics[width=\linewidth]{pictures/Unikraft-architecture.png}
+\includegraphics[width=\linewidth]{assets/Unikraft-architecture.png}
 \caption{Unikraft的架构（黑色框内的是APIs）允许用户程序接入不同层次的APIs，也
 允许用户选择不同的API实现。}\label{fig:unikraft-arch}
 \end{figure}
@@ -451,16 +451,16 @@ Unikraft的作者有意将它们分割到了不同的库中，并尽可能降低
 \begin{figure}[H]
 \centering
 \begin{minipage}{0.32\linewidth}
-\includegraphics[width=1\linewidth]{pictures/Unikraft-image-size.png}
+\includegraphics[width=1\linewidth]{assets/Unikraft-image-size.png}
 \caption{}
 \label{fig:unikraft-image-size}
 \end{minipage}
 \begin{minipage}{0.32\linewidth}
-\includegraphics[width=1\linewidth]{pictures/Unikraft-memory.png}
+\includegraphics[width=1\linewidth]{assets/Unikraft-memory.png}
 \caption{}
 \end{minipage}
 \begin{minipage}{0.32\linewidth}
-\includegraphics[width=1\linewidth]{pictures/Unikraft-throughput.png}
+\includegraphics[width=1\linewidth]{assets/Unikraft-throughput.png}
 \caption{}
 \end{minipage}
 \end{figure}
@@ -995,7 +995,7 @@ Unikernel 开发难度高、分发部署困难、对系统管理人员要求高�
 
 \begin{figure}[!hbt]
 \centering
-\includegraphics[width=0.5\linewidth]{pictures/resp1.png}
+\includegraphics[width=0.5\linewidth]{assets/resp1.png}
 \caption{Cunik-engine 架构}
 \end{figure}
 其具体细节可参考

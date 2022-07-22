@@ -34,10 +34,10 @@
 // Translated from unikraft/lib/uknetdev/include/uk/netdev_core.h.
 
 use runikraft::compat_list::Tailq;
-use rkalloc::RKalloc;
+use rkalloc::Alloc;
 use runikraft::config;
 #[cfg(feature="dispatcherthreads")]
-use rksched::RKsched;
+use rksched::Sched;
 use super::netbuf::Netbuf;
 use core::fmt::Display;
 use core::ptr::NonNull;
@@ -209,17 +209,17 @@ pub struct RxqueueConf {
 	callback: QueueEvent,       // Event callback function.
 	callback_cookie: *mut u8,   // Argument pointer for callback.
 
-    a: *const dyn RKalloc,      // Allocator for descriptors.
+    a: *const dyn Alloc,      // Allocator for descriptors.
 
 	alloc_rxpkts: AllocRxpkts,  // Allocator for rx netbufs
 	alloc_rxpkts_argp: *mut u8, // Argument for alloc_rxpkts
     #[cfg(feature="dispatcherthreads")]
-    s: *const dyn RKsched,      // Scheduler for dispatcher.
+    s: *const dyn Sched,      // Scheduler for dispatcher.
 }
 
 /// A structure used to configure an Unikraft network device TX queue.
 pub struct TxqueueConf {
-    a: *const dyn RKalloc,      // Allocator for descriptors.
+    a: *const dyn Alloc,      // Allocator for descriptors.
 }
 
 //Status code flags returned by rx and tx functions

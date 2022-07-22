@@ -13,6 +13,6 @@ license = "BSD-3-Clause"
 edition = "2021"
 
 [dependencies]
-    runikraft = {path = "../../core", default-features = false}
-    rkalloc = {path = "../rkalloc", default-features = false}
-    rkplat = {path = "../rkplat", default-features = false}
+    runikraft = {path = "../../core"}
+    rkalloc = {path = "../rkalloc"}
+    rkplat = {path = "../rkplat"}

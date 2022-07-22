@@ -12,7 +12,6 @@ authors = [
 ]
 
 [features]
-    default = ["has_smp","driver_ns16550","driver_virtio_all","driver_goldfish_rtc"]
     has_smp = []            # 对称多处理器支持
     save_fp = []            # 在线程切换时保存浮点寄存器
     driver_uart = []        # 串口设备驱动
@@ -23,14 +22,14 @@ authors = [
     driver_virtio_gpu = ["driver_virtio"]
     driver_virtio_input = ["driver_virtio"]
     driver_virtio_net = ["driver_virtio"]
-    driver_virtio_all = ["driver_virtio_blk","driver_virtio_console","driver_virtio_gpu","driver_virtio_input","driver_virtio_net"]
+    driver_virtio_entropy = ["driver_virtio"]
+    driver_virtio_all = ["driver_virtio_blk","driver_virtio_console","driver_virtio_gpu","driver_virtio_input","driver_virtio_net","driver_virtio_entropy"]
     driver_rtc = []         # 真实时间时钟驱动
     driver_goldfish_rtc = ["driver_rtc"]
-    bios_io = ["driver_goldfish_rtc"]            # 使用BIOS输出
 
 [dependencies]
-    rkalloc = {path = "../rkalloc", default-features = false}
-    runikraft = {path = "../../core", default-features = false}
+    rkalloc = {path = "../rkalloc"}
+    runikraft = {path = "../../core"}
     log = "0.4"
     volatile = {version = "0.3", optional = true}
     bitflags = {version = "1.3", optional = true}

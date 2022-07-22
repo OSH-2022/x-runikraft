@@ -18,9 +18,6 @@ fn putchar_bios(ch: usize) -> bool {
 //     sbi_call(SBI_CONSOLE_GETCHAR, 0, 0, 0, 0)
 // }
 
-#[cfg(all(feature="driver_uart",feature="bios_io"))]
-compile_error!("feature \"driver_uart\" and \"bios_io\" cannot be enabled at the same time");
-
 #[cfg(feature="driver_uart")]
 mod uart_based_io
 {
@@ -68,7 +65,7 @@ mod uart_based_io
     }
 }
 
-#[cfg(feature="bios_io")]
+#[cfg(not(any(feature="driver_uart")))]
 mod bios_io {
     use super::*;
     fn putchar(ch: usize) -> bool {
@@ -108,7 +105,7 @@ mod bios_io {
 #[cfg(feature="driver_uart")]
 pub use uart_based_io::*;
 
-#[cfg(feature="bios_io")]
+#[cfg(not(any(feature="driver_uart")))]
 pub use bios_io::*;
 
 ///////////////////
@@ -122,13 +119,18 @@ struct RustStyleOutput;
 static LOCK: super::spinlock::SpinLock = super::spinlock::SpinLock::new();
 
 pub(crate) fn __print_bios(args: fmt::Arguments) {
+    let flag = super::lcpu::save_irqf();
     let _lock = LOCK.lock();
     RustStyleOutputBIOS.write_fmt(args).unwrap();
+    super::lcpu::restore_irqf(flag);
 }
 
+#[doc(hidden)]
 pub fn __print(args: fmt::Arguments) {
+    let flag = super::lcpu::save_irqf();
     let _lock = LOCK.lock();
     RustStyleOutput.write_fmt(args).unwrap();
+    super::lcpu::restore_irqf(flag);
 }
 
 impl Write for RustStyleOutputBIOS {

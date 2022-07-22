@@ -35,7 +35,7 @@ pub mod sched;
 pub mod thread;
 pub mod wait;
 
-pub use sched::RKsched;
+pub use sched::Sched;
 
 /// 针对当前线程的操作
 pub mod this_thread {

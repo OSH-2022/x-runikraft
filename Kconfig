@@ -1,0 +1,66 @@
+mainmenu "Runikraft/0.1.0 Configuration"
+
+menu "Memory and CPU Configuration"
+    config HEAP_SIZE
+        int "Heap size(MiB)"
+        default 16
+
+    config STACK_SIZE_PAGE_ORDER
+        int "Page order of stack size(log STACK_SIZE)"
+        default 4
+    
+    menu "Limit Configuration"
+        config MEMORY_SIZE
+            int "the maximum size of memory(B)"
+            default -1
+			help
+                -1: unlimited
+
+        config OPEN_FILES
+            int "the maximum size of open files"
+            default 1024
+
+        config PIPE_SIZE
+            int "the maximum size of pipe files"
+            default 4096
+		
+		config CPU_TIME
+            int "the limit of CPU time(ms)"
+			default -1
+			help
+                -1: Duration::MAX
+    endmenu
+
+    config LCPU_MAXCOUNT
+        int "the maximum count of CPU(less than 8)"
+        default 8
+
+    config MAIN_STACK_SIZE
+        int "the main stack size(B)"
+        default 65536
+    
+    config PAGE_SIZE
+        int "the page size(B)"
+        default 4096
+endmenu
+
+menu "Library Configuration"
+    source "lib/rkplat/config"
+	source "lib/rkboot/config"
+endmenu
+
+menu "Make Build Configuration"
+    choice
+        prompt "Make build type"
+        default debug
+
+        config debug
+            bool "debug type"
+            help
+                Compile without "--release"
+        config release
+            bool "release type"
+            help
+                Compile with "--release"
+    endchoice
+endmenu

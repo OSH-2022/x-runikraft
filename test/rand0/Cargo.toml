@@ -1,0 +1,11 @@
+[package]
+    name = "test-rand0"
+    version = "0.1.0"
+    edition = "2021"
+
+[workspace]
+
+[dependencies]
+    rkplat = {path = "../../lib/rkplat", features = ["driver_ns16550","driver_virtio_entropy"]}
+    rkboot = {path = "../../lib/rkboot", features = ["alloc_buddy"]}
+    rkswrand = {path = "../../lib/rkswrand"}

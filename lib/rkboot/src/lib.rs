@@ -34,14 +34,15 @@
 use core::time::Duration;
 use core::{slice,str};
 use core::mem::{align_of, size_of};
-use core::ptr::{addr_of, null_mut};
-use rkalloc::RKalloc;
+use core::ptr::{addr_of, null_mut, addr_of_mut};
+use rkalloc::Alloc;
 use rkplat::{irq,time,bootstrap,device, lcpu};
 #[cfg(feature="have_scheduler")]
-use rksched::RKsched;
+use rksched::Sched;
 use runikraft::align_as;
-use runikraft::config::HEAP_SIZE;
+use runikraft::config::{HEAP_SIZE,rkboot::*};
 
+#[cfg(any(feature="alloc_buddy"))]
 static mut HEAP:align_as::A4096<[u8;HEAP_SIZE]> = align_as::A4096::new([0;HEAP_SIZE]);
 
 extern "Rust" {
@@ -75,10 +76,45 @@ mod virtio_alloc{
     }
 }
 
+#[cfg(not(any(feature="alloc_buddy")))]
+struct NullAllocator;
+
+#[cfg(not(any(feature="alloc_buddy")))]
+unsafe impl Alloc for NullAllocator {
+    unsafe fn alloc(&self, _: usize, _: usize) -> *mut u8 {
+        unimplemented!();
+    }
+    unsafe fn dealloc(&self, _: *mut u8, _: usize, _: usize) {
+        unimplemented!();
+    }
+}
+
+#[cfg(not(any(feature="alloc_buddy")))]
+impl rkalloc::AllocState for NullAllocator {
+    fn free_size(&self) -> usize {
+        0
+    }
+    fn total_size(&self) -> usize {
+        0
+    }
+}
+
+static mut ARGV: [*mut u8;MAX_ARGS_CNT] = [null_mut();MAX_ARGS_CNT];
+
+#[no_mangle]
+pub unsafe extern "C" fn rkplat_entry_argp(arg0: *mut u8, argb: *mut u8, argb_len: usize) -> ! {
+    let argc = rkargparse::argnparse(argb, if argb_len==0 {usize::MAX/1024} else {argb_len}, 
+        addr_of_mut!(ARGV[1]), MAX_ARGS_CNT-1);
+    ARGV[0] = arg0;
+    rkplat_entry(argc, ARGV.as_mut_ptr())
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn rkplat_entry(argc: i32, argv: *mut *mut u8) -> ! {
     #[cfg(feature="alloc_buddy")]
-    let a = rkalloc_buddy::RKallocBuddy::new(HEAP.data.as_mut_ptr(), HEAP.data.len());
+    let a = rkallocbuddy::AllocBuddy::new(HEAP.data.as_mut_ptr(), HEAP.data.len());
+    #[cfg(not(any(feature="alloc_buddy")))]
+    let a = NullAllocator;
 
     rkalloc::register(addr_of!(a));
     rkalloc::register_state(addr_of!(a));
@@ -120,11 +156,11 @@ fn thread_main(arg: *mut u8) {
 #[cfg(feature="have_scheduler")]
 fn sched_start(arg: *mut u8) -> !{
     unsafe {
-        (**(arg as *mut *mut dyn RKsched)).start();
+        (**(arg as *mut *mut dyn Sched)).start();
     }
 }
 
-unsafe fn rkboot_entry(alloc: &dyn RKalloc, args: &mut [&str]) -> ! {
+unsafe fn rkboot_entry(alloc: &dyn Alloc, args: &mut [&str]) -> ! {
     irq::init(alloc).unwrap();
     device::init(alloc).unwrap();
     time::init();
@@ -132,11 +168,13 @@ unsafe fn rkboot_entry(alloc: &dyn RKalloc, args: &mut [&str]) -> ! {
     {
         let wrapper = ThreadMainArgWrapper{base: args.as_mut_ptr(), size: args.len()};
         let cpu_cnt = lcpu::count();
-        let scheds = slice::from_raw_parts_mut(alloc.alloc(cpu_cnt*size_of::<*mut dyn rksched::RKsched>(), 
-            align_of::<*mut dyn rksched::RKsched>()) as *mut *mut dyn rksched::RKsched, cpu_cnt);
+        let scheds = slice::from_raw_parts_mut(alloc.alloc(cpu_cnt*size_of::<*mut dyn rksched::Sched>(), 
+            align_of::<*mut dyn rksched::Sched>()) as *mut *mut dyn rksched::Sched, cpu_cnt);
         for i in 0..cpu_cnt {
             #[cfg(feature="sched_coop")]
-            {scheds[i] = rkalloc::alloc_type(alloc,rkschedcoop::RKschedcoop::new(i));}
+            {scheds[i] = rkalloc::alloc_type(alloc,rkschedcoop::Schedcoop::new(i));}
+            #[cfg(feature="sched_preem")]
+            {scheds[i] = rkalloc::alloc_type(alloc,rkschedpreem::Schedpreem::new(i));}
             rksched::sched::register(&mut *scheds[i]);
         }
         for i in 0..cpu_cnt {
@@ -148,7 +186,7 @@ unsafe fn rkboot_entry(alloc: &dyn RKalloc, args: &mut [&str]) -> ! {
             use runikraft::config::STACK_SIZE_SCALE as SSS;
             rksched::sched::create_thread_on_sched("empty", rkalloc::make_static(alloc),
                 i,
-                ThreadAttr::new(WAITABLE, true,PRIO_EMPTY, Duration::MAX, Duration::MAX, 4096*SSS, 0),
+                ThreadAttr::new(WAITABLE, true,PRIO_EMPTY, Duration::from_secs(10), Duration::MAX, 4096*SSS, 0),
                 ThreadLimit::default(),
                 rksched::sched::__empty_thread_function,
                 null_mut()).unwrap();

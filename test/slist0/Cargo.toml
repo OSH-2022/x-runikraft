@@ -7,7 +7,7 @@
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-    rkboot = {path = "../../lib/rkboot"}
-    rkplat = {path = "../../lib/rkplat"}
+    rkboot = {path = "../../lib/rkboot", features = ["alloc_buddy"]}
+    rkplat = {path = "../../lib/rkplat", features = ["driver_ns16550"]}
     rkalloc = {path = "../../lib/rkalloc"}
     runikraft = {path = "../../core"}

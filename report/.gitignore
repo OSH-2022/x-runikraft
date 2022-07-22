@@ -7,5 +7,5 @@
 *.bbl
 *.run.xml
 *.toc
-!*/assets/*
+!/assets/*
 !4_midterm/midterm.pdf

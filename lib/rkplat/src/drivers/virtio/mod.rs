@@ -35,31 +35,35 @@ extern crate log;
 
 extern crate alloc;
 
-#[cfg(feature="driver_virtio_blk")]
+#[cfg(feature = "driver_virtio_blk")]
 mod blk;
-#[cfg(feature="driver_virtio_console")]
+#[cfg(feature = "driver_virtio_console")]
 mod console;
-#[cfg(feature="driver_virtio_gpu")]
-pub(crate) mod gpu;
+#[cfg(feature = "driver_virtio_gpu")]
+mod gpu;
 mod hal;
 mod header;
-#[cfg(feature="driver_virtio_input")]
-pub(crate) mod input;
-#[cfg(feature="driver_virtio_net")]
+#[cfg(feature = "driver_virtio_input")]
+mod input;
+#[cfg(feature = "driver_virtio_net")]
 mod net;
 mod queue;
+#[cfg(feature = "driver_virtio_entropy")]
+mod entropy;
 
-#[cfg(feature="driver_virtio_blk")]
+#[cfg(feature = "driver_virtio_blk")]
 pub use self::blk::{BlkResp, RespStatus, VirtIOBlk};
-#[cfg(feature="driver_virtio_console")]
+#[cfg(feature = "driver_virtio_console")]
 pub use self::console::VirtIOConsole;
-#[cfg(feature="driver_virtio_gpu")]
+#[cfg(feature = "driver_virtio_gpu")]
 pub use self::gpu::VirtIOGpu;
 pub use self::header::*;
-#[cfg(feature="driver_virtio_input")]
+#[cfg(feature = "driver_virtio_input")]
 pub use self::input::{InputConfigSelect, InputEvent, VirtIOInput};
-#[cfg(feature="driver_virtio_net")]
+#[cfg(feature = "driver_virtio_net")]
 pub use self::net::VirtIONet;
+#[cfg(feature = "driver_virtio_entropy")]
+pub use self::entropy::VirtIOEntropy;
 use self::queue::VirtQueue;
 use core::mem::size_of;
 use hal::*;
@@ -89,7 +93,7 @@ pub enum Error {
     DmaError,
     /// I/O Error
     IoError,
-    /// 
+    ///
     Uninitialized,
 }
 
@@ -114,8 +118,14 @@ unsafe trait AsBuf: Sized {
 }
 
 
-#[cfg(feature="driver_virtio_gpu")]
-pub static mut GPU_DEIVCE: Option<&'static mut VirtIOGpu> = None;
+#[cfg(feature = "driver_virtio_gpu")]
+#[doc(hidden)]
+pub static mut __GPU_DEIVCE: Option<&'static mut VirtIOGpu> = None;
 
-#[cfg(feature="driver_virtio_input")]
-pub static mut INPUT_DEIVCE: Option<&'static mut VirtIOInput> = None;
+#[cfg(feature = "driver_virtio_input")]
+#[doc(hidden)]
+pub static mut __INPUT_DEIVCE: Option<&'static mut VirtIOInput> = None;
+
+#[cfg(feature = "driver_virtio_entropy")]
+#[doc(hidden)]
+pub static mut __ENTROPY_DEIVCE: Option<&'static mut VirtIOEntropy> = None;

@@ -30,10 +30,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-use rksched::{RKsched, RKthread};
+use rksched::{Sched, Thread};
 use runikraft::compat_list::Tailq;
 use crate::blkfront::RkBlkdevQueue;
-use crate::blkreq::{RkBlkreq, RkBlkreqOp,Sector};
+use crate::blkreq::{RkBlkreq, RkBlkreqOp, Sector};
 use crate::CONFIG_LIBUKBLKDEV_MAXNBQUEUES;
 
 pub struct RkBlkdev<'a> {
@@ -95,7 +95,6 @@ pub struct RkBlkdevQueueInfo {
 }
 
 
-
 ///用于队列事件回调的函数类型
 ///
 ///@参数 dev
@@ -117,18 +116,18 @@ pub type RkBlkdevQueueEventT = fn(&RkBlkdev, u16, *mut u8);
 ///用于配置Runikraft块设备队列的结构体
 pub struct RkBlkdevQueueConf<'a> {
     ///用于设备描述符环的分配器
-    a: &'a dyn rkalloc::RKalloc,
+    a: &'a dyn rkalloc::Alloc,
     ///事件回调函数
     pub(crate) callback: RkBlkdevQueueEventT,
     ///回调的参数指针
     pub(crate) callback_cookie: *mut u8,
     #[cfg(feature = "dispatcherthreads")]
     ///描述符的调度器
-    pub(crate) s: *mut RKsched<'a>,
+    pub(crate) s: *mut Sched<'a>,
 }
 
 #[cfg(feature = "dispatcherthreads")]
-static s: RKsched = RKsched;
+static s: Sched = Sched;
 
 /**
  * Status code flags returned queue_submit_one function
@@ -201,7 +200,7 @@ pub struct RkBlkdevEventHandler<'a> {
     pub(crate) dispatcher_name: *mut char,
     #[cfg(feature = "dispatcherthreads")]
     ///分配器的调度器
-    pub(crate) dispatcher_s: *mut rksched::RKsched<'a>,
+    pub(crate) dispatcher_s: *mut rksched::Sched<'a>,
 }
 
 ///@内部
@@ -216,5 +215,5 @@ pub struct RkBlkdevData<'a> {
     ///设备名称
     pub(crate) drv_name: &'a str,
     ///分配器
-    pub(crate) a: &'a dyn rkalloc::RKalloc,
+    pub(crate) a: &'a dyn rkalloc::Alloc,
 }

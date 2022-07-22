@@ -34,7 +34,7 @@
 use runikraft::config;
 
 use super::netdev_core::{Netdev};
-use rkalloc::RKalloc;
+use rkalloc::Alloc;
 
 /// Adds a Runikraft network device to the device list.
 /// This should be called whenever a driver adds a new found device.
@@ -47,7 +47,7 @@ use rkalloc::RKalloc;
 /// - Return: 
 ///   - (-ENOMEM): Allocation of private
 ///   - (>=0): Network device ID on success
-pub fn register<'a>(dev: &mut Netdev<'a>, a: *const dyn RKalloc, drv_name: &'a str)->Result<i32,i32>{
+pub fn register<'a>(dev: &mut Netdev<'a>, a: *const dyn Alloc, drv_name: &'a str)->Result<i32,i32>{
     unimplemented!();
 }
 

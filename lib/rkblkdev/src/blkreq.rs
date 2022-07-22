@@ -64,6 +64,7 @@ pub struct RkBlkreq {
 
 ///操作状态
 pub type RkBlkreqState = atomic::AtomicBool;
+
 pub const RkBlkreqFinished: bool = true;
 pub const RkBlkreqUnfinished: bool = false;
 
@@ -87,6 +88,7 @@ pub enum RkBlkreqOp {
 ///	由用户在递交请求时设定的可选参数
 ///
 pub type RkBlkreqEventT = fn(&RkBlkreq, *mut u8);
+
 ///初始化一个请求结构体
 ///
 ///@参数 req
@@ -115,25 +117,25 @@ pub type RkBlkreqEventT = fn(&RkBlkreq, *mut u8);
 ///
 #[inline]
 #[cfg(feature = "sync_io_blocked_waiting")]
-pub fn rk_blkreq_init(req: &mut RkBlkreq, op: RkBlkreqOp, start: Sector, nb_sectors: Sector, aio_buf: *mut u8, cb:RkBlkreqEventT, cb_cookie: *const RkBlkdevSyncIORequest) {
-    req.operation=op;
-    req.start_sector=start;
-    req.nb_sectors=nb_sectors;
-    req.aio_buf=aio_buf;
+pub fn rk_blkreq_init(req: &mut RkBlkreq, op: RkBlkreqOp, start: Sector, nb_sectors: Sector, aio_buf: *mut u8, cb: RkBlkreqEventT, cb_cookie: *const RkBlkdevSyncIORequest) {
+    req.operation = op;
+    req.start_sector = start;
+    req.nb_sectors = nb_sectors;
+    req.aio_buf = aio_buf;
     req.state.store(RkBlkreqFinished, atomic::Ordering::Release);
-    req.cb=cb;
-    req.cb_cookie=cb_cookie;
+    req.cb = cb;
+    req.cb_cookie = cb_cookie;
 }
 
 #[inline]
 #[cfg(not(feature = "sync_io_blocked_waiting"))]
-pub fn rk_blkreq_init(req: &mut RkBlkreq, op: RkBlkreqOp, start: Sector, nb_sectors: Sector, aio_buf: *mut u8, cb:RkBlkreqEventT) {
-    req.operation=op;
-    req.start_sector=start;
-    req.nb_sectors=nb_sectors;
-    req.aio_buf=aio_buf;
+pub fn rk_blkreq_init(req: &mut RkBlkreq, op: RkBlkreqOp, start: Sector, nb_sectors: Sector, aio_buf: *mut u8, cb: RkBlkreqEventT) {
+    req.operation = op;
+    req.start_sector = start;
+    req.nb_sectors = nb_sectors;
+    req.aio_buf = aio_buf;
     req.state.store(RkBlkreqFinished, atomic::Ordering::Release);
-    req.cb=cb;
+    req.cb = cb;
 }
 
 /// 检查请求是否结束

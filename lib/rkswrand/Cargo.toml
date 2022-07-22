@@ -1,0 +1,16 @@
+[package]
+name = "rkswrand"
+version = "0.1.0"
+authors = [ "张子辰 <zichen350@gmail.com>" ]
+license = "BSD-3-Clause"
+edition = "2021"
+
+[dependencies]
+runikraft = {path = "../../core"}
+rkplat = {path = "../rkplat", features = ["driver_virtio_entropy"]}
+getrandom = { version = "0.2", features = ["custom"] }
+rand = {version = "0.8", default-features = false, features = ["std_rng","small_rng","getrandom"]}
+rklock = {path = "../rklock", optional = true}
+
+[features]
+have_scheduler = ["rklock"]

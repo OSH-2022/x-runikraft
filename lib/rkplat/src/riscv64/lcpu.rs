@@ -112,6 +112,8 @@ pub fn halt_irq() {
 }
 
 pub type ID = usize;
+pub type Entry = fn(*mut u8) -> !;
+pub type StackPointer = *mut u8;
 
 #[cfg(feature = "has_smp")]
 mod smp {
@@ -120,9 +122,6 @@ mod smp {
     extern "C" {
         fn __rkplat_hart_entry();
     }
-
-    pub type Entry = fn(*mut u8) -> !;
-    pub type StackPointer = *mut u8;
 
     static LOCK: spinlock::SpinLock = spinlock::SpinLock::new();
     arch::global_asm!(include_str!("hart_entry.asm"));
@@ -170,13 +169,6 @@ mod smp {
         Ok(())
     }
 
-    /// 让编号为`lcpuid`的逻辑处理器等待`timeout`
-    ///
-    /// 可以用`timeout`=0等待不确定的时间
-    pub fn wait(_lcpuid: ID, _timeout: Duration) -> Result<(), i32> {
-        todo!();
-    }
-
     //TODO:
     // fn run()
 
@@ -198,12 +190,26 @@ mod smp {
 pub use smp::*;
 
 #[cfg(not(feature = "has_smp"))]
-#[inline(always)]
-pub fn id() -> ID { 0 }
+mod no_smp {
+    use super::*;
+    #[inline(always)]
+    pub fn id() -> ID { 0 }
+
+
+    #[inline(always)]
+    pub fn count() -> ID { 1 }
+
+    pub fn start(_lcpuid: ID, _sp: StackPointer, _entry: Entry, _arg: *mut u8) -> Result<(), i32> {
+        unimplemented!();
+    }
+
+    pub fn wakeup(_lcpuid: ID) -> Result<(), i32> {
+        unimplemented!();
+    }
+}
 
 #[cfg(not(feature = "has_smp"))]
-#[inline(always)]
-pub fn count() -> ID { 1 }
+pub use no_smp::*;
 
 //来自ukarch
 #[inline(always)]

@@ -35,7 +35,7 @@ use core::time::Duration;
 use core::ptr::NonNull;
 use runikraft::errno::Errno;
 use crate::thread::{ThreadData,ThreadAttr,ThreadLimit,Prio,Thread};
-use rkalloc::RKalloc;
+use rkalloc::Alloc;
 use core::sync::atomic::{AtomicU32,Ordering::SeqCst};
 use core::mem::size_of;
 
@@ -60,7 +60,7 @@ use core::mem::size_of;
 /// 在系统启动时，只有一个hart活跃（这里称之为boot hart），而其他hart被挂起。
 /// boot hart负责初始化所有的调度器，构建调度器循环链表，启动其他harts，然后调用自己的
 /// 调度器的`start`。其他harts的初始化函数最终也会调用`start`。
-pub trait RKsched {
+pub trait Sched {
     /// 把当前hart的控制权转交给调度器
     fn start(&mut self)->!;
     /// 调度器是否已启动
@@ -84,22 +84,24 @@ pub trait RKsched {
     //它们本应该被隐藏，但是Rust不支持protected和friend，所以只能把它们设置成公开接口
 
     ///**安全性**：只能在初始化调度器的环形链表时使用
-    unsafe fn __set_next_sheduler(&mut self, sched: *const dyn RKsched);
+    #[doc(hidden)]
+    unsafe fn __set_next_sheduler(&mut self, sched: *const dyn Sched);
 
     /// 调度器的负载程度，一般是就绪队列的大小，用于负载均衡。
     /// 目前，如果self.workload()*2>=next.workload()*3，则将线程加入下一个调取器
     /// TODO: 使这个参数可配置
+    #[doc(hidden)]
     fn __workload(&self) -> usize;
 }
 
 ///TODO: 在合并后应该改成rkplat::LCPU_MAXCOUNT
-static mut SCHED_LIST: [Option<NonNull<dyn RKsched>>;16] = [None;16];
+static mut SCHED_LIST: [Option<NonNull<dyn Sched>>;16] = [None;16];
 static mut SCHED_CNT: usize = 0;
 static ADD_NEW_THEAD_TO: AtomicU32 = AtomicU32::new(0);
 
 ///注册调度器
-pub unsafe fn register(sched: &mut dyn RKsched) -> usize {
-    SCHED_LIST[SCHED_CNT] = NonNull::new(sched as *const dyn RKsched as *mut dyn RKsched);
+pub unsafe fn register(sched: &mut dyn Sched) -> usize {
+    SCHED_LIST[SCHED_CNT] = NonNull::new(sched as *const dyn Sched as *mut dyn Sched);
     SCHED_CNT += 1;
     SCHED_CNT-1
 }
@@ -119,7 +121,7 @@ unsafe fn thread_entry_point(arg: *mut u8) -> ! {
 }
 
 /// 创建新线程，并且把它添加到调度器
-pub fn create_thread_on_sched(name: &str, alloc: &'static dyn RKalloc,sched_id: usize, attr: ThreadAttr, limit: ThreadLimit, function: fn(*mut u8), arg: *mut u8) -> Result<&'static mut Thread,Errno> {
+pub fn create_thread_on_sched(name: &str, alloc: &'static dyn Alloc,sched_id: usize, attr: ThreadAttr, limit: ThreadLimit, function: fn(*mut u8), arg: *mut u8) -> Result<&'static mut Thread,Errno> {
     unsafe {
         assert!(SCHED_CNT!=0);
         let stack = alloc.alloc(attr.get_stack_size(), 16);
@@ -158,7 +160,7 @@ pub fn create_thread_on_sched(name: &str, alloc: &'static dyn RKalloc,sched_id: 
 }
 
 /// 创建新线程，并且把它添加到调度器
-pub fn create_thread(name: &str, alloc: &'static dyn RKalloc, attr: ThreadAttr, limit: ThreadLimit, function: fn(*mut u8), arg: *mut u8) -> Result<&'static mut Thread,Errno> {
+pub fn create_thread(name: &str, alloc: &'static dyn Alloc, attr: ThreadAttr, limit: ThreadLimit, function: fn(*mut u8), arg: *mut u8) -> Result<&'static mut Thread,Errno> {
     create_thread_on_sched(name, alloc, ADD_NEW_THEAD_TO.fetch_update(SeqCst, SeqCst, 
         |x| {
             Some(if x+1 == unsafe{SCHED_CNT} as u32 {0}
@@ -181,6 +183,7 @@ pub fn destroy_thread(t: &mut Thread) {
 }
 
 /// 填充调度器的函数，在调用start时，调度器内必须有一个执行__empty_thread_function的线程（参见rkboot::rkboot_entry的实现）
+#[doc(hidden)]
 pub fn __empty_thread_function(_: *mut u8) {
     loop {
         super::this_thread::r#yield();
